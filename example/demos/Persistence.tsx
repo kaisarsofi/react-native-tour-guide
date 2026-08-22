@@ -9,8 +9,8 @@ import {
 
 import { Badge, Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
+import { OnboardingBanner } from "../components/mocks";
 import { Section } from "../components/Section";
-import { Tile } from "../components/Tile";
 
 const TOUR_ID = "example-onboarding";
 
@@ -55,6 +55,7 @@ export function Persistence() {
       targetId: "onboarding-target",
       title: "Welcome!",
       description: "This only plays once per tourId — try tapping the button again.",
+      spotlightBorderRadius: 16,
     },
   ];
 
@@ -70,7 +71,7 @@ export function Persistence() {
       }
     >
       <TourTarget id="onboarding-target">
-        <Tile label="Onboarding target" />
+        <OnboardingBanner />
       </TourTarget>
 
       <View className="flex-row items-center justify-between">

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
     "expo": "~54.0.35",
     "expo-status-bar": "~3.0.9",
     "nativewind": "^4.2.3",
