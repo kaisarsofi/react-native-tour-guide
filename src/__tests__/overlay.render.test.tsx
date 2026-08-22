@@ -74,4 +74,45 @@ describe("TourGuideOverlay rendering", () => {
     renderTour();
     expect(screen.queryByText("Hello")).toBeNull();
   });
+
+  it("does nothing on backdrop tap by default", async () => {
+    const tour = renderTour();
+    await tour.start([makeStep(), makeStep({ id: "b", title: "Second" })]);
+
+    fireEvent.press(screen.getByTestId("tour-guide-backdrop"));
+
+    // Still on step one, tooltip still showing — the backdrop tap was a no-op.
+    expect(screen.getByText("Hello")).toBeTruthy();
+    expect(screen.getByText("1 of 2")).toBeTruthy();
+  });
+
+  it("advances on backdrop tap when defaultBackdropBehavior is next", async () => {
+    const tour = renderTour();
+    await tour.start(
+      [makeStep({ id: "a", title: "First" }), makeStep({ id: "b", title: "Second" })],
+      { defaultBackdropBehavior: "next" },
+    );
+
+    fireEvent.press(screen.getByTestId("tour-guide-backdrop"));
+
+    expect(await screen.findByText("Second")).toBeTruthy();
+  });
+
+  it("ends the tour on backdrop tap when defaultBackdropBehavior is dismiss", async () => {
+    const tour = renderTour();
+    await tour.start([makeStep()], { defaultBackdropBehavior: "dismiss" });
+
+    fireEvent.press(screen.getByTestId("tour-guide-backdrop"));
+
+    expect(tour.api.isActive).toBe(false);
+  });
+
+  it("ends the tour when Skip is pressed", async () => {
+    const tour = renderTour();
+    await tour.start([makeStep(), makeStep({ id: "b", title: "Second" })]);
+
+    fireEvent.press(screen.getByText("Skip"));
+
+    expect(tour.api.isActive).toBe(false);
+  });
 });

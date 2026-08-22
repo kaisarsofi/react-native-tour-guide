@@ -1,11 +1,11 @@
 import React, { useRef } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { TourTarget, useTourGuide, type TourStep } from "react-native-tour-guide";
 
 import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
+import { Avatar, ComposeButton, SettingsRow } from "../components/mocks";
 import { Section } from "../components/Section";
-import { Tile } from "../components/Tile";
 
 /**
  * Shows the two ways to point a step at a component: a `targetRef` (the
@@ -53,20 +53,16 @@ export function BasicTargeting() {
       }
     >
       <View className="flex-row items-center gap-3">
-        <View
-          ref={avatarRef}
-          collapsable={false}
-          className="h-11 w-11 items-center justify-center rounded-full bg-violet-600"
-        >
-          <Text className="text-sm font-semibold text-white">RN</Text>
+        <View ref={avatarRef} collapsable={false}>
+          <Avatar initials="JD" />
         </View>
         <TourTarget id="compose-button" className="flex-1">
-          <Tile label="Compose button" />
+          <ComposeButton />
         </TourTarget>
       </View>
 
       <TourTarget id="settings-row">
-        <Tile label="Settings row" />
+        <SettingsRow label="Notifications" meta="On" />
       </TourTarget>
 
       <View className="flex-row">

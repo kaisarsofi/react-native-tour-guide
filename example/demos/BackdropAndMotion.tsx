@@ -4,8 +4,8 @@ import { TourTarget, useTourGuide, type TourStep } from "react-native-tour-guide
 
 import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
+import { FeedCard } from "../components/mocks";
 import { Section } from "../components/Section";
-import { Tile } from "../components/Tile";
 
 /**
  * Three variations of the same two-step tour: tapping the dimmed backdrop
@@ -20,13 +20,13 @@ export function BackdropAndMotion() {
     {
       id: "tile-a",
       targetId: "motion-tile-a",
-      title: "Tile A",
+      title: "Product update",
       description: "First stop.",
     },
     {
       id: "tile-b",
       targetId: "motion-tile-b",
-      title: "Tile B",
+      title: "New feature",
       description: "Second stop.",
     },
   ];
@@ -44,10 +44,10 @@ export function BackdropAndMotion() {
     >
       <View className="flex-row gap-2">
         <TourTarget id="motion-tile-a" className="flex-1">
-          <Tile label="Tile A" />
+          <FeedCard title="Product update" meta="2 min read" />
         </TourTarget>
         <TourTarget id="motion-tile-b" className="flex-1">
-          <Tile label="Tile B" />
+          <FeedCard title="New feature" meta="5 min read" />
         </TourTarget>
       </View>
 
