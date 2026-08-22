@@ -22,8 +22,8 @@ function Hero() {
         react-native-tour-guide
       </Text>
       <Text className="mt-2 text-[13px] leading-5 text-neutral-500">
-        Spotlight tours and coach marks for Expo & React Native. Six demos below —
-        each starts its own tour in isolation.
+        Spotlight tours and coach marks for Expo & React Native. Six demos below — each
+        starts its own tour in isolation.
       </Text>
 
       <View className="mt-4 flex-row items-center gap-2 rounded-lg bg-neutral-900 px-3.5 py-2.5">
@@ -39,7 +39,12 @@ function Hero() {
 function Demo() {
   return (
     <SafeAreaView className="flex-1 bg-neutral-50" edges={["top", "bottom"]}>
-      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-12 pt-4">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-4 pb-12 pt-4"
+        automaticallyAdjustContentInsets={false}
+        contentInsetAdjustmentBehavior="never"
+      >
         <Hero />
 
         <BasicTargeting />

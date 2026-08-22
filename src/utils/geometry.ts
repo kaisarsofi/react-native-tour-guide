@@ -3,19 +3,70 @@ import { Dimensions, type View } from "react-native";
 
 import type { Rect, TooltipPosition } from "../types";
 
-export function measureView(ref: RefObject<View | null>): Promise<Rect | null> {
+type MeasureCallback = (
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  pageX: number,
+  pageY: number,
+) => void;
+
+type Measurable = Pick<View, "measure" | "measureInWindow">;
+
+function readWindowRect(node: Measurable): Promise<Rect | null> {
   return new Promise((resolve) => {
-    const node = ref.current;
-    if (!node) {
-      resolve(null);
+    if (typeof node.measure === "function") {
+      node.measure(((_x, _y, width, height, pageX, pageY) => {
+        if (width === 0 && height === 0) {
+          resolve(null);
+          return;
+        }
+        resolve({ x: pageX, y: pageY, width, height });
+      }) as MeasureCallback);
       return;
     }
+
     node.measureInWindow((x, y, width, height) => {
       if (width === 0 && height === 0) {
         resolve(null);
         return;
       }
       resolve({ x, y, width, height });
+    });
+  });
+}
+
+/** Two frames so ScrollView / safe-area insets finish applying before we measure. */
+export function nextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
+}
+
+export function measureView(
+  ref: RefObject<View | null>,
+  hostRef?: RefObject<View | null>,
+): Promise<Rect | null> {
+  const node = ref.current;
+  if (!node) {
+    return Promise.resolve(null);
+  }
+
+  return readWindowRect(node).then((rect) => {
+    if (!rect) return null;
+    const host = hostRef?.current;
+    if (!host) return rect;
+    return readWindowRect(host).then((origin) => {
+      if (!origin) return rect;
+      return {
+        x: rect.x - origin.x,
+        y: rect.y - origin.y,
+        width: rect.width,
+        height: rect.height,
+      };
     });
   });
 }

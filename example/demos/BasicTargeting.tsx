@@ -14,7 +14,8 @@ import { Tile } from "../components/Tile";
  */
 export function BasicTargeting() {
   const avatarRef = useRef<View>(null);
-  const { startTour, isActive } = useTourGuide();
+  const { startTour, isActive, tourId } = useTourGuide();
+  const isThisTour = isActive && tourId === "targeting";
 
   const steps: TourStep[] = [
     {
@@ -70,9 +71,9 @@ export function BasicTargeting() {
 
       <View className="flex-row">
         <DemoButton
-          label={isActive ? "Tour running…" : "Start tour"}
+          label={isThisTour ? "Tour running…" : "Start tour"}
           disabled={isActive}
-          onPress={() => startTour(steps)}
+          onPress={() => startTour(steps, { tourId: "targeting" })}
         />
       </View>
     </Section>

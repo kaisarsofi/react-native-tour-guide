@@ -21,6 +21,7 @@ export function useTourGuide() {
     currentStep,
     currentStepIndex: state.currentIndex,
     totalSteps: state.steps.length,
+    tourId: state.config.tourId,
     events: ctx.events,
   };
 }

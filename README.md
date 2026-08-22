@@ -34,10 +34,12 @@ Expo-first, zero native modules, TypeScript throughout.
 npx expo install react-native-tour-guide react-native-svg react-native-reanimated
 ```
 
-Bare React Native:
+Bare React Native (npm or yarn):
 
 ```bash
 npm install react-native-tour-guide react-native-svg react-native-reanimated
+# or
+yarn add react-native-tour-guide react-native-svg react-native-reanimated
 ```
 
 Reanimated needs its Babel plugin — see the
@@ -219,8 +221,8 @@ resetTour("onboarding-v1"); // show it again
 const {
   startTour,   // (steps: TourStep[], config?: TourGuideConfig) => void
   nextStep, prevStep, goToStep, skipTour, endTour, pauseTour, resumeTour,
-  isActive, isPaused, currentStep, currentStepIndex, totalSteps,
-  events,      // .on('start'|'stepChange'|'end'|'skip'|'pause'|'resume', handler) => unsubscribe
+    isActive, isPaused, currentStep, currentStepIndex, totalSteps, tourId,
+    events,      // .on('start'|'stepChange'|'end'|'skip'|'pause'|'resume', handler) => unsubscribe
 } = useTourGuide();
 ```
 
@@ -283,3 +285,53 @@ persistence, and a live event log.
 ## License
 
 MIT
+
+## Publishing (maintainers)
+
+The published tarball is a whitelist (`files` in `package.json`) plus
+`.npmignore` for extra excludes inside those folders. `README.md`,
+`LICENSE`, and `package.json` are always included.
+
+Included:
+
+- `src/` — Metro / `react-native` entry (`src/index.ts`)
+- `lib/` — CommonJS, ESM, and TypeScript declarations from `bob build`
+
+Excluded: tests (`src/__tests__`), source maps, the `example/` app, CI,
+Husky, lockfiles, and editor/build caches.
+
+### First-time npm login (Yarn 4)
+
+```bash
+yarn npm login
+# or: echo 'npmAuthToken: "YOUR_NPM_TOKEN"' >> .yarnrc.yml   # do not commit this
+```
+
+Create a granular access token at https://www.npmjs.com/settings/~/tokens with
+**Read and write** for the `react-native-tour-guide` package (or the whole
+account). The unscoped name `react-native-tour-guide` is currently unpublished
+on the registry.
+
+### Release
+
+1. Bump `"version"` in `package.json` (this is `0.1.0` for the first publish).
+2. Confirm the tarball:
+
+   ```bash
+   yarn validate
+   yarn pack:list
+   ```
+
+3. Publish:
+
+   ```bash
+   yarn release
+   ```
+
+   That runs lint, format, typecheck, and tests, then `yarn npm publish`
+   (`prepack` builds `lib/` first).
+
+4. Optional: tag the git commit (`git tag v0.1.0 && git push --tags`).
+   Pushing a GitHub Release named `v*` can also publish via
+   `.github/workflows/publish.yml` if the `NPM_TOKEN` secret is set.
+
