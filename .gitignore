@@ -1,0 +1,11 @@
+node_modules/
+lib/
+.DS_Store
+*.log
+.turbo/
+.yarn/
+.expo/
+example/node_modules/
+example/.expo/
+example/ios/
+example/android/
