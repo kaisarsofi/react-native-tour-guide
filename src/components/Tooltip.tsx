@@ -1,5 +1,14 @@
 import React from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from "react-native";
 
 import type { Placement, TooltipProps, TooltipStyles } from "../types";
 
@@ -30,42 +39,66 @@ function Arrow({
     Math.min(Math.max(v, min), Math.max(min, max));
   const inset = t.borderRadius + ARROW_SIZE;
 
+  const w = t.borderWidth;
+  const shift = -ARROW_SIZE / 2;
+  const borders: Record<Placement, ViewStyle> = {
+    bottom: { borderTopWidth: w, borderLeftWidth: w },
+    top: { borderBottomWidth: w, borderRightWidth: w },
+    right: { borderBottomWidth: w, borderLeftWidth: w },
+    left: { borderTopWidth: w, borderRightWidth: w },
+  };
+
   if (placement === "bottom" || placement === "top") {
-    const isBottom = placement === "bottom";
+    const left = clamp(offset - ARROW_SIZE / 2, inset, t.maxWidth - inset);
+    const edge = placement === "bottom" ? { top: shift } : { bottom: shift };
     return (
-      <View
-        pointerEvents="none"
-        style={[
-          base,
-          {
-            left: clamp(offset - ARROW_SIZE / 2, inset, t.maxWidth - inset),
-            [isBottom ? "top" : "bottom"]: -ARROW_SIZE / 2,
-            borderTopWidth: isBottom ? t.borderWidth : 0,
-            borderLeftWidth: isBottom ? t.borderWidth : 0,
-            borderBottomWidth: isBottom ? 0 : t.borderWidth,
-            borderRightWidth: isBottom ? 0 : t.borderWidth,
-          },
-        ]}
-      />
+      <View pointerEvents="none" style={[base, edge, { left }, borders[placement]]} />
     );
   }
 
-  const isRight = placement === "right";
+  const top = clamp(offset - ARROW_SIZE / 2, inset, 400);
+  const edge = placement === "right" ? { left: shift } : { right: shift };
   return (
-    <View
-      pointerEvents="none"
-      style={[
-        base,
-        {
-          top: clamp(offset - ARROW_SIZE / 2, inset, 400),
-          [isRight ? "left" : "right"]: -ARROW_SIZE / 2,
-          borderBottomWidth: isRight ? t.borderWidth : 0,
-          borderLeftWidth: isRight ? t.borderWidth : 0,
-          borderTopWidth: isRight ? 0 : t.borderWidth,
-          borderRightWidth: isRight ? 0 : t.borderWidth,
-        },
-      ]}
-    />
+    <View pointerEvents="none" style={[base, edge, { top }, borders[placement]]} />
+  );
+}
+
+/**
+ * NativeWind remaps `Pressable` `style` (including function styles) through
+ * CSS, which drops `backgroundColor`. Keep the pill chrome on a `View`.
+ */
+function FooterButton({
+  label,
+  onPress,
+  backgroundColor,
+  textColor,
+  buttonStyle,
+  textStyle,
+}: {
+  label: string;
+  onPress: () => void;
+  backgroundColor: string;
+  textColor: string;
+  buttonStyle?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button">
+      {({ pressed }) => (
+        <View
+          style={[
+            styles.button,
+            { backgroundColor },
+            buttonStyle,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={[styles.buttonText, { color: textColor }, textStyle]}>
+            {label}
+          </Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -104,14 +137,14 @@ export function Tooltip({
         slot.container,
       ]}
     >
-      {t.showArrow && (
-        <Arrow placement={placement} offset={arrowOffset} styles={t} />
-      )}
+      {t.showArrow && <Arrow placement={placement} offset={arrowOffset} styles={t} />}
 
       {(config.showStepCounter || config.showProgressDots) && (
         <View style={styles.meta}>
           {config.showStepCounter && (
-            <Text style={[styles.counter, { color: t.stepCounterColor }, slot.stepCounter]}>
+            <Text
+              style={[styles.counter, { color: t.stepCounterColor }, slot.stepCounter]}
+            >
               {stepIndex + 1} of {totalSteps}
             </Text>
           )}
@@ -140,77 +173,52 @@ export function Tooltip({
       <Text style={[styles.title, { color: t.titleColor }, slot.title]}>
         {step.title}
       </Text>
-      <Text style={[styles.description, { color: t.descriptionColor }, slot.description]}>
+      <Text
+        style={[styles.description, { color: t.descriptionColor }, slot.description]}
+      >
         {step.description}
       </Text>
 
       <View style={[styles.footer, slot.footer]}>
         <View style={styles.footerLeft}>
           {showSkip && (
-            <Pressable
-              onPress={onSkip}
-              hitSlop={10}
-              accessibilityRole="button"
-              style={({ pressed }) => [pressed && styles.pressed]}
-            >
-              <Text
-                style={[
-                  styles.skipText,
-                  { color: t.skipButtonTextColor },
-                  slot.skipButtonText,
-                ]}
-              >
-                {config.skipButtonText}
-              </Text>
+            <Pressable onPress={onSkip} hitSlop={10} accessibilityRole="button">
+              {({ pressed }) => (
+                <Text
+                  style={[
+                    styles.skipText,
+                    { color: t.skipButtonTextColor },
+                    slot.skipButtonText,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  {config.skipButtonText}
+                </Text>
+              )}
             </Pressable>
           )}
         </View>
 
         <View style={styles.footerRight}>
           {showPrev && (
-            <Pressable
+            <FooterButton
+              label={config.prevButtonText}
               onPress={onPrev}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.button,
-                { backgroundColor: t.secondaryButtonColor },
-                slot.secondaryButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.buttonText,
-                  { color: t.secondaryButtonTextColor },
-                  slot.secondaryButtonText,
-                ]}
-              >
-                {config.prevButtonText}
-              </Text>
-            </Pressable>
+              backgroundColor={t.secondaryButtonColor}
+              textColor={t.secondaryButtonTextColor}
+              buttonStyle={slot.secondaryButton}
+              textStyle={slot.secondaryButtonText}
+            />
           )}
           {showNext && (
-            <Pressable
+            <FooterButton
+              label={isLast ? config.doneButtonText : config.nextButtonText}
               onPress={onNext}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.button,
-                styles.buttonPrimary,
-                { backgroundColor: t.primaryButtonColor },
-                slot.primaryButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.buttonText,
-                  { color: t.primaryButtonTextColor },
-                  slot.primaryButtonText,
-                ]}
-              >
-                {isLast ? config.doneButtonText : config.nextButtonText}
-              </Text>
-            </Pressable>
+              backgroundColor={t.primaryButtonColor}
+              textColor={t.primaryButtonTextColor}
+              buttonStyle={[styles.buttonPrimary, slot.primaryButton]}
+              textStyle={slot.primaryButtonText}
+            />
           )}
         </View>
       </View>

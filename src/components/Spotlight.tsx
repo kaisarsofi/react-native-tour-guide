@@ -55,7 +55,19 @@ export function Spotlight({
     holeH.value = withTiming(rect.height + padding * 2, timing);
     holeR.value = withTiming(radius, timing);
     opacity.value = withTiming(1, { duration });
-  }, [duration, holeH, holeR, holeW, holeX, holeY, motion, opacity, padding, radius, rect]);
+  }, [
+    duration,
+    holeH,
+    holeR,
+    holeW,
+    holeX,
+    holeY,
+    motion,
+    opacity,
+    padding,
+    radius,
+    rect,
+  ]);
 
   useEffect(() => {
     if (!s.enablePulse || !rect) {

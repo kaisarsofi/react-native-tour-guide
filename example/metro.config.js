@@ -28,13 +28,21 @@ const singletonModules = new Set([
   "react",
   "react-native",
   "react-native-reanimated",
+  "react-native-worklets",
   "react-native-svg",
   "react-native-safe-area-context",
   "buffer",
 ]);
 const appNodeModules = path.resolve(projectRoot, "node_modules");
+const libraryEntry = path.resolve(workspaceRoot, "src/index.ts");
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (
+    moduleName === "react-native-tour-guide" ||
+    moduleName.startsWith("react-native-tour-guide/")
+  ) {
+    return { type: "sourceFile", filePath: libraryEntry };
+  }
   if (moduleName === "buffer") {
     // "buffer" is also a Node core module name, so a bare
     // `require.resolve("buffer", { paths })` short-circuits to Node's

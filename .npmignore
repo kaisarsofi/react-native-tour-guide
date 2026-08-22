@@ -1,0 +1,36 @@
+# Dev / repo-only
+example/
+coverage/
+.github/
+.husky/
+.vscode/
+.idea/
+.cursor/
+.yarn/
+.expo/
+
+# Config that consumers don't need
+.eslintrc.js
+.prettierrc.json
+.gitignore
+.nvmrc
+.yarnrc.yml
+babel.config.js
+jest.setup.js
+tsconfig.json
+tsconfig.build.json
+package-lock.json
+yarn.lock
+
+# Tests and maps inside src/ and lib/
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.tsbuildinfo
+**/*.map
+
+# Local artifacts
+*.tgz
+*.log
+.DS_Store
+node_modules/
