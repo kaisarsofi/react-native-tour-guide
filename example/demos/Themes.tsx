@@ -15,7 +15,7 @@ import {
 } from "react-native-tour-guide";
 
 import { Section } from "../components/Section";
-import { Tile } from "../components/Tile";
+import { StatCard } from "../components/mocks";
 
 const THEMES: { label: string; theme: TourGuideTheme; swatch: string }[] = [
   { label: "Light", theme: lightTheme, swatch: "#6D28D9" },
@@ -47,7 +47,7 @@ export function Themes() {
       id: "card-b",
       targetId: "theme-card-b",
       title: "Same steps, new skin",
-      description: "Swap the theme object passed to startTour — nothing else changes.",
+      description: "Swap the theme object passed to startTour — the widgets underneath never change.",
     },
   ];
 
@@ -59,10 +59,10 @@ export function Themes() {
     >
       <View className="flex-row gap-2">
         <TourTarget id="theme-card-a" className="flex-1">
-          <Tile label="Card A" />
+          <StatCard label="Revenue" value="$12,480" trend="8.2%" />
         </TourTarget>
         <TourTarget id="theme-card-b" className="flex-1">
-          <Tile label="Card B" />
+          <StatCard label="Orders" value="342" trend="3.1%" />
         </TourTarget>
       </View>
 

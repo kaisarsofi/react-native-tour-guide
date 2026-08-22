@@ -9,8 +9,8 @@ import {
 
 import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
+import { IconButton } from "../components/mocks";
 import { Section } from "../components/Section";
-import { Tile } from "../components/Tile";
 
 /**
  * `renderTooltip` gets the same props the built-in <Tooltip> receives
@@ -58,6 +58,7 @@ export function CustomTooltip() {
       targetId: "custom-tooltip-target",
       title: "Fully custom UI",
       description: "renderTooltip swaps out the whole tooltip — layout, buttons, and all.",
+      spotlightBorderRadius: 999,
       renderTooltip: (props) => <CardTooltip {...props} />,
     },
   ];
@@ -73,9 +74,11 @@ export function CustomTooltip() {
         </>
       }
     >
-      <TourTarget id="custom-tooltip-target">
-        <Tile label="Highlighted element" />
-      </TourTarget>
+      <View className="flex-row">
+        <TourTarget id="custom-tooltip-target">
+          <IconButton icon="chatbubble" badge />
+        </TourTarget>
+      </View>
 
       <View className="flex-row">
         <DemoButton

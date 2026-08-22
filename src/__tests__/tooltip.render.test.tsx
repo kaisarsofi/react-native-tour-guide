@@ -108,4 +108,41 @@ describe("Tooltip", () => {
     expect(screen.getByText("Previous")).toBeTruthy();
     expect(screen.getByText("Close")).toBeTruthy();
   });
+
+  it.each(["top", "bottom", "left", "right"] as const)(
+    "renders the arrow for a %s placement without crashing",
+    (placement) => {
+      renderTooltip({ placement });
+
+      expect(screen.getByText("Hello")).toBeTruthy();
+    },
+  );
+
+  it("omits the arrow when showArrow is false", () => {
+    renderTooltip({
+      config: {
+        ...DEFAULT_CONFIG,
+        tooltipStyles: { ...DEFAULT_TOOLTIP_STYLES, showArrow: false },
+        spotlightStyles: DEFAULT_SPOTLIGHT_STYLES,
+      },
+    });
+
+    expect(screen.getByText("Hello")).toBeTruthy();
+  });
+
+  it("renders one progress dot per step and highlights the current one", () => {
+    renderTooltip({
+      stepIndex: 1,
+      totalSteps: 3,
+      isFirst: false,
+      config: {
+        ...DEFAULT_CONFIG,
+        tooltipStyles: DEFAULT_TOOLTIP_STYLES,
+        spotlightStyles: DEFAULT_SPOTLIGHT_STYLES,
+        showProgressDots: true,
+      },
+    });
+
+    expect(screen.getByText("2 of 3")).toBeTruthy();
+  });
 });

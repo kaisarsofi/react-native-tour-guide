@@ -4,8 +4,8 @@ import { TourTarget, useTourGuide, type TourStep } from "react-native-tour-guide
 
 import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
+import { MiniBarChart } from "../components/mocks";
 import { Section } from "../components/Section";
-import { Tile } from "../components/Tile";
 
 /**
  * `events.on(name, handler)` subscribes to the tour lifecycle
@@ -58,10 +58,10 @@ export function EventLog() {
     >
       <View className="flex-row gap-2">
         <TourTarget id="event-target-a" className="flex-1">
-          <Tile label="Target A" />
+          <MiniBarChart label="Sessions" value="1.2k" />
         </TourTarget>
         <TourTarget id="event-target-b" className="flex-1">
-          <Tile label="Target B" />
+          <MiniBarChart label="Conversion" value="4.8%" />
         </TourTarget>
       </View>
 

@@ -71,6 +71,13 @@ describe("measureView", () => {
     await expect(measureView(ref)).resolves.toBeNull();
   });
 
+  it("resolves null when a host-relative node measures 0x0", async () => {
+    const target = pageRef(0, 0, 0, 0);
+    const host = pageRef(0, 59, 400, 800);
+
+    await expect(measureView(target, host)).resolves.toBeNull();
+  });
+
   it("subtracts the overlay host origin so the hole is in overlay space", async () => {
     const target = pageRef(40, 180, 80, 40);
     const host = pageRef(0, 59, 400, 800);
