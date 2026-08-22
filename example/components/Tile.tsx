@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { cn } from "react-native-tour";
+import { cn } from "react-native-tour-guide";
 
 /** Neutral bordered placeholder standing in for "your actual UI" in a demo. */
 export function Tile({ label, className }: { label: string; className?: string }) {

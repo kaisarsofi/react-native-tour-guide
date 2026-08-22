@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { cn } from "react-native-tour";
+import { cn } from "react-native-tour-guide";
 
 /** Inline `code`-style chip, the way docs sites render identifiers. */
 export function Code({ children, className }: { children: string; className?: string }) {

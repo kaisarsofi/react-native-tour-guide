@@ -3,7 +3,7 @@ import "./global.css";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { TourGuideProvider, TourGuideOverlay } from "react-native-tour";
+import { TourGuideProvider, TourGuideOverlay } from "react-native-tour-guide";
 
 import { BackdropAndMotion } from "./demos/BackdropAndMotion";
 import { BasicTargeting } from "./demos/BasicTargeting";
@@ -16,10 +16,10 @@ function Hero() {
   return (
     <View className="mb-6">
       <Text className="text-xs font-semibold uppercase tracking-widest text-violet-600">
-        React Native · Expo · NativeWind
+        React Native · Expo · TypeScript
       </Text>
       <Text className="mt-2 text-[28px] font-bold leading-8 text-neutral-900">
-        react-native-tour
+        react-native-tour-guide
       </Text>
       <Text className="mt-2 text-[13px] leading-5 text-neutral-500">
         Spotlight tours and coach marks for Expo & React Native. Six demos below —
@@ -29,7 +29,7 @@ function Hero() {
       <View className="mt-4 flex-row items-center gap-2 rounded-lg bg-neutral-900 px-3.5 py-2.5">
         <Text className="font-mono text-[13px] text-emerald-400">$</Text>
         <Text className="font-mono text-[13px] text-neutral-100">
-          npx expo install react-native-tour
+          npx expo install react-native-tour-guide
         </Text>
       </View>
     </View>

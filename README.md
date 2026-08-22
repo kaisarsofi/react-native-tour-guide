@@ -1,4 +1,4 @@
-# react-native-tour
+# react-native-tour-guide
 
 Spotlight tours, coach marks and onboarding walkthroughs for React Native —
 Expo-first, zero native modules, TypeScript throughout.
@@ -31,13 +31,13 @@ Expo-first, zero native modules, TypeScript throughout.
 ## Installation
 
 ```bash
-npx expo install react-native-tour react-native-svg react-native-reanimated
+npx expo install react-native-tour-guide react-native-svg react-native-reanimated
 ```
 
 Bare React Native:
 
 ```bash
-npm install react-native-tour react-native-svg react-native-reanimated
+npm install react-native-tour-guide react-native-svg react-native-reanimated
 ```
 
 Reanimated needs its Babel plugin — see the
@@ -57,7 +57,7 @@ import {
   TourGuideOverlay,
   useTourGuide,
   type TourStep,
-} from "react-native-tour";
+} from "react-native-tour-guide";
 
 function Screen() {
   const buttonRef = useRef<View>(null);
@@ -93,7 +93,7 @@ export default function App() {
 ### Targeting by id instead of a ref
 
 ```tsx
-import { TourTarget } from "react-native-tour";
+import { TourTarget } from "react-native-tour-guide";
 
 <TourTarget id="header-avatar">
   <Avatar />
@@ -114,7 +114,7 @@ startTour([
 ### Themes
 
 ```tsx
-import { darkTheme, oceanTheme } from "react-native-tour";
+import { darkTheme, oceanTheme } from "react-native-tour-guide";
 
 startTour(steps, darkTheme);
 startTour(steps, { ...oceanTheme, showProgressDots: false });
@@ -148,6 +148,27 @@ startTour(steps, {
 `spotlightStyles`: `overlayColor`, `overlayOpacity`, `borderColor`,
 `borderWidth`, `enablePulse`, `pulseColor`, `pulseWidth`, `pulseDuration`.
 
+### Per-slot style overrides
+
+For one-off tweaks where a whole theme is overkill, pass raw RN styles. These
+are applied last, so they win over both the defaults and the theme tokens.
+
+```tsx
+startTour(steps, {
+  ...darkTheme,
+  styles: {
+    container: { paddingHorizontal: 24 },
+    title: { fontFamily: "Inter_700Bold", fontSize: 19 },
+    description: { fontFamily: "Inter_400Regular" },
+    primaryButton: { borderRadius: 8 },
+  },
+});
+```
+
+Slots: `container`, `stepCounter`, `progressDot`, `progressDotActive`, `title`,
+`description`, `footer`, `primaryButton`, `primaryButtonText`,
+`secondaryButton`, `secondaryButtonText`, `skipButtonText`.
+
 ### A note on NativeWind / Tailwind
 
 The built-in tooltip deliberately uses `StyleSheet` rather than `className`.
@@ -159,7 +180,7 @@ Your own components have no such limitation. A `renderTooltip` you write is
 compiled by *your* app, so Tailwind classes work there normally:
 
 ```tsx
-import type { TooltipProps } from "react-native-tour";
+import type { TooltipProps } from "react-native-tour-guide";
 
 function MyTooltip({ step, isLast, onNext, config }: TooltipProps) {
   return (
@@ -182,7 +203,7 @@ startTour(steps, { renderTooltip: (props) => <MyTooltip {...props} /> });
 
 ```tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useTourPersistence } from "react-native-tour";
+import { useTourPersistence } from "react-native-tour-guide";
 
 const { startTour, resetTour } = useTourPersistence(AsyncStorage);
 

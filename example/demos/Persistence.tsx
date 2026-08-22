@@ -5,7 +5,7 @@ import {
   useTourPersistence,
   type TourStep,
   type TourStorageAdapter,
-} from "react-native-tour";
+} from "react-native-tour-guide";
 
 import { Badge, Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
@@ -83,7 +83,7 @@ export function Persistence() {
         <DemoButton
           label="Show onboarding"
           onPress={async () => {
-            const already = (await memoryStorage.getItem(`react-native-tour:${TOUR_ID}`)) === "true";
+            const already = (await memoryStorage.getItem(`react-native-tour-guide:${TOUR_ID}`)) === "true";
             await startTour(steps, {
               tourId: TOUR_ID,
               onTourEnd: () => setStatus("shown"),

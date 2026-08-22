@@ -34,6 +34,7 @@ export type {
   SpotlightStyles,
   TooltipPosition,
   TooltipProps,
+  TooltipSlotStyles,
   TooltipStyles,
   TourEventEmitter,
   TourEventName,

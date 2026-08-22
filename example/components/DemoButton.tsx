@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, Text } from "react-native";
-import { cn } from "react-native-tour";
+import { cn } from "react-native-tour-guide";
 
 export interface DemoButtonProps {
   label: string;

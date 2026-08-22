@@ -7,14 +7,14 @@ const workspaceRoot = path.resolve(projectRoot, "..");
 
 const config = getDefaultConfig(projectRoot);
 
-// `react-native-tour` is linked in via the npm `file:..` symlink, so Metro's
+// `react-native-tour-guide` is linked in via the npm `file:..` symlink, so Metro's
 // watcher needs to see outside `example/` to pick up changes to it.
 config.watchFolders = [workspaceRoot];
 
 // The linked package has its own `node_modules` (with its own copies of
 // react/react-native/reanimated/svg as devDependencies for local typechecking).
 // Metro's default resolution walks up from the *requiring* file, so code
-// inside `react-native-tour/lib/**` finds the package's own `node_modules`
+// inside `react-native-tour-guide/lib/**` finds the package's own `node_modules`
 // first — producing two live copies of native-singleton modules like React
 // and Reanimated, and crashing with "Invalid hook call" / "[runtime not
 // ready]: ReferenceError: Property '_toString' doesn't exist".

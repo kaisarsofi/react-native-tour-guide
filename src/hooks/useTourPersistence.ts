@@ -9,7 +9,7 @@ export interface TourStorageAdapter {
   removeItem?: (key: string) => void | Promise<void>;
 }
 
-const STORAGE_PREFIX = "react-native-tour:";
+const STORAGE_PREFIX = "react-native-tour-guide:";
 
 /**
  * Wraps `startTour` so a tour only plays once per `config.tourId`, persisted

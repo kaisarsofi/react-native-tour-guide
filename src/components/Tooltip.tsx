@@ -83,6 +83,7 @@ export function Tooltip({
   onSkip,
 }: TooltipProps) {
   const t = config.tooltipStyles;
+  const slot = config.styles ?? {};
   const showSkip = !step.hideSkipButton && !isLast;
   const showPrev = !step.hidePrevButton && !isFirst;
   const showNext = !step.hideNextButton;
@@ -100,6 +101,7 @@ export function Tooltip({
           borderColor: t.borderColor,
           borderWidth: t.borderWidth,
         },
+        slot.container,
       ]}
     >
       {t.showArrow && (
@@ -109,7 +111,7 @@ export function Tooltip({
       {(config.showStepCounter || config.showProgressDots) && (
         <View style={styles.meta}>
           {config.showStepCounter && (
-            <Text style={[styles.counter, { color: t.stepCounterColor }]}>
+            <Text style={[styles.counter, { color: t.stepCounterColor }, slot.stepCounter]}>
               {stepIndex + 1} of {totalSteps}
             </Text>
           )}
@@ -125,6 +127,8 @@ export function Tooltip({
                       backgroundColor:
                         i === stepIndex ? t.progressDotActiveColor : t.progressDotColor,
                     },
+                    slot.progressDot,
+                    i === stepIndex && slot.progressDotActive,
                   ]}
                 />
               ))}
@@ -133,12 +137,14 @@ export function Tooltip({
         </View>
       )}
 
-      <Text style={[styles.title, { color: t.titleColor }]}>{step.title}</Text>
-      <Text style={[styles.description, { color: t.descriptionColor }]}>
+      <Text style={[styles.title, { color: t.titleColor }, slot.title]}>
+        {step.title}
+      </Text>
+      <Text style={[styles.description, { color: t.descriptionColor }, slot.description]}>
         {step.description}
       </Text>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, slot.footer]}>
         <View style={styles.footerLeft}>
           {showSkip && (
             <Pressable
@@ -147,7 +153,13 @@ export function Tooltip({
               accessibilityRole="button"
               style={({ pressed }) => [pressed && styles.pressed]}
             >
-              <Text style={[styles.skipText, { color: t.skipButtonTextColor }]}>
+              <Text
+                style={[
+                  styles.skipText,
+                  { color: t.skipButtonTextColor },
+                  slot.skipButtonText,
+                ]}
+              >
                 {config.skipButtonText}
               </Text>
             </Pressable>
@@ -162,10 +174,17 @@ export function Tooltip({
               style={({ pressed }) => [
                 styles.button,
                 { backgroundColor: t.secondaryButtonColor },
+                slot.secondaryButton,
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={[styles.buttonText, { color: t.secondaryButtonTextColor }]}>
+              <Text
+                style={[
+                  styles.buttonText,
+                  { color: t.secondaryButtonTextColor },
+                  slot.secondaryButtonText,
+                ]}
+              >
                 {config.prevButtonText}
               </Text>
             </Pressable>
@@ -178,10 +197,17 @@ export function Tooltip({
                 styles.button,
                 styles.buttonPrimary,
                 { backgroundColor: t.primaryButtonColor },
+                slot.primaryButton,
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={[styles.buttonText, { color: t.primaryButtonTextColor }]}>
+              <Text
+                style={[
+                  styles.buttonText,
+                  { color: t.primaryButtonTextColor },
+                  slot.primaryButtonText,
+                ]}
+              >
                 {isLast ? config.doneButtonText : config.nextButtonText}
               </Text>
             </Pressable>

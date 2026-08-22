@@ -1,6 +1,6 @@
 import React from "react";
 import { View } from "react-native";
-import { TourTarget, useTourGuide, type TourStep } from "react-native-tour";
+import { TourTarget, useTourGuide, type TourStep } from "react-native-tour-guide";
 
 import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";

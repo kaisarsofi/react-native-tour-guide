@@ -1,7 +1,7 @@
 {
-  "name": "react-native-tour",
+  "name": "react-native-tour-guide",
   "version": "0.1.0",
-  "description": "Expo-compatible, NativeWind-styled spotlight tour guide / coach marks / walkthroughs for React Native.",
+  "description": "Spotlight tour guide, coach marks and onboarding walkthroughs for React Native and Expo. Animated SVG spotlight, auto-placed tooltips, themeable, zero native modules, TypeScript.",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "types": "lib/typescript/index.d.ts",
@@ -32,18 +32,34 @@
   "keywords": [
     "react-native",
     "expo",
-    "nativewind",
-    "tailwind",
     "tour",
     "tour-guide",
+    "tourguide",
     "walkthrough",
     "onboarding",
     "coach-marks",
+    "coachmarks",
     "spotlight",
-    "tooltip"
+    "showcase",
+    "highlight",
+    "tooltip",
+    "product-tour",
+    "feature-tour",
+    "intro",
+    "nativewind",
+    "tailwind",
+    "typescript"
   ],
-  "author": "",
+  "author": "kaisarsofi (https://github.com/kaisarsofi)",
   "license": "MIT",
+  "homepage": "https://github.com/kaisarsofi/react-native-tour-guide#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaisarsofi/react-native-tour-guide.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kaisarsofi/react-native-tour-guide/issues"
+  },
   "dependencies": {
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.6.1"

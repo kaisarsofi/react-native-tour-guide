@@ -5,7 +5,7 @@ import {
   useTourGuide,
   type TooltipProps,
   type TourStep,
-} from "react-native-tour";
+} from "react-native-tour-guide";
 
 import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";

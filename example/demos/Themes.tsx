@@ -12,7 +12,7 @@ import {
   vibrantTheme,
   type TourGuideTheme,
   type TourStep,
-} from "react-native-tour";
+} from "react-native-tour-guide";
 
 import { Section } from "../components/Section";
 import { Tile } from "../components/Tile";

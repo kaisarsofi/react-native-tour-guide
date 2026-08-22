@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import type { View } from "react-native";
+import type { StyleProp, TextStyle, View, ViewStyle } from "react-native";
 
 export type TooltipPosition = "top" | "bottom" | "left" | "right" | "auto";
 
@@ -101,6 +101,27 @@ export interface TooltipStyles {
   maxWidth?: number;
 }
 
+/**
+ * Raw RN style overrides for individual parts of the built-in tooltip, applied
+ * last so they win over both the defaults and the theme tokens. Use these for
+ * one-off tweaks (a font, some padding) where defining a whole theme would be
+ * overkill.
+ */
+export interface TooltipSlotStyles {
+  container?: StyleProp<ViewStyle>;
+  stepCounter?: StyleProp<TextStyle>;
+  progressDot?: StyleProp<ViewStyle>;
+  progressDotActive?: StyleProp<ViewStyle>;
+  title?: StyleProp<TextStyle>;
+  description?: StyleProp<TextStyle>;
+  footer?: StyleProp<ViewStyle>;
+  primaryButton?: StyleProp<ViewStyle>;
+  primaryButtonText?: StyleProp<TextStyle>;
+  secondaryButton?: StyleProp<ViewStyle>;
+  secondaryButtonText?: StyleProp<TextStyle>;
+  skipButtonText?: StyleProp<TextStyle>;
+}
+
 export interface SpotlightStyles {
   overlayColor?: string;
   overlayOpacity?: number;
@@ -141,6 +162,8 @@ export interface TourEventEmitter {
 export interface TourGuideConfig {
   tooltipStyles?: TooltipStyles;
   spotlightStyles?: SpotlightStyles;
+  /** Raw RN style overrides per tooltip slot; applied after the theme tokens. */
+  styles?: TooltipSlotStyles;
   /** Replace the tooltip for every step of this tour. */
   renderTooltip?: (props: TooltipProps) => React.ReactNode;
   showProgressDots?: boolean;
@@ -161,6 +184,7 @@ export interface TourGuideConfig {
 export interface ResolvedTourGuideConfig {
   tooltipStyles: Required<TooltipStyles>;
   spotlightStyles: Required<SpotlightStyles>;
+  styles?: TooltipSlotStyles;
   renderTooltip?: (props: TooltipProps) => React.ReactNode;
   showProgressDots: boolean;
   showStepCounter: boolean;
