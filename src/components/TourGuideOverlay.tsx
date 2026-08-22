@@ -117,6 +117,7 @@ export function TourGuideOverlay() {
       accessibilityViewIsModal
     >
       <Pressable
+        testID="tour-guide-backdrop"
         style={StyleSheet.absoluteFill}
         onPress={() => handleBackdropPress(step.backdropBehavior)}
       >
