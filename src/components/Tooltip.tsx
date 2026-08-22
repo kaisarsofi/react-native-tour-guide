@@ -1,8 +1,73 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { TooltipProps } from "../types";
-import { cn } from "../utils/cn";
+import type { Placement, TooltipProps, TooltipStyles } from "../types";
+
+const ARROW_SIZE = 12;
+
+/** Rotated square tucked under the card edge so it reads as a caret. */
+function Arrow({
+  placement,
+  offset,
+  styles: t,
+}: {
+  placement: Placement;
+  offset: number;
+  styles: Required<TooltipStyles>;
+}) {
+  const base = {
+    position: "absolute" as const,
+    width: ARROW_SIZE,
+    height: ARROW_SIZE,
+    backgroundColor: t.backgroundColor,
+    borderColor: t.borderColor,
+    transform: [{ rotate: "45deg" }],
+  };
+
+  // The caret sits on the edge facing the target, nudged to line up with the
+  // target's centre but kept clear of the card's rounded corners.
+  const clamp = (v: number, min: number, max: number) =>
+    Math.min(Math.max(v, min), Math.max(min, max));
+  const inset = t.borderRadius + ARROW_SIZE;
+
+  if (placement === "bottom" || placement === "top") {
+    const isBottom = placement === "bottom";
+    return (
+      <View
+        pointerEvents="none"
+        style={[
+          base,
+          {
+            left: clamp(offset - ARROW_SIZE / 2, inset, t.maxWidth - inset),
+            [isBottom ? "top" : "bottom"]: -ARROW_SIZE / 2,
+            borderTopWidth: isBottom ? t.borderWidth : 0,
+            borderLeftWidth: isBottom ? t.borderWidth : 0,
+            borderBottomWidth: isBottom ? 0 : t.borderWidth,
+            borderRightWidth: isBottom ? 0 : t.borderWidth,
+          },
+        ]}
+      />
+    );
+  }
+
+  const isRight = placement === "right";
+  return (
+    <View
+      pointerEvents="none"
+      style={[
+        base,
+        {
+          top: clamp(offset - ARROW_SIZE / 2, inset, 400),
+          [isRight ? "left" : "right"]: -ARROW_SIZE / 2,
+          borderBottomWidth: isRight ? t.borderWidth : 0,
+          borderLeftWidth: isRight ? t.borderWidth : 0,
+          borderTopWidth: isRight ? 0 : t.borderWidth,
+          borderRightWidth: isRight ? 0 : t.borderWidth,
+        },
+      ]}
+    />
+  );
+}
 
 export function Tooltip({
   step,
@@ -10,76 +75,97 @@ export function Tooltip({
   totalSteps,
   isFirst,
   isLast,
+  placement,
+  arrowOffset,
   config,
   onNext,
   onPrev,
   onSkip,
 }: TooltipProps) {
-  const classNames = config.tooltipClassNames ?? {};
+  const t = config.tooltipStyles;
   const showSkip = !step.hideSkipButton && !isLast;
   const showPrev = !step.hidePrevButton && !isFirst;
   const showNext = !step.hideNextButton;
 
   return (
     <View
-      className={cn("w-full rounded-2xl p-4 shadow-lg", classNames.container)}
       accessibilityRole="alert"
       accessibilityLabel={step.accessibilityLabel ?? step.title}
+      style={[
+        styles.card,
+        t.shadow && styles.shadow,
+        {
+          backgroundColor: t.backgroundColor,
+          borderRadius: t.borderRadius,
+          borderColor: t.borderColor,
+          borderWidth: t.borderWidth,
+        },
+      ]}
     >
-      {config.showStepCounter && (
-        <Text className={cn("mb-1 text-xs font-medium", classNames.stepCounter)}>
-          {stepIndex + 1} / {totalSteps}
-        </Text>
+      {t.showArrow && (
+        <Arrow placement={placement} offset={arrowOffset} styles={t} />
       )}
 
-      <Text className={cn("text-base font-semibold", classNames.title)}>
-        {step.title}
-      </Text>
-      <Text className={cn("mt-1 text-sm", classNames.description)}>
-        {step.description}
-      </Text>
-
-      {config.showProgressDots && (
-        <View className="mt-3 flex-row gap-1.5">
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <View
-              key={i}
-              className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                i === stepIndex
-                  ? (classNames.progressDotActive ?? "bg-neutral-900")
-                  : (classNames.progressDot ?? "bg-neutral-200"),
-              )}
-            />
-          ))}
+      {(config.showStepCounter || config.showProgressDots) && (
+        <View style={styles.meta}>
+          {config.showStepCounter && (
+            <Text style={[styles.counter, { color: t.stepCounterColor }]}>
+              {stepIndex + 1} of {totalSteps}
+            </Text>
+          )}
+          {config.showProgressDots && (
+            <View style={styles.dots}>
+              {Array.from({ length: totalSteps }).map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    i === stepIndex && styles.dotActive,
+                    {
+                      backgroundColor:
+                        i === stepIndex ? t.progressDotActiveColor : t.progressDotColor,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          )}
         </View>
       )}
 
-      <View className={cn("mt-4 flex-row items-center justify-between", classNames.footer)}>
-        <View className="flex-row items-center gap-3">
+      <Text style={[styles.title, { color: t.titleColor }]}>{step.title}</Text>
+      <Text style={[styles.description, { color: t.descriptionColor }]}>
+        {step.description}
+      </Text>
+
+      <View style={styles.footer}>
+        <View style={styles.footerLeft}>
           {showSkip && (
             <Pressable
               onPress={onSkip}
-              hitSlop={8}
-              className={classNames.skipButton}
+              hitSlop={10}
+              accessibilityRole="button"
+              style={({ pressed }) => [pressed && styles.pressed]}
             >
-              <Text className={cn("text-sm", classNames.skipButtonText)}>
+              <Text style={[styles.skipText, { color: t.skipButtonTextColor }]}>
                 {config.skipButtonText}
               </Text>
             </Pressable>
           )}
         </View>
 
-        <View className="flex-row items-center gap-2">
+        <View style={styles.footerRight}>
           {showPrev && (
             <Pressable
               onPress={onPrev}
-              className={cn(
-                "rounded-full px-3.5 py-2",
-                classNames.prevButton,
-              )}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.button,
+                { backgroundColor: t.secondaryButtonColor },
+                pressed && styles.pressed,
+              ]}
             >
-              <Text className={cn("text-sm font-medium", classNames.prevButtonText)}>
+              <Text style={[styles.buttonText, { color: t.secondaryButtonTextColor }]}>
                 {config.prevButtonText}
               </Text>
             </Pressable>
@@ -87,12 +173,15 @@ export function Tooltip({
           {showNext && (
             <Pressable
               onPress={onNext}
-              className={cn(
-                "rounded-full px-3.5 py-2",
-                classNames.nextButton,
-              )}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.button,
+                styles.buttonPrimary,
+                { backgroundColor: t.primaryButtonColor },
+                pressed && styles.pressed,
+              ]}
             >
-              <Text className={cn("text-sm font-medium", classNames.nextButtonText)}>
+              <Text style={[styles.buttonText, { color: t.primaryButtonTextColor }]}>
                 {isLast ? config.doneButtonText : config.nextButtonText}
               </Text>
             </Pressable>
@@ -102,3 +191,97 @@ export function Tooltip({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    width: "100%",
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 14,
+  },
+  shadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOpacity: 0.22,
+        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 8 },
+      },
+      android: { elevation: 12 },
+      default: {},
+    }),
+  },
+  meta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  counter: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.4,
+  },
+  dots: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  dotActive: {
+    width: 18,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: "700",
+    lineHeight: 22,
+    letterSpacing: -0.2,
+  },
+  description: {
+    marginTop: 5,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  footer: {
+    marginTop: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  footerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  footerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: "auto",
+  },
+  skipText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  button: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 999,
+    minWidth: 72,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonPrimary: {
+    minWidth: 84,
+  },
+  buttonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+});

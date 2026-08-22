@@ -1,46 +1,52 @@
-import React from "react";
-import { Text, View } from "react-native";
+import React, { useState } from "react";
+import { Pressable, Text, View } from "react-native";
 import {
   TourTarget,
+  cn,
   darkTheme,
   lightTheme,
   minimalTheme,
+  oceanTheme,
+  sunsetTheme,
   useTourGuide,
   vibrantTheme,
   type TourGuideTheme,
   type TourStep,
 } from "react-native-tour";
 
-import { DemoButton } from "../components/DemoButton";
 import { Section } from "../components/Section";
 import { Tile } from "../components/Tile";
 
-const THEMES: { label: string; theme: TourGuideTheme; variant: "primary" | "accent" | "secondary" }[] = [
-  { label: "Light", theme: lightTheme, variant: "secondary" },
-  { label: "Dark", theme: darkTheme, variant: "primary" },
-  { label: "Minimal", theme: minimalTheme, variant: "secondary" },
-  { label: "Vibrant", theme: vibrantTheme, variant: "accent" },
+const THEMES: { label: string; theme: TourGuideTheme; swatch: string }[] = [
+  { label: "Light", theme: lightTheme, swatch: "#6D28D9" },
+  { label: "Dark", theme: darkTheme, swatch: "#1E293B" },
+  { label: "Minimal", theme: minimalTheme, swatch: "#0F172A" },
+  { label: "Vibrant", theme: vibrantTheme, swatch: "#7C3AED" },
+  { label: "Ocean", theme: oceanTheme, swatch: "#0F766E" },
+  { label: "Sunset", theme: sunsetTheme, swatch: "#EA580C" },
 ];
 
 /**
- * Same two-step tour, run four times with the four bundled themes, to show
- * how `tooltipClassNames` + `spotlightStyles` change the look without
- * touching a single step definition.
+ * The same two-step tour run with each bundled theme — every theme is just a
+ * bag of `tooltipStyles` + `spotlightStyles` tokens, so nothing about the
+ * steps changes.
  */
 export function Themes() {
   const { startTour, isActive } = useTourGuide();
+  const [active, setActive] = useState("Light");
 
   const steps: TourStep[] = [
     {
       id: "card-a",
       targetId: "theme-card-a",
-      title: "Card A",
-      description: "The tooltip and spotlight dim both come from the active theme.",
+      title: "Themed tooltip",
+      description:
+        "Card colour, button colours, the arrow, the scrim and the pulse ring all come from the theme.",
     },
     {
       id: "card-b",
       targetId: "theme-card-b",
-      title: "Card B",
+      title: "Same steps, new skin",
       description: "Swap the theme object passed to startTour — nothing else changes.",
     },
   ];
@@ -49,7 +55,7 @@ export function Themes() {
     <Section
       index={2}
       title="Themes"
-      description="lightTheme, darkTheme, minimalTheme, vibrantTheme — or build your own with createTheme()."
+      description="Six bundled themes, or compose your own token set with createTheme()."
     >
       <View className="flex-row gap-2">
         <TourTarget id="theme-card-a" className="flex-1">
@@ -61,14 +67,35 @@ export function Themes() {
       </View>
 
       <View className="flex-row flex-wrap gap-2">
-        {THEMES.map(({ label, theme, variant }) => (
-          <DemoButton
+        {THEMES.map(({ label, theme, swatch }) => (
+          <Pressable
             key={label}
-            label={label}
-            variant={variant}
             disabled={isActive}
-            onPress={() => startTour(steps, { ...theme, showStepCounter: true })}
-          />
+            onPress={() => {
+              setActive(label);
+              startTour(steps, theme);
+            }}
+            className={cn(
+              "flex-row items-center gap-2 rounded-lg border px-3 py-2 active:opacity-70",
+              active === label
+                ? "border-neutral-900 bg-neutral-900"
+                : "border-neutral-200 bg-white",
+              isActive && "opacity-40",
+            )}
+          >
+            <View
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: swatch }}
+            />
+            <Text
+              className={cn(
+                "text-[13px] font-medium",
+                active === label ? "text-white" : "text-neutral-700",
+              )}
+            >
+              {label}
+            </Text>
+          </Pressable>
         ))}
       </View>
     </Section>

@@ -3,8 +3,8 @@ module.exports = {
   content: [
     "./App.tsx",
     "./index.ts",
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "../lib/**/*.{js,jsx,ts,tsx}",
+    "./components/**/*.{js,jsx,ts,tsx}",
+    "./demos/**/*.{js,jsx,ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
   theme: {

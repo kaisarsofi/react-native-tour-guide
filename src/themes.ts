@@ -1,25 +1,65 @@
-import type { BackdropBehavior, TourGuideTheme, TourMotion } from "./types";
+import type {
+  SpotlightStyles,
+  TooltipStyles,
+  TourGuideConfig,
+  TourGuideTheme,
+} from "./types";
 
-interface DefaultTourGuideConfig {
-  showProgressDots: boolean;
-  showStepCounter: boolean;
-  nextButtonText: string;
-  prevButtonText: string;
-  skipButtonText: string;
-  doneButtonText: string;
-  animationDuration: number;
-  motion: TourMotion;
-  defaultBackdropBehavior: BackdropBehavior;
-}
+export const DEFAULT_TOOLTIP_STYLES: Required<TooltipStyles> = {
+  backgroundColor: "#FFFFFF",
+  borderRadius: 18,
+  borderColor: "transparent",
+  borderWidth: 0,
+  titleColor: "#0F172A",
+  descriptionColor: "#64748B",
+  stepCounterColor: "#94A3B8",
+  primaryButtonColor: "#6D28D9",
+  primaryButtonTextColor: "#FFFFFF",
+  secondaryButtonColor: "#F1F5F9",
+  secondaryButtonTextColor: "#334155",
+  skipButtonTextColor: "#94A3B8",
+  progressDotColor: "#E2E8F0",
+  progressDotActiveColor: "#6D28D9",
+  showArrow: true,
+  shadow: true,
+  maxWidth: 340,
+};
 
-export const DEFAULT_CONFIG: DefaultTourGuideConfig = {
-  showProgressDots: false,
+export const DEFAULT_SPOTLIGHT_STYLES: Required<SpotlightStyles> = {
+  overlayColor: "#0F172A",
+  overlayOpacity: 0.72,
+  borderColor: "#FFFFFF",
+  borderWidth: 2,
+  enablePulse: true,
+  pulseColor: "#FFFFFF",
+  pulseWidth: 2,
+  pulseDuration: 1800,
+};
+
+export const DEFAULT_CONFIG: Omit<
+  Required<
+    Pick<
+      TourGuideConfig,
+      | "showProgressDots"
+      | "showStepCounter"
+      | "nextButtonText"
+      | "prevButtonText"
+      | "skipButtonText"
+      | "doneButtonText"
+      | "animationDuration"
+      | "motion"
+      | "defaultBackdropBehavior"
+    >
+  >,
+  never
+> = {
+  showProgressDots: true,
   showStepCounter: true,
   nextButtonText: "Next",
   prevButtonText: "Back",
   skipButtonText: "Skip",
   doneButtonText: "Done",
-  animationDuration: 300,
+  animationDuration: 320,
   motion: "morph",
   defaultBackdropBehavior: "none",
 };
@@ -28,86 +68,182 @@ export function createTheme(theme: TourGuideTheme): TourGuideTheme {
   return theme;
 }
 
+/** Clean white card on a deep navy scrim. The default. */
 export const lightTheme: TourGuideTheme = createTheme({
-  tooltipClassNames: {
-    container: "bg-white",
-    title: "text-neutral-900",
-    description: "text-neutral-600",
-    stepCounter: "text-neutral-400",
-    nextButton: "bg-neutral-900",
-    nextButtonText: "text-white",
-    prevButton: "bg-neutral-100",
-    prevButtonText: "text-neutral-900",
-    skipButton: "",
-    skipButtonText: "text-neutral-400",
-    progressDot: "bg-neutral-200",
-    progressDotActive: "bg-neutral-900",
-  },
-  spotlightStyles: {
-    overlayColor: "#000000",
-    overlayOpacity: 0.55,
-  },
+  tooltipStyles: { ...DEFAULT_TOOLTIP_STYLES },
+  spotlightStyles: { ...DEFAULT_SPOTLIGHT_STYLES },
 });
 
+/** Slate card for dark UIs. */
 export const darkTheme: TourGuideTheme = createTheme({
-  tooltipClassNames: {
-    container: "bg-neutral-900",
-    title: "text-white",
-    description: "text-neutral-300",
-    stepCounter: "text-neutral-500",
-    nextButton: "bg-white",
-    nextButtonText: "text-neutral-900",
-    prevButton: "bg-neutral-800",
-    prevButtonText: "text-white",
-    skipButton: "",
-    skipButtonText: "text-neutral-500",
-    progressDot: "bg-neutral-700",
-    progressDotActive: "bg-white",
+  tooltipStyles: {
+    backgroundColor: "#1E293B",
+    borderRadius: 18,
+    borderColor: "#334155",
+    borderWidth: 1,
+    titleColor: "#F8FAFC",
+    descriptionColor: "#94A3B8",
+    stepCounterColor: "#64748B",
+    primaryButtonColor: "#8B5CF6",
+    primaryButtonTextColor: "#FFFFFF",
+    secondaryButtonColor: "#334155",
+    secondaryButtonTextColor: "#E2E8F0",
+    skipButtonTextColor: "#64748B",
+    progressDotColor: "#334155",
+    progressDotActiveColor: "#8B5CF6",
+    showArrow: true,
+    shadow: true,
+    maxWidth: 340,
   },
   spotlightStyles: {
-    overlayColor: "#000000",
-    overlayOpacity: 0.7,
+    overlayColor: "#020617",
+    overlayOpacity: 0.82,
+    borderColor: "#8B5CF6",
+    borderWidth: 2,
+    enablePulse: true,
+    pulseColor: "#8B5CF6",
+    pulseWidth: 2,
+    pulseDuration: 1800,
   },
 });
 
+/** Understated: hairline border, no pulse, muted scrim. */
 export const minimalTheme: TourGuideTheme = createTheme({
-  tooltipClassNames: {
-    container: "bg-white border border-neutral-200",
-    title: "text-neutral-900",
-    description: "text-neutral-500",
-    stepCounter: "text-neutral-400",
-    nextButton: "bg-transparent",
-    nextButtonText: "text-neutral-900 underline",
-    prevButton: "bg-transparent",
-    prevButtonText: "text-neutral-500",
-    skipButton: "",
-    skipButtonText: "text-neutral-400",
-    progressDot: "bg-neutral-200",
-    progressDotActive: "bg-neutral-900",
+  tooltipStyles: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    borderColor: "#E2E8F0",
+    borderWidth: 1,
+    titleColor: "#0F172A",
+    descriptionColor: "#64748B",
+    stepCounterColor: "#94A3B8",
+    primaryButtonColor: "#0F172A",
+    primaryButtonTextColor: "#FFFFFF",
+    secondaryButtonColor: "#FFFFFF",
+    secondaryButtonTextColor: "#475569",
+    skipButtonTextColor: "#94A3B8",
+    progressDotColor: "#E2E8F0",
+    progressDotActiveColor: "#0F172A",
+    showArrow: false,
+    shadow: false,
+    maxWidth: 320,
   },
   spotlightStyles: {
-    overlayColor: "#000000",
-    overlayOpacity: 0.4,
+    overlayColor: "#0F172A",
+    overlayOpacity: 0.45,
+    borderColor: "transparent",
+    borderWidth: 0,
+    enablePulse: false,
+    pulseColor: "#FFFFFF",
+    pulseWidth: 2,
+    pulseDuration: 1800,
   },
 });
 
+/** Saturated violet card — high contrast, playful. */
 export const vibrantTheme: TourGuideTheme = createTheme({
-  tooltipClassNames: {
-    container: "bg-violet-600",
-    title: "text-white",
-    description: "text-violet-100",
-    stepCounter: "text-violet-200",
-    nextButton: "bg-white",
-    nextButtonText: "text-violet-600",
-    prevButton: "bg-violet-500",
-    prevButtonText: "text-white",
-    skipButton: "",
-    skipButtonText: "text-violet-200",
-    progressDot: "bg-violet-400",
-    progressDotActive: "bg-white",
+  tooltipStyles: {
+    backgroundColor: "#6D28D9",
+    borderRadius: 22,
+    borderColor: "transparent",
+    borderWidth: 0,
+    titleColor: "#FFFFFF",
+    descriptionColor: "#DDD6FE",
+    stepCounterColor: "#C4B5FD",
+    primaryButtonColor: "#FFFFFF",
+    primaryButtonTextColor: "#6D28D9",
+    secondaryButtonColor: "#7C3AED",
+    secondaryButtonTextColor: "#FFFFFF",
+    skipButtonTextColor: "#C4B5FD",
+    progressDotColor: "#8B5CF6",
+    progressDotActiveColor: "#FFFFFF",
+    showArrow: true,
+    shadow: true,
+    maxWidth: 340,
   },
   spotlightStyles: {
-    overlayColor: "#4c1d95",
-    overlayOpacity: 0.6,
+    overlayColor: "#2E1065",
+    overlayOpacity: 0.78,
+    borderColor: "#C4B5FD",
+    borderWidth: 2,
+    enablePulse: true,
+    pulseColor: "#C4B5FD",
+    pulseWidth: 3,
+    pulseDuration: 1500,
   },
 });
+
+/** Teal / deep-sea. */
+export const oceanTheme: TourGuideTheme = createTheme({
+  tooltipStyles: {
+    backgroundColor: "#0F766E",
+    borderRadius: 18,
+    borderColor: "transparent",
+    borderWidth: 0,
+    titleColor: "#FFFFFF",
+    descriptionColor: "#CCFBF1",
+    stepCounterColor: "#5EEAD4",
+    primaryButtonColor: "#FFFFFF",
+    primaryButtonTextColor: "#0F766E",
+    secondaryButtonColor: "#115E59",
+    secondaryButtonTextColor: "#CCFBF1",
+    skipButtonTextColor: "#5EEAD4",
+    progressDotColor: "#115E59",
+    progressDotActiveColor: "#FFFFFF",
+    showArrow: true,
+    shadow: true,
+    maxWidth: 340,
+  },
+  spotlightStyles: {
+    overlayColor: "#042F2E",
+    overlayOpacity: 0.8,
+    borderColor: "#5EEAD4",
+    borderWidth: 2,
+    enablePulse: true,
+    pulseColor: "#5EEAD4",
+    pulseWidth: 2,
+    pulseDuration: 1600,
+  },
+});
+
+/** Warm amber / sunset. */
+export const sunsetTheme: TourGuideTheme = createTheme({
+  tooltipStyles: {
+    backgroundColor: "#FFF7ED",
+    borderRadius: 20,
+    borderColor: "#FED7AA",
+    borderWidth: 1,
+    titleColor: "#7C2D12",
+    descriptionColor: "#9A3412",
+    stepCounterColor: "#C2410C",
+    primaryButtonColor: "#EA580C",
+    primaryButtonTextColor: "#FFFFFF",
+    secondaryButtonColor: "#FFEDD5",
+    secondaryButtonTextColor: "#9A3412",
+    skipButtonTextColor: "#C2410C",
+    progressDotColor: "#FED7AA",
+    progressDotActiveColor: "#EA580C",
+    showArrow: true,
+    shadow: true,
+    maxWidth: 340,
+  },
+  spotlightStyles: {
+    overlayColor: "#431407",
+    overlayOpacity: 0.75,
+    borderColor: "#FB923C",
+    borderWidth: 2,
+    enablePulse: true,
+    pulseColor: "#FB923C",
+    pulseWidth: 3,
+    pulseDuration: 1500,
+  },
+});
+
+export const themes = {
+  light: lightTheme,
+  dark: darkTheme,
+  minimal: minimalTheme,
+  vibrant: vibrantTheme,
+  ocean: oceanTheme,
+  sunset: sunsetTheme,
+};

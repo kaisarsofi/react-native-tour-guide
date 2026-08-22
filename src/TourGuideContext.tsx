@@ -10,7 +10,11 @@ import React, {
 import type { RefObject } from "react";
 import type { View } from "react-native";
 
-import { DEFAULT_CONFIG } from "./themes";
+import {
+  DEFAULT_CONFIG,
+  DEFAULT_SPOTLIGHT_STYLES,
+  DEFAULT_TOOLTIP_STYLES,
+} from "./themes";
 import type {
   BackdropBehavior,
   Rect,
@@ -43,7 +47,7 @@ type TourGuideAction =
 
 const initialState: TourGuideState = {
   steps: [],
-  config: { ...DEFAULT_CONFIG },
+  config: resolveConfig(),
   currentIndex: 0,
   isActive: false,
   isPaused: false,
@@ -98,7 +102,14 @@ export interface TourGuideContextValue {
 const TourGuideContext = createContext<TourGuideContextValue | null>(null);
 
 function resolveConfig(config?: TourGuideConfig): ResolvedTourGuideConfig {
-  return { ...DEFAULT_CONFIG, ...config };
+  return {
+    ...DEFAULT_CONFIG,
+    ...config,
+    // Merge per-key so a theme (or a caller) can override a single colour
+    // without having to restate the whole palette.
+    tooltipStyles: { ...DEFAULT_TOOLTIP_STYLES, ...config?.tooltipStyles },
+    spotlightStyles: { ...DEFAULT_SPOTLIGHT_STYLES, ...config?.spotlightStyles },
+  };
 }
 
 export function TourGuideProvider({ children }: { children: React.ReactNode }) {

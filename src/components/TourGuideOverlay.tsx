@@ -18,7 +18,7 @@ import { Tooltip } from "./Tooltip";
 
 const DEFAULT_SPOTLIGHT_PADDING = 8;
 const DEFAULT_SPOTLIGHT_RADIUS = 12;
-const DEFAULT_TOOLTIP_WIDTH_MARGIN = 32;
+const SCREEN_MARGIN = 16;
 
 export function TourGuideOverlay() {
   const { state, nextStep, prevStep, skipTour, handleBackdropPress } =
@@ -49,7 +49,10 @@ export function TourGuideOverlay() {
     return () => sub.remove();
   }, [prevStep, skipTour, state.currentIndex, visible]);
 
-  const tooltipWidth = screenWidth - DEFAULT_TOOLTIP_WIDTH_MARGIN;
+  const tooltipWidth = Math.min(
+    screenWidth - SCREEN_MARGIN * 2,
+    state.config.tooltipStyles.maxWidth,
+  );
 
   const layout = useMemo(() => {
     if (!state.targetRect || !tooltipSize) return null;
@@ -71,6 +74,8 @@ export function TourGuideOverlay() {
     totalSteps: state.steps.length,
     isFirst: state.currentIndex === 0,
     isLast: state.currentIndex === state.steps.length - 1,
+    placement: layout?.placement ?? "bottom",
+    arrowOffset: layout?.arrowOffset ?? tooltipWidth / 2,
     config: state.config,
     onNext: nextStep,
     onPrev: prevStep,
@@ -112,22 +117,20 @@ export function TourGuideOverlay() {
           padding={padding}
           duration={state.config.animationDuration}
           motion={step.motion ?? state.config.motion}
-          styles={{
-            overlayColor: state.config.spotlightStyles?.overlayColor ?? "#000000",
-            overlayOpacity: state.config.spotlightStyles?.overlayOpacity ?? 0.55,
-          }}
+          styles={state.config.spotlightStyles}
         />
       </Pressable>
 
+      {/* Rendered offscreen for one frame so it can be measured, then placed. */}
       <View
         onLayout={handleMeasureLayout}
-        pointerEvents={layout ? "box-none" : "none"}
+        pointerEvents="box-none"
         style={[
           styles.tooltipContainer,
           { width: tooltipWidth },
           layout
-            ? { top: layout.y, left: layout.x }
-            : { top: -9999, left: -9999 },
+            ? { top: layout.y, left: layout.x, opacity: 1 }
+            : { top: 0, left: 0, opacity: 0 },
         ]}
       >
         {CustomTooltip ? CustomTooltip(tooltipProps) : <Tooltip {...tooltipProps} />}

@@ -3,6 +3,8 @@ import type { View } from "react-native";
 
 export type TooltipPosition = "top" | "bottom" | "left" | "right" | "auto";
 
+export type Placement = Exclude<TooltipPosition, "auto">;
+
 export type BackdropBehavior = "next" | "dismiss" | "none";
 
 export type TourMotion = "morph" | "fade" | "none";
@@ -20,6 +22,10 @@ export interface TooltipProps {
   totalSteps: number;
   isFirst: boolean;
   isLast: boolean;
+  /** Which side of the target the tooltip ended up on. */
+  placement: Placement;
+  /** Distance from the tooltip's leading edge to the target's centre, for arrow alignment. */
+  arrowOffset: number;
   config: ResolvedTourGuideConfig;
   onNext: () => void;
   onPrev: () => void;
@@ -51,6 +57,7 @@ export interface TourStep {
   before?: () => Promise<void> | void;
   /** Static delay (ms) before showing the step, after `before` resolves. */
   delayBefore?: number;
+  /** Replace the tooltip for this step only. */
   renderTooltip?: (props: TooltipProps) => React.ReactNode;
   motion?: TourMotion;
   hideNextButton?: boolean;
@@ -63,25 +70,48 @@ export interface TourStep {
   accessibilityLabel?: string;
 }
 
-export interface TooltipClassNames {
-  container?: string;
-  title?: string;
-  description?: string;
-  footer?: string;
-  stepCounter?: string;
-  nextButton?: string;
-  nextButtonText?: string;
-  prevButton?: string;
-  prevButtonText?: string;
-  skipButton?: string;
-  skipButtonText?: string;
-  progressDot?: string;
-  progressDotActive?: string;
+/**
+ * Visual tokens for the built-in tooltip. These are real style values rather
+ * than class names: this package ships precompiled, so a `className` on a
+ * component *inside* the library would never reach NativeWind's build-time
+ * transform. Bring your own `renderTooltip` if you want to style with
+ * Tailwind classes — that component is compiled by your app, so `className`
+ * works there.
+ */
+export interface TooltipStyles {
+  backgroundColor?: string;
+  borderRadius?: number;
+  borderColor?: string;
+  borderWidth?: number;
+  titleColor?: string;
+  descriptionColor?: string;
+  stepCounterColor?: string;
+  primaryButtonColor?: string;
+  primaryButtonTextColor?: string;
+  secondaryButtonColor?: string;
+  secondaryButtonTextColor?: string;
+  skipButtonTextColor?: string;
+  progressDotColor?: string;
+  progressDotActiveColor?: string;
+  /** Draw a caret pointing at the highlighted element. */
+  showArrow?: boolean;
+  /** Drop shadow / Android elevation under the tooltip card. */
+  shadow?: boolean;
+  /** Max width (px) of the tooltip card. */
+  maxWidth?: number;
 }
 
 export interface SpotlightStyles {
   overlayColor?: string;
   overlayOpacity?: number;
+  /** Ring drawn immediately around the cutout. */
+  borderColor?: string;
+  borderWidth?: number;
+  /** Animated ring that repeatedly expands out of the cutout. */
+  enablePulse?: boolean;
+  pulseColor?: string;
+  pulseWidth?: number;
+  pulseDuration?: number;
 }
 
 export type TourEventName =
@@ -109,8 +139,9 @@ export interface TourEventEmitter {
 }
 
 export interface TourGuideConfig {
-  tooltipClassNames?: TooltipClassNames;
+  tooltipStyles?: TooltipStyles;
   spotlightStyles?: SpotlightStyles;
+  /** Replace the tooltip for every step of this tour. */
   renderTooltip?: (props: TooltipProps) => React.ReactNode;
   showProgressDots?: boolean;
   showStepCounter?: boolean;
@@ -127,30 +158,26 @@ export interface TourGuideConfig {
   onStepChange?: (from: number, to: number) => void;
 }
 
-export type ResolvedTourGuideConfig = Required<
-  Omit<
-    TourGuideConfig,
-    | "renderTooltip"
-    | "tourId"
-    | "onTourStart"
-    | "onTourEnd"
-    | "onStepChange"
-    | "tooltipClassNames"
-    | "spotlightStyles"
-  >
-> &
-  Pick<
-    TourGuideConfig,
-    | "renderTooltip"
-    | "tourId"
-    | "onTourStart"
-    | "onTourEnd"
-    | "onStepChange"
-    | "tooltipClassNames"
-    | "spotlightStyles"
-  >;
+export interface ResolvedTourGuideConfig {
+  tooltipStyles: Required<TooltipStyles>;
+  spotlightStyles: Required<SpotlightStyles>;
+  renderTooltip?: (props: TooltipProps) => React.ReactNode;
+  showProgressDots: boolean;
+  showStepCounter: boolean;
+  nextButtonText: string;
+  prevButtonText: string;
+  skipButtonText: string;
+  doneButtonText: string;
+  animationDuration: number;
+  motion: TourMotion;
+  tourId?: string;
+  defaultBackdropBehavior: BackdropBehavior;
+  onTourStart?: () => void;
+  onTourEnd?: (completed: boolean) => void;
+  onStepChange?: (from: number, to: number) => void;
+}
 
 export interface TourGuideTheme {
-  tooltipClassNames: TooltipClassNames;
+  tooltipStyles: TooltipStyles;
   spotlightStyles: SpotlightStyles;
 }

@@ -22,8 +22,8 @@ function Hero() {
         react-native-tour
       </Text>
       <Text className="mt-2 text-[13px] leading-5 text-neutral-500">
-        Spotlight tours and coach marks, styled with Tailwind classes instead of style
-        objects. Six demos below — each starts its own tour in isolation.
+        Spotlight tours and coach marks for Expo & React Native. Six demos below —
+        each starts its own tour in isolation.
       </Text>
 
       <View className="mt-4 flex-row items-center gap-2 rounded-lg bg-neutral-900 px-3.5 py-2.5">

@@ -33,6 +33,12 @@ export interface TooltipLayout {
   x: number;
   y: number;
   placement: Exclude<TooltipPosition, "auto">;
+  /**
+   * Distance from the tooltip's leading edge to the target's centre, along
+   * whichever axis the caret slides on. The tooltip gets clamped to the
+   * screen, so this is what keeps the arrow pointing at the target.
+   */
+  arrowOffset: number;
 }
 
 const SCREEN_MARGIN = 16;
@@ -93,7 +99,12 @@ export function computeTooltipLayout(
   x = clamp(x, SCREEN_MARGIN, screen.width - tooltipSize.width - SCREEN_MARGIN);
   y = clamp(y, SCREEN_MARGIN, screen.height - tooltipSize.height - SCREEN_MARGIN);
 
-  return { x, y, placement };
+  const arrowOffset =
+    placement === "top" || placement === "bottom"
+      ? target.x + target.width / 2 - x
+      : target.y + target.height / 2 - y;
+
+  return { x, y, placement, arrowOffset };
 }
 
 function clamp(value: number, min: number, max: number): number {

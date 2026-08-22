@@ -12,10 +12,15 @@ export {
 } from "./hooks/useTourPersistence";
 
 export {
+  DEFAULT_SPOTLIGHT_STYLES,
+  DEFAULT_TOOLTIP_STYLES,
   createTheme,
   darkTheme,
   lightTheme,
   minimalTheme,
+  oceanTheme,
+  sunsetTheme,
+  themes,
   vibrantTheme,
 } from "./themes";
 
@@ -23,12 +28,13 @@ export { cn } from "./utils/cn";
 
 export type {
   BackdropBehavior,
+  Placement,
   Rect,
   ResolvedTourGuideConfig,
   SpotlightStyles,
-  TooltipClassNames,
   TooltipPosition,
   TooltipProps,
+  TooltipStyles,
   TourEventEmitter,
   TourEventName,
   TourEventPayload,
