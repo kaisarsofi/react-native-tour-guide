@@ -71,6 +71,12 @@ export function measureView(
   });
 }
 
+export function rectsEqual(a: Rect | null, b: Rect | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
 export function padRect(rect: Rect, padding: number): Rect {
   return {
     x: rect.x - padding,

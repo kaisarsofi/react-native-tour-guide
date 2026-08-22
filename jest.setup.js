@@ -14,12 +14,29 @@ jest.mock("react-native-reanimated", () => {
     },
     View,
     createAnimatedComponent: (Component) => Component,
-    Easing: { out: identity, ease: noop },
+    Easing: {
+      out: identity,
+      in: identity,
+      inOut: identity,
+      ease: noop,
+      linear: noop,
+    },
     cancelAnimation: noop,
+    interpolate: (_value, _input, output) => (output ? output[0] : 0),
     useAnimatedProps: () => ({}),
-    useAnimatedStyle: () => ({}),
+    // Run the worklet so the component's interpolate/transform code is
+    // actually exercised by render tests rather than skipped.
+    useAnimatedStyle: (worklet) => {
+      try {
+        return worklet();
+      } catch {
+        return {};
+      }
+    },
     useSharedValue: (init) => ({ value: init }),
+    withDelay: (_delay, animation) => animation,
     withRepeat: identity,
+    withSequence: (...animations) => animations[0],
     withTiming: identity,
   };
 });
@@ -42,5 +59,8 @@ jest.mock("react-native-svg", () => {
     Defs: Mock,
     Mask: Mock,
     Rect: Mock,
+    Path: Mock,
+    Circle: Mock,
+    G: Mock,
   };
 });

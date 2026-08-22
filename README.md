@@ -40,6 +40,8 @@ startTour([
   - [Per-slot style overrides](#per-slot-style-overrides)
   - [A fully custom tooltip](#a-fully-custom-tooltip)
   - [Backdrop behavior, timing & motion](#backdrop-behavior-timing--motion)
+  - [Tours through lists](#tours-through-lists)
+  - [Swipe hints (gesture tours)](#swipe-hints-gesture-tours)
   - [Play a tour only once](#play-a-tour-only-once)
   - [Listening to tour events](#listening-to-tour-events)
   - [NativeWind / Tailwind](#nativewind--tailwind)
@@ -59,10 +61,12 @@ startTour([
 | 🎨 **Six bundled themes** | `light`, `dark`, `minimal`, `vibrant`, `ocean`, `sunset` — or compose your own with `createTheme()` |
 | 🧩 **Full step lifecycle** | async `before`, `delayBefore`, `autoAdvance`, per-step callbacks, configurable backdrop behavior, conditional steps |
 | 📡 **Events** | `start`, `stepChange`, `end`, `skip`, `pause`, `resume` — subscribe with `events.on(...)` |
+| 📜 **List tours** | `useTourScroll()` brings off-screen rows into view, or keeps the spotlight on a list while the user swipes through it |
+| ✋ **Gesture demos** | `swipeHint` mimes a swipe with an animated hand — no Next/Back; the list moves, the hole stays put |
 | 💾 **Play-once persistence** | `useTourPersistence` works with any AsyncStorage/MMKV-shaped adapter |
 | 📦 **Zero native code** | works in Expo Go, dev builds, and bare React Native alike — no config plugin, no prebuild |
 | 🖌️ **Looks right immediately** | the built-in tooltip is styled with real `StyleSheet` values, so it renders correctly with or without NativeWind/Tailwind in your app |
-| 🧪 **Well tested** | 85+ unit and render tests across the spotlight, tooltip, geometry, and provider |
+| 🧪 **Well tested** | 140+ unit and render tests across the spotlight, tooltip, geometry, scroll, and provider |
 
 ## Installation
 
@@ -330,6 +334,126 @@ Turn off the morph animation for an instant cut instead:
 startTour(steps, { motion: "none", animationDuration: 0 });
 ```
 
+### Tours through lists
+
+Two patterns share the same `useTourScroll()` binding.
+
+**1. Spotlight a row that's off screen.** The tour scrolls it into view,
+waits for it to settle, then measures and spotlights that row:
+
+```tsx
+import { useTourScroll } from "react-native-tour-guide";
+
+const { ref, scrollProps, handle, reset } = useTourScroll();
+
+<ScrollView ref={ref} {...scrollProps}>
+  <TourTarget id="row-17">
+    <Row />
+  </TourTarget>
+</ScrollView>;
+
+startTour([
+  {
+    id: "row",
+    targetId: "row-17",
+    title: "Way down here",
+    description: "The tour scrolled to find this.",
+    scroll: { handle },
+  },
+]);
+```
+
+**2. Teach the list itself.** Keep the spotlight on the list, hide the
+tooltip, and let the user swipe. The hole does not jump onto child rows.
+See [gesture tours](#swipe-hints-gesture-tours).
+
+**Horizontal lists** — pass the axis on the hook:
+
+```tsx
+const { ref, scrollProps, handle, reset } = useTourScroll({ horizontal: true });
+```
+
+**Paginated / virtualized lists** need an `index` (`scrollToIndex`) instead
+of a pixel offset — paging snaps to whole pages, and a far-down `FlatList`
+row isn't mounted yet so it can't be measured:
+
+```tsx
+{ ...step, scroll: { handle, index: 0, viewPosition: 0 } }
+```
+
+Call `reset()` when you start the tour so the list (and swipe count) always
+begin at the first item:
+
+```tsx
+onPress={() => {
+  reset();
+  startTour(steps, { tourId: "inbox" });
+}}
+```
+
+`scroll` options: `handle` (required), `padding` (space around the row,
+default 24), `settleDelay` (ms to wait after a scroll, default 400),
+`index`, `viewPosition` (`0` = start, `0.5` = centre, `1` = end), and
+`pageSize` (px per counted swipe on a non-paging list).
+
+`useTourScroll` stores the offset in a ref, so scrolling never re-renders
+your list. It wraps any `onScroll` you pass in. Works with `ScrollView`,
+`FlatList`, `SectionList`, and their `Animated` variants.
+
+### Swipe hints (gesture tours)
+
+A spotlight can't explain that a rail scrolls sideways. `swipeHint` draws an
+animated hand over the target **and turns the step into a gesture tour**:
+no tooltip, no Next/Back. The user swipes in that direction (the opposite
+goes back). Pair it with `scroll` so the **list moves under a fixed
+spotlight**.
+
+```tsx
+{
+  id: "inbox",
+  targetId: "inbox-list",
+  title: "Your inbox",
+  description: "Swipe up to catch up.",
+  swipeHint: "up",
+  scroll: { handle, pageSize: 192 }, // px per swipe; spotlight stays on the list
+}
+```
+
+```tsx
+swipeHint: { direction: "left", distance: 90, duration: 1200, color: "#0F172A" }
+```
+
+Directions: `"up"`, `"down"`, `"left"`, `"right"`. Hand options: `distance`,
+`duration`, `repeatDelay`, `size`, `color`, `showTrail`, `trailColor`.
+
+A swipe-hint step takes **3 swipes** by default, then advances or ends the
+tour. Override per step or for the whole tour:
+
+```tsx
+{ ...step, swipeHint: "up", swipeCount: 5 }
+
+startTour(steps, { swipeCount: 2 })
+```
+
+- **Paging lists** — `scroll.index` is the start page; each swipe does
+  `index + n`. The third swipe (by default) ends the tour.
+- **Vertical / horizontal lists** — `scroll.pageSize` is how far one swipe
+  scrolls, in px. The spotlight stays on the list, not on a child row.
+- **Skip** stays in the top-right, below the status bar.
+- Call `reset()` from `useTourScroll()` when starting so the list returns to
+  index 0 and swipe counting starts over.
+
+To keep a tooltip and buttons instead of a gesture:
+
+```tsx
+{ ...step, swipeHint: "left", hideTooltip: false, advanceOnSwipe: false }
+```
+
+The hand sits on the *spotlit* target (the undimmed hole), so it defaults to
+dark. Override `color` / `trailColor` on a dark target. Only transform and
+opacity animate, so this stays on the UI thread. **Reduce Motion** parks the
+hand mid-swipe instead of looping.
+
 ### Play a tour only once
 
 `useTourPersistence` wraps `startTour` so a tour (keyed by `tourId`) only
@@ -387,6 +511,20 @@ const {
 } = useTourGuide();
 ```
 
+### `useTourScroll()`
+
+```ts
+const { ref, scrollProps, handle, reset } = useTourScroll({
+  horizontal?: boolean,  // default false
+  onScroll?: (event) => void,  // your handler still runs
+});
+
+<FlatList ref={ref} {...scrollProps} ... />
+
+// Pass `handle` on a step's `scroll` option.
+// Call `reset()` when starting a list tour so it begins at index 0.
+```
+
 ### `TourStep`
 
 | Property | Type | Default | Purpose |
@@ -404,9 +542,14 @@ const {
 | `autoAdvance` | `number` | — | Auto-advance after N ms |
 | `before` | `() => Promise<void>\|void` | — | Awaited before measuring |
 | `delayBefore` | `number` | — | Static delay after `before` |
+| `scroll` | `TourScrollOptions \| TourScrollOptions[]` | — | Scroll a list before spotlighting |
+| `swipeHint` | `'up'\|'down'\|'left'\|'right' \| SwipeHintConfig` | — | Animated hand + gesture tour |
 | `renderTooltip` | `(props) => ReactNode` | — | Per-step custom tooltip |
 | `motion` | `'morph'\|'fade'\|'none'` | config | Transition style |
-| `hideNextButton` / `hidePrevButton` / `hideSkipButton` | `boolean` | `false` | Hide controls |
+| `hideNextButton` / `hidePrevButton` / `hideSkipButton` / `hideControls` | `boolean` | `false` | Hide controls |
+| `hideTooltip` | `boolean` | `true` when `swipeHint` is set | Hide the whole tooltip card |
+| `advanceOnSwipe` | `boolean` | `true` when `swipeHint` is set | Swipe in the hinted direction to scroll / count |
+| `swipeCount` | `number` | `3` when `swipeHint` is set | Swipes before this step advances |
 | `onNext` / `onPrev` / `onSkip` / `onSpotlightPress` | `() => void` | — | Callbacks |
 | `accessibilityLabel` | `string` | — | Screen reader label |
 
@@ -425,13 +568,13 @@ const {
 | `motion` | `'morph'\|'fade'\|'none'` | `'morph'` |
 | `tourId` | `string` | — |
 | `defaultBackdropBehavior` | `'next'\|'dismiss'\|'none'` | `'none'` |
+| `swipeCount` | `number` | `3` |
 | `onTourStart` / `onTourEnd` / `onStepChange` | callbacks | — |
 
 ## Example app
 
-A full showcase — six sections, each running its own isolated tour against
-realistic mock UI (a header, a dashboard, a feed, an onboarding banner,
-analytics charts):
+A full showcase — targeting, themes, custom tooltips, persistence, plus
+vertical, horizontal, and paginated list tours:
 
 ```bash
 git clone https://github.com/kaisarsofi/react-native-tour-guide.git
@@ -443,7 +586,7 @@ npx expo run:ios      # or: npx expo start
 ## Roadmap
 
 - [ ] Interactive spotlight (pass touches through the cutout)
-- [ ] Auto-scroll for targets inside a `ScrollView` / `FlatList`
+- [x] Auto-scroll / gesture tours for `ScrollView` / `FlatList`
 - [ ] Blur backdrop option
 
 Have a feature request? [Open an issue](https://github.com/kaisarsofi/react-native-tour-guide/issues).
@@ -460,57 +603,6 @@ npm run validate   # lint + format check + typecheck + tests
 A Husky pre-commit hook runs `lint-staged` (ESLint + Prettier on staged
 files) and a full typecheck automatically — no extra setup needed once
 `npm install` has run.
-
-<details>
-<summary><strong>Publishing (maintainers)</strong></summary>
-
-The published tarball is a whitelist (`files` in `package.json`) plus
-`.npmignore` for extra excludes inside those folders. `README.md`,
-`LICENSE`, and `package.json` are always included.
-
-Included:
-
-- `src/` — Metro / `react-native` entry (`src/index.ts`)
-- `lib/` — CommonJS, ESM, and TypeScript declarations from `bob build`
-
-Excluded: tests (`src/__tests__`), source maps, the `example/` app, CI,
-Husky, lockfiles, and editor/build caches.
-
-#### First-time npm login (Yarn 4)
-
-```bash
-yarn npm login
-# or: echo 'npmAuthToken: "YOUR_NPM_TOKEN"' >> .yarnrc.yml   # do not commit this
-```
-
-Create a granular access token at https://www.npmjs.com/settings/~/tokens
-with **Read and write** for the `react-native-tour-guide` package (or the
-whole account).
-
-#### Release
-
-1. Bump `"version"` in `package.json`.
-2. Confirm the tarball:
-
-   ```bash
-   yarn validate
-   yarn pack:list
-   ```
-
-3. Publish:
-
-   ```bash
-   yarn release
-   ```
-
-   That runs lint, format, typecheck, and tests, then `yarn npm publish`
-   (`prepack` builds `lib/` first).
-
-4. Optional: tag the git commit (`git tag v<version> && git push --tags`).
-   Pushing a GitHub Release named `v*` can also publish via
-   `.github/workflows/publish.yml` if the `NPM_TOKEN` secret is set.
-
-</details>
 
 ## License
 
