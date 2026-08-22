@@ -1,9 +1,11 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { TourTarget, useTourGuide, type TourStep } from "react-native-tour";
 
+import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
 import { Section } from "../components/Section";
+import { Tile } from "../components/Tile";
 
 /**
  * Three variations of the same two-step tour: tapping the dimmed backdrop
@@ -33,25 +35,26 @@ export function BackdropAndMotion() {
     <Section
       index={4}
       title="Backdrop, timing & motion"
-      description="Configure what tapping outside the spotlight does, whether a step advances itself, and how transitions animate."
+      description={
+        <>
+          <Code>backdropBehavior</Code>, <Code>autoAdvance</Code>, and{" "}
+          <Code>{'motion: "none"'}</Code> — configured per step or for the whole tour.
+        </>
+      }
     >
-      <View className="flex-row gap-3">
-        <TourTarget id="motion-tile-a">
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4">
-            <Text className="text-sm text-neutral-500">Tile A</Text>
-          </View>
+      <View className="flex-row gap-2">
+        <TourTarget id="motion-tile-a" className="flex-1">
+          <Tile label="Tile A" />
         </TourTarget>
-        <TourTarget id="motion-tile-b">
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4">
-            <Text className="text-sm text-neutral-500">Tile B</Text>
-          </View>
+        <TourTarget id="motion-tile-b" className="flex-1">
+          <Tile label="Tile B" />
         </TourTarget>
       </View>
 
       <View className="flex-row flex-wrap gap-2">
         <DemoButton
           label="Tap backdrop → next"
-          variant="outline"
+          variant="secondary"
           disabled={isActive}
           onPress={() =>
             startTour(baseSteps(), { defaultBackdropBehavior: "next" })
@@ -59,7 +62,7 @@ export function BackdropAndMotion() {
         />
         <DemoButton
           label="Tap backdrop → dismiss"
-          variant="outline"
+          variant="secondary"
           disabled={isActive}
           onPress={() =>
             startTour(baseSteps(), { defaultBackdropBehavior: "dismiss" })
@@ -67,7 +70,7 @@ export function BackdropAndMotion() {
         />
         <DemoButton
           label="Auto-advance (1.5s)"
-          variant="outline"
+          variant="secondary"
           disabled={isActive}
           onPress={() => {
             const steps = baseSteps();
@@ -78,7 +81,7 @@ export function BackdropAndMotion() {
         />
         <DemoButton
           label="No animation"
-          variant="outline"
+          variant="secondary"
           disabled={isActive}
           onPress={() => startTour(baseSteps(), { motion: "none", animationDuration: 0 })}
         />

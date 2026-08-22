@@ -7,8 +7,10 @@ import {
   type TourStep,
 } from "react-native-tour";
 
+import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
 import { Section } from "../components/Section";
+import { Tile } from "../components/Tile";
 
 /**
  * `renderTooltip` gets the same props the built-in <Tooltip> receives
@@ -54,12 +56,15 @@ export function CustomTooltip() {
     <Section
       index={3}
       title="Custom tooltip"
-      description="Pass renderTooltip on a step (or in the tour config) to replace the built-in tooltip entirely."
+      description={
+        <>
+          Pass <Code>renderTooltip</Code> on a step (or in the tour config) to replace the
+          built-in tooltip entirely.
+        </>
+      }
     >
       <TourTarget id="custom-tooltip-target">
-        <View className="items-center rounded-xl bg-neutral-100 p-4">
-          <Text className="text-sm text-neutral-500">Highlighted element</Text>
-        </View>
+        <Tile label="Highlighted element" />
       </TourTarget>
 
       <View className="flex-row">

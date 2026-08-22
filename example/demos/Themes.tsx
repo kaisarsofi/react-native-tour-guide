@@ -13,11 +13,12 @@ import {
 
 import { DemoButton } from "../components/DemoButton";
 import { Section } from "../components/Section";
+import { Tile } from "../components/Tile";
 
-const THEMES: { label: string; theme: TourGuideTheme; variant: "dark" | "accent" | "outline" }[] = [
-  { label: "Light", theme: lightTheme, variant: "outline" },
-  { label: "Dark", theme: darkTheme, variant: "dark" },
-  { label: "Minimal", theme: minimalTheme, variant: "outline" },
+const THEMES: { label: string; theme: TourGuideTheme; variant: "primary" | "accent" | "secondary" }[] = [
+  { label: "Light", theme: lightTheme, variant: "secondary" },
+  { label: "Dark", theme: darkTheme, variant: "primary" },
+  { label: "Minimal", theme: minimalTheme, variant: "secondary" },
   { label: "Vibrant", theme: vibrantTheme, variant: "accent" },
 ];
 
@@ -50,16 +51,12 @@ export function Themes() {
       title="Themes"
       description="lightTheme, darkTheme, minimalTheme, vibrantTheme — or build your own with createTheme()."
     >
-      <View className="flex-row gap-3">
-        <TourTarget id="theme-card-a">
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4">
-            <Text className="text-sm text-neutral-500">Card A</Text>
-          </View>
+      <View className="flex-row gap-2">
+        <TourTarget id="theme-card-a" className="flex-1">
+          <Tile label="Card A" />
         </TourTarget>
-        <TourTarget id="theme-card-b">
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4">
-            <Text className="text-sm text-neutral-500">Card B</Text>
-          </View>
+        <TourTarget id="theme-card-b" className="flex-1">
+          <Tile label="Card B" />
         </TourTarget>
       </View>
 

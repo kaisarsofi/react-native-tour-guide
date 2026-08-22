@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import {
   TourTarget,
   useTourPersistence,
@@ -7,10 +7,18 @@ import {
   type TourStorageAdapter,
 } from "react-native-tour";
 
+import { Badge, Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
 import { Section } from "../components/Section";
+import { Tile } from "../components/Tile";
 
 const TOUR_ID = "example-onboarding";
+
+const STATUS_LABEL = {
+  idle: "Not shown",
+  shown: "Completed",
+  skipped: "Skipped (already done)",
+} as const;
 
 /**
  * A minimal in-memory stand-in for AsyncStorage/MMKV, just so this demo has
@@ -54,22 +62,22 @@ export function Persistence() {
     <Section
       index={5}
       title="Play once (persistence)"
-      description="useTourPersistence(storage) skips startTour if this tourId already completed, and lets you reset it."
+      description={
+        <>
+          <Code>useTourPersistence(storage)</Code> skips <Code>startTour</Code> if this{" "}
+          tourId already completed, and lets you reset it.
+        </>
+      }
     >
       <TourTarget id="onboarding-target">
-        <View className="rounded-xl bg-neutral-100 p-4">
-          <Text className="text-sm text-neutral-500">Onboarding target</Text>
-        </View>
+        <Tile label="Onboarding target" />
       </TourTarget>
 
-      <Text className="text-xs text-neutral-400">
-        Status:{" "}
-        <Text className="font-medium text-neutral-600">
-          {status === "idle" && "not shown yet"}
-          {status === "shown" && "completed — won't show again until reset"}
-          {status === "skipped" && "already completed, startTour was a no-op"}
-        </Text>
-      </Text>
+      <View className="flex-row items-center justify-between">
+        <Badge tone={status === "shown" ? "success" : status === "skipped" ? "accent" : "neutral"}>
+          {STATUS_LABEL[status]}
+        </Badge>
+      </View>
 
       <View className="flex-row gap-2">
         <DemoButton
@@ -85,7 +93,7 @@ export function Persistence() {
         />
         <DemoButton
           label="Reset"
-          variant="outline"
+          variant="secondary"
           onPress={() => {
             resetTour(TOUR_ID);
             setStatus("idle");

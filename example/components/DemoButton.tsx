@@ -6,38 +6,38 @@ export interface DemoButtonProps {
   label: string;
   onPress: () => void;
   disabled?: boolean;
-  variant?: "dark" | "accent" | "outline";
+  variant?: "primary" | "secondary" | "accent";
 }
 
 const VARIANT_CLASSES: Record<NonNullable<DemoButtonProps["variant"]>, string> = {
-  dark: "bg-neutral-900",
+  primary: "bg-neutral-900",
+  secondary: "border border-neutral-200 bg-white",
   accent: "bg-violet-600",
-  outline: "border border-neutral-300 bg-white",
 };
 
 const VARIANT_TEXT_CLASSES: Record<NonNullable<DemoButtonProps["variant"]>, string> = {
-  dark: "text-white",
+  primary: "text-white",
+  secondary: "text-neutral-700",
   accent: "text-white",
-  outline: "text-neutral-900",
 };
 
 export function DemoButton({
   label,
   onPress,
   disabled,
-  variant = "dark",
+  variant = "primary",
 }: DemoButtonProps) {
   return (
     <Pressable
       disabled={disabled}
       onPress={onPress}
       className={cn(
-        "items-center rounded-full px-5 py-3",
+        "items-center rounded-lg px-4 py-2.5 active:opacity-80",
         VARIANT_CLASSES[variant],
         disabled && "opacity-40",
       )}
     >
-      <Text className={cn("text-sm font-medium", VARIANT_TEXT_CLASSES[variant])}>
+      <Text className={cn("text-[13px] font-medium", VARIANT_TEXT_CLASSES[variant])}>
         {label}
       </Text>
     </Pressable>

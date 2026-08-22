@@ -12,17 +12,35 @@ import { EventLog } from "./demos/EventLog";
 import { Persistence } from "./demos/Persistence";
 import { Themes } from "./demos/Themes";
 
+function Hero() {
+  return (
+    <View className="mb-6">
+      <Text className="text-xs font-semibold uppercase tracking-widest text-violet-600">
+        React Native · Expo · NativeWind
+      </Text>
+      <Text className="mt-2 text-[28px] font-bold leading-8 text-neutral-900">
+        react-native-tour
+      </Text>
+      <Text className="mt-2 text-[13px] leading-5 text-neutral-500">
+        Spotlight tours and coach marks, styled with Tailwind classes instead of style
+        objects. Six demos below — each starts its own tour in isolation.
+      </Text>
+
+      <View className="mt-4 flex-row items-center gap-2 rounded-lg bg-neutral-900 px-3.5 py-2.5">
+        <Text className="font-mono text-[13px] text-emerald-400">$</Text>
+        <Text className="font-mono text-[13px] text-neutral-100">
+          npx expo install react-native-tour
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 function Demo() {
   return (
     <SafeAreaView className="flex-1 bg-neutral-50" edges={["top", "bottom"]}>
       <ScrollView className="flex-1" contentContainerClassName="px-4 pb-12 pt-4">
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-neutral-900">react-native-tour</Text>
-          <Text className="mt-1 text-sm text-neutral-500">
-            Six self-contained demos — each one starts its own tour so you can try a
-            feature in isolation.
-          </Text>
-        </View>
+        <Hero />
 
         <BasicTargeting />
         <Themes />

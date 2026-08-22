@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { TourTarget, useTourGuide, type TourStep } from "react-native-tour";
 
+import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
 import { Section } from "../components/Section";
+import { Tile } from "../components/Tile";
 
 /**
  * `events.on(name, handler)` subscribes to the tour lifecycle
@@ -46,30 +48,31 @@ export function EventLog() {
     <Section
       index={6}
       title="Events"
-      description="Subscribe to start / stepChange / skip / end via events.on(...) — useful for analytics. The emitter is shared app-wide, so this log also picks up tours started by the other sections above."
+      description={
+        <>
+          Subscribe via <Code>events.on(...)</Code> — the emitter is shared app-wide, so
+          this log also picks up tours started by the sections above.
+        </>
+      }
     >
-      <View className="flex-row gap-3">
-        <TourTarget id="event-target-a">
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4">
-            <Text className="text-sm text-neutral-500">Target A</Text>
-          </View>
+      <View className="flex-row gap-2">
+        <TourTarget id="event-target-a" className="flex-1">
+          <Tile label="Target A" />
         </TourTarget>
-        <TourTarget id="event-target-b">
-          <View className="flex-1 rounded-xl bg-neutral-100 p-4">
-            <Text className="text-sm text-neutral-500">Target B</Text>
-          </View>
+        <TourTarget id="event-target-b" className="flex-1">
+          <Tile label="Target B" />
         </TourTarget>
       </View>
 
-      <View className="rounded-xl bg-neutral-900 p-3">
-        <ScrollView style={{ maxHeight: 96 }}>
+      <View className="rounded-lg bg-neutral-900 p-3">
+        <ScrollView style={{ maxHeight: 92 }}>
           {log.length === 0 ? (
-            <Text className="font-mono text-xs text-neutral-500">
+            <Text className="font-mono text-[12px] text-neutral-500">
               No events yet — start the tour.
             </Text>
           ) : (
             log.map((line, i) => (
-              <Text key={i} className="font-mono text-xs text-lime-400">
+              <Text key={i} className="font-mono text-[12px] text-emerald-400">
                 {line}
               </Text>
             ))

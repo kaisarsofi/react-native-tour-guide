@@ -1,9 +1,11 @@
 import React, { useRef } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { TourTarget, useTourGuide, type TourStep } from "react-native-tour";
 
+import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
 import { Section } from "../components/Section";
+import { Tile } from "../components/Tile";
 
 /**
  * Shows the two ways to point a step at a component: a `targetRef` (the
@@ -19,22 +21,21 @@ export function BasicTargeting() {
       id: "avatar",
       targetRef: avatarRef,
       title: "Targeted by ref",
-      description: "This avatar is highlighted via a plain React `targetRef`.",
+      description: "This avatar is highlighted via a plain React targetRef.",
       spotlightBorderRadius: 999,
     },
     {
       id: "compose",
       targetId: "compose-button",
       title: "Targeted by id",
-      description:
-        "This button is wrapped in <TourTarget id=\"compose-button\"> — no ref needed.",
+      description: "This button is wrapped in <TourTarget> — no ref needed.",
       spotlightBorderRadius: 16,
     },
     {
       id: "settings",
       targetId: "settings-row",
       title: "Positioned above",
-      description: "tooltipPosition: \"top\" flips the tooltip to sit above the target.",
+      description: "tooltipPosition: \"top\" flips the tooltip above the target.",
       tooltipPosition: "top",
     },
   ];
@@ -43,21 +44,28 @@ export function BasicTargeting() {
     <Section
       index={1}
       title="Targeting"
-      description="Highlight a component with targetRef, or wrap it in <TourTarget id> and reference the id — no ref plumbing required."
+      description={
+        <>
+          Highlight a component with <Code>targetRef</Code>, or wrap it in{" "}
+          <Code>{"<TourTarget id>"}</Code> and reference the id.
+        </>
+      }
     >
       <View className="flex-row items-center gap-3">
-        <View ref={avatarRef} collapsable={false} className="h-10 w-10 rounded-full bg-violet-500" />
-        <TourTarget id="compose-button">
-          <Pressable className="rounded-full bg-neutral-900 px-4 py-2.5">
-            <Text className="text-sm font-medium text-white">Compose</Text>
-          </Pressable>
+        <View
+          ref={avatarRef}
+          collapsable={false}
+          className="h-11 w-11 items-center justify-center rounded-full bg-violet-600"
+        >
+          <Text className="text-sm font-semibold text-white">RN</Text>
+        </View>
+        <TourTarget id="compose-button" className="flex-1">
+          <Tile label="Compose button" />
         </TourTarget>
       </View>
 
       <TourTarget id="settings-row">
-        <View className="rounded-xl bg-neutral-100 p-3">
-          <Text className="text-sm text-neutral-500">Settings row</Text>
-        </View>
+        <Tile label="Settings row" />
       </TourTarget>
 
       <View className="flex-row">
