@@ -136,12 +136,7 @@ export interface SpotlightStyles {
 }
 
 export type TourEventName =
-  | "start"
-  | "stepChange"
-  | "end"
-  | "skip"
-  | "pause"
-  | "resume";
+  "start" | "stepChange" | "end" | "skip" | "pause" | "resume";
 
 export type TourEventPayload = {
   start: { steps: TourStep[] };

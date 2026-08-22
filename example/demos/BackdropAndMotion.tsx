@@ -73,9 +73,14 @@ export function BackdropAndMotion() {
           variant="secondary"
           disabled={isActive}
           onPress={() => {
-            const steps = baseSteps();
-            steps[0]!.autoAdvance = 1500;
-            steps[0]!.description = "Advances on its own after 1.5s — no tap needed.";
+            const steps = baseSteps().map((step, index) => ({
+              ...step,
+              autoAdvance: 1500,
+              description:
+                index === 0
+                  ? "Advances on its own after 1.5s — no tap needed."
+                  : "Last stop. Closes on its own after 1.5s.",
+            }));
             startTour(steps);
           }}
         />

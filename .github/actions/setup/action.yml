@@ -1,0 +1,23 @@
+name: Setup
+description: Install Node.js and dependencies with yarn or npm
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+
+    - name: Enable Corepack
+      shell: bash
+      run: corepack enable
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        if [ -f yarn.lock ]; then
+          yarn install --immutable
+        else
+          npm ci
+        fi

@@ -13,8 +13,9 @@ import { Tile } from "../components/Tile";
  * returns an unsubscribe function — handy for analytics.
  */
 export function EventLog() {
-  const { startTour, isActive, events } = useTourGuide();
+  const { startTour, isActive, tourId, events } = useTourGuide();
   const [log, setLog] = useState<string[]>([]);
+  const isThisTour = isActive && tourId === "events";
 
   useEffect(() => {
     const append = (line: string) =>
@@ -82,11 +83,11 @@ export function EventLog() {
 
       <View className="flex-row">
         <DemoButton
-          label={isActive ? "Tour running…" : "Start tour"}
+          label={isThisTour ? "Tour running…" : "Start tour"}
           disabled={isActive}
           onPress={() => {
             setLog([]);
-            startTour(steps);
+            startTour(steps, { tourId: "events" });
           }}
         />
       </View>
