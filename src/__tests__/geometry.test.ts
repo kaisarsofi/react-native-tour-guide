@@ -1,7 +1,12 @@
 import type { RefObject } from "react";
 import { Dimensions, type View } from "react-native";
 
-import { computeTooltipLayout, measureView, padRect } from "../utils/geometry";
+import {
+  computeTooltipLayout,
+  measureView,
+  padRect,
+  rectsEqual,
+} from "../utils/geometry";
 
 function viewRef(
   measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => void,
@@ -46,6 +51,26 @@ describe("padRect", () => {
   it("returns the original geometry when padding is 0", () => {
     const rect = { x: 4, y: 8, width: 16, height: 24 };
     expect(padRect(rect, 0)).toEqual(rect);
+  });
+});
+
+describe("rectsEqual", () => {
+  it("treats identical geometry as equal even across objects", () => {
+    expect(
+      rectsEqual(
+        { x: 1, y: 2, width: 3, height: 4 },
+        { x: 1, y: 2, width: 3, height: 4 },
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false when any edge differs", () => {
+    expect(
+      rectsEqual(
+        { x: 1, y: 2, width: 3, height: 4 },
+        { x: 1, y: 2, width: 3, height: 5 },
+      ),
+    ).toBe(false);
   });
 });
 

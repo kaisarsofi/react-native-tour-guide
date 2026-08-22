@@ -24,7 +24,9 @@ import type {
   TourStep,
 } from "./types";
 import { createTourEventEmitter } from "./utils/eventEmitter";
-import { measureView, nextPaint } from "./utils/geometry";
+import { measureView, nextPaint, rectsEqual } from "./utils/geometry";
+import { scrollStepIntoView } from "./utils/scroll";
+import { isSameTourTarget } from "./utils/swipe";
 
 interface TourGuideState {
   steps: TourStep[];
@@ -33,17 +35,15 @@ interface TourGuideState {
   isActive: boolean;
   isPaused: boolean;
   targetRect: Rect | null;
-  measuring: boolean;
 }
 
 type TourGuideAction =
   | { type: "START"; steps: TourStep[]; config: ResolvedTourGuideConfig }
-  | { type: "GOTO"; index: number }
+  | { type: "GOTO"; index: number; keepTarget?: boolean }
   | { type: "END" }
   | { type: "PAUSE" }
   | { type: "RESUME" }
-  | { type: "SET_TARGET_RECT"; rect: Rect | null }
-  | { type: "SET_MEASURING"; measuring: boolean };
+  | { type: "SET_TARGET_RECT"; rect: Rect | null };
 
 const initialState: TourGuideState = {
   steps: [],
@@ -52,7 +52,6 @@ const initialState: TourGuideState = {
   isActive: false,
   isPaused: false,
   targetRect: null,
-  measuring: false,
 };
 
 function reducer(state: TourGuideState, action: TourGuideAction): TourGuideState {
@@ -68,7 +67,11 @@ function reducer(state: TourGuideState, action: TourGuideAction): TourGuideState
         targetRect: null,
       };
     case "GOTO":
-      return { ...state, currentIndex: action.index, targetRect: null };
+      return {
+        ...state,
+        currentIndex: action.index,
+        targetRect: action.keepTarget ? state.targetRect : null,
+      };
     case "END":
       return { ...state, isActive: false, isPaused: false, targetRect: null };
     case "PAUSE":
@@ -76,9 +79,8 @@ function reducer(state: TourGuideState, action: TourGuideAction): TourGuideState
     case "RESUME":
       return { ...state, isPaused: false };
     case "SET_TARGET_RECT":
+      if (rectsEqual(state.targetRect, action.rect)) return state;
       return { ...state, targetRect: action.rect };
-    case "SET_MEASURING":
-      return { ...state, measuring: action.measuring };
     default:
       return state;
   }
@@ -163,11 +165,16 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const from = state.currentIndex;
+      const fromStep = state.steps[from];
+      const toStep = state.steps[index];
+      const keepTarget = Boolean(
+        fromStep && toStep && isSameTourTarget(fromStep, toStep) && state.targetRect,
+      );
       state.config.onStepChange?.(from, index);
       events.emit("stepChange", { from, to: index });
-      dispatch({ type: "GOTO", index });
+      dispatch({ type: "GOTO", index, keepTarget });
     },
-    [endTour, events, state.config, state.currentIndex, state.steps.length],
+    [endTour, events, state.config, state.currentIndex, state.steps, state.targetRect],
   );
 
   const nextStep = useCallback(() => {
@@ -214,7 +221,6 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
     if (!step) return;
 
     const token = ++measureToken.current;
-    dispatch({ type: "SET_MEASURING", measuring: true });
 
     const resolve = async () => {
       await step.before?.();
@@ -227,11 +233,23 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
 
       if (step.targetRegion) {
         dispatch({ type: "SET_TARGET_RECT", rect: step.targetRegion });
-        dispatch({ type: "SET_MEASURING", measuring: false });
         return;
       }
 
       const ref = step.targetRef ?? targetRegistry.current.get(step.targetId ?? "");
+
+      if (step.scroll) {
+        // A chain runs outermost-first: scroll the page so the list is on
+        // screen, then the list so the row is. Scrolling only the inner list
+        // leaves the spotlight off-screen when the list itself is scrolled
+        // out of the page.
+        const chain = Array.isArray(step.scroll) ? step.scroll : [step.scroll];
+        for (const options of chain) {
+          await scrollStepIntoView(options, ref);
+          if (measureToken.current !== token) return;
+        }
+      }
+
       await nextPaint();
       if (measureToken.current !== token) return;
       const rect = ref
@@ -239,7 +257,6 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
         : null;
       if (measureToken.current !== token) return;
       dispatch({ type: "SET_TARGET_RECT", rect });
-      dispatch({ type: "SET_MEASURING", measuring: false });
     };
 
     resolve();
