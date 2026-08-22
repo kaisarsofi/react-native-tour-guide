@@ -1,5 +1,8 @@
 import type {
+  ResolvedSwipeHint,
   SpotlightStyles,
+  SwipeDirection,
+  SwipeHintConfig,
   TooltipStyles,
   TourGuideConfig,
   TourGuideTheme,
@@ -36,6 +39,33 @@ export const DEFAULT_SPOTLIGHT_STYLES: Required<SpotlightStyles> = {
   pulseDuration: 1800,
 };
 
+/**
+ * The hand rides over the *spotlit* target — the one part of the screen the
+ * scrim doesn't dim — so it has to read against ordinary app content, not
+ * against the dark backdrop. Hence a dark default rather than a white one.
+ * Override `color` / `trailColor` when spotlighting a dark element.
+ */
+export const DEFAULT_SWIPE_HINT: Omit<ResolvedSwipeHint, "direction"> = {
+  distance: 64,
+  duration: 1400,
+  repeatDelay: 400,
+  size: 48,
+  color: "#0F172A",
+  showTrail: true,
+  trailColor: "#0F172A",
+};
+
+/** Accepts the `"left"` shorthand as well as the full config object. */
+export function resolveSwipeHint(
+  hint: SwipeDirection | SwipeHintConfig | undefined,
+): ResolvedSwipeHint | null {
+  if (!hint) return null;
+  if (typeof hint === "string") {
+    return { ...DEFAULT_SWIPE_HINT, direction: hint };
+  }
+  return { ...DEFAULT_SWIPE_HINT, ...hint };
+}
+
 export const DEFAULT_CONFIG: Omit<
   Required<
     Pick<
@@ -49,6 +79,7 @@ export const DEFAULT_CONFIG: Omit<
       | "animationDuration"
       | "motion"
       | "defaultBackdropBehavior"
+      | "swipeCount"
     >
   >,
   never
@@ -62,6 +93,7 @@ export const DEFAULT_CONFIG: Omit<
   animationDuration: 320,
   motion: "morph",
   defaultBackdropBehavior: "none",
+  swipeCount: 3,
 };
 
 export function createTheme(theme: TourGuideTheme): TourGuideTheme {

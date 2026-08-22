@@ -9,8 +9,11 @@ import { BackdropAndMotion } from "./demos/BackdropAndMotion";
 import { BasicTargeting } from "./demos/BasicTargeting";
 import { CustomTooltip } from "./demos/CustomTooltip";
 import { EventLog } from "./demos/EventLog";
+import { HorizontalListTour } from "./demos/HorizontalListTour";
+import { PaginatedCardsTour } from "./demos/PaginatedCardsTour";
 import { Persistence } from "./demos/Persistence";
 import { Themes } from "./demos/Themes";
+import { VerticalListTour } from "./demos/VerticalListTour";
 
 function Hero() {
   return (
@@ -53,6 +56,9 @@ function Demo() {
         <BackdropAndMotion />
         <Persistence />
         <EventLog />
+        <VerticalListTour />
+        <HorizontalListTour />
+        <PaginatedCardsTour />
       </ScrollView>
     </SafeAreaView>
   );

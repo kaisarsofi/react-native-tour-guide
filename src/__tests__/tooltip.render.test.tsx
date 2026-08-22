@@ -91,6 +91,20 @@ describe("Tooltip", () => {
     expect(screen.queryByText("Skip")).toBeNull();
   });
 
+  it("drops the whole button row when hideControls is set", () => {
+    renderTooltip({
+      step: makeStep({ hideControls: true }),
+      stepIndex: 1,
+      isFirst: false,
+    });
+
+    // Copy still shows; only the controls go.
+    expect(screen.getByText("Hello")).toBeTruthy();
+    expect(screen.queryByText("Next")).toBeNull();
+    expect(screen.queryByText("Back")).toBeNull();
+    expect(screen.queryByText("Skip")).toBeNull();
+  });
+
   it("uses custom button labels from the config", () => {
     renderTooltip({
       isFirst: false,
