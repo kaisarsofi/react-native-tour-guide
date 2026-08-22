@@ -117,9 +117,11 @@ export function Tooltip({
 }: TooltipProps) {
   const t = config.tooltipStyles;
   const slot = config.styles ?? {};
-  const showSkip = !step.hideSkipButton && !isLast;
-  const showPrev = !step.hidePrevButton && !isFirst;
-  const showNext = !step.hideNextButton;
+  const showSkip = !step.hideControls && !step.hideSkipButton && !isLast;
+  const showPrev = !step.hideControls && !step.hidePrevButton && !isFirst;
+  const showNext = !step.hideControls && !step.hideNextButton;
+  // Drop the whole row rather than leaving an empty band of padding.
+  const showFooter = showSkip || showPrev || showNext;
 
   return (
     <View
@@ -179,49 +181,51 @@ export function Tooltip({
         {step.description}
       </Text>
 
-      <View style={[styles.footer, slot.footer]}>
-        <View style={styles.footerLeft}>
-          {showSkip && (
-            <Pressable onPress={onSkip} hitSlop={10} accessibilityRole="button">
-              {({ pressed }) => (
-                <Text
-                  style={[
-                    styles.skipText,
-                    { color: t.skipButtonTextColor },
-                    slot.skipButtonText,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  {config.skipButtonText}
-                </Text>
-              )}
-            </Pressable>
-          )}
-        </View>
+      {showFooter && (
+        <View style={[styles.footer, slot.footer]}>
+          <View style={styles.footerLeft}>
+            {showSkip && (
+              <Pressable onPress={onSkip} hitSlop={10} accessibilityRole="button">
+                {({ pressed }) => (
+                  <Text
+                    style={[
+                      styles.skipText,
+                      { color: t.skipButtonTextColor },
+                      slot.skipButtonText,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    {config.skipButtonText}
+                  </Text>
+                )}
+              </Pressable>
+            )}
+          </View>
 
-        <View style={styles.footerRight}>
-          {showPrev && (
-            <FooterButton
-              label={config.prevButtonText}
-              onPress={onPrev}
-              backgroundColor={t.secondaryButtonColor}
-              textColor={t.secondaryButtonTextColor}
-              buttonStyle={slot.secondaryButton}
-              textStyle={slot.secondaryButtonText}
-            />
-          )}
-          {showNext && (
-            <FooterButton
-              label={isLast ? config.doneButtonText : config.nextButtonText}
-              onPress={onNext}
-              backgroundColor={t.primaryButtonColor}
-              textColor={t.primaryButtonTextColor}
-              buttonStyle={[styles.buttonPrimary, slot.primaryButton]}
-              textStyle={slot.primaryButtonText}
-            />
-          )}
+          <View style={styles.footerRight}>
+            {showPrev && (
+              <FooterButton
+                label={config.prevButtonText}
+                onPress={onPrev}
+                backgroundColor={t.secondaryButtonColor}
+                textColor={t.secondaryButtonTextColor}
+                buttonStyle={slot.secondaryButton}
+                textStyle={slot.secondaryButtonText}
+              />
+            )}
+            {showNext && (
+              <FooterButton
+                label={isLast ? config.doneButtonText : config.nextButtonText}
+                onPress={onNext}
+                backgroundColor={t.primaryButtonColor}
+                textColor={t.primaryButtonTextColor}
+                buttonStyle={[styles.buttonPrimary, slot.primaryButton]}
+                textStyle={slot.primaryButtonText}
+              />
+            )}
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }

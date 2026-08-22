@@ -115,4 +115,40 @@ describe("TourGuideOverlay rendering", () => {
 
     expect(tour.api.isActive).toBe(false);
   });
+
+  it("hides the tooltip on a swipe-hint step and keeps a Skip control", async () => {
+    await renderTour().start([
+      makeStep({
+        swipeHint: "left",
+        title: "Browse categories",
+        description: "Swipe sideways.",
+      }),
+    ]);
+
+    expect(screen.queryByText("Browse categories")).toBeNull();
+    expect(screen.queryByText("Next")).toBeNull();
+    expect(screen.getByTestId("tour-guide-skip")).toBeTruthy();
+  });
+
+  it("keeps the tooltip when hideTooltip is false on a swipe-hint step", async () => {
+    await renderTour().start([
+      makeStep({
+        swipeHint: "up",
+        hideTooltip: false,
+        title: "Keep me",
+      }),
+    ]);
+
+    expect(screen.getByText("Keep me")).toBeTruthy();
+    expect(screen.getByText("Done")).toBeTruthy();
+  });
+
+  it("ends a gesture tour from the overlay Skip control", async () => {
+    const tour = renderTour();
+    await tour.start([makeStep({ swipeHint: "up" })]);
+
+    fireEvent.press(screen.getByTestId("tour-guide-skip"));
+
+    expect(tour.api.isActive).toBe(false);
+  });
 });
