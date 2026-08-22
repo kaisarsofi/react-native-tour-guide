@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from "react";
 import type { RefObject } from "react";
-import type { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import {
   DEFAULT_CONFIG,
@@ -24,7 +24,7 @@ import type {
   TourStep,
 } from "./types";
 import { createTourEventEmitter } from "./utils/eventEmitter";
-import { measureView } from "./utils/geometry";
+import { measureView, nextPaint } from "./utils/geometry";
 
 interface TourGuideState {
   steps: TourStep[];
@@ -96,6 +96,7 @@ export interface TourGuideContextValue {
   resumeTour: () => void;
   handleBackdropPress: (behavior?: BackdropBehavior) => void;
   registerTarget: (id: string, ref: RefObject<View | null>) => () => void;
+  registerOverlayHost: (ref: RefObject<View | null>) => () => void;
   events: TourEventEmitter;
 }
 
@@ -115,18 +116,25 @@ function resolveConfig(config?: TourGuideConfig): ResolvedTourGuideConfig {
 export function TourGuideProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const targetRegistry = useRef(new Map<string, RefObject<View | null>>());
+  const overlayHostRef = useRef<RefObject<View | null> | null>(null);
   const events = useMemo(() => createTourEventEmitter(), []);
   const measureToken = useRef(0);
 
-  const registerTarget = useCallback(
-    (id: string, ref: RefObject<View | null>) => {
-      targetRegistry.current.set(id, ref);
-      return () => {
-        targetRegistry.current.delete(id);
-      };
-    },
-    [],
-  );
+  const registerTarget = useCallback((id: string, ref: RefObject<View | null>) => {
+    targetRegistry.current.set(id, ref);
+    return () => {
+      targetRegistry.current.delete(id);
+    };
+  }, []);
+
+  const registerOverlayHost = useCallback((ref: RefObject<View | null>) => {
+    overlayHostRef.current = ref;
+    return () => {
+      if (overlayHostRef.current === ref) {
+        overlayHostRef.current = null;
+      }
+    };
+  }, []);
 
   const startTour = useCallback(
     (steps: TourStep[], config?: TourGuideConfig) => {
@@ -211,7 +219,9 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
     const resolve = async () => {
       await step.before?.();
       if (step.delayBefore) {
-        await new Promise((r) => setTimeout(r, step.delayBefore));
+        await new Promise<void>((done) => {
+          setTimeout(done, step.delayBefore);
+        });
       }
       if (measureToken.current !== token) return;
 
@@ -222,13 +232,17 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
       }
 
       const ref = step.targetRef ?? targetRegistry.current.get(step.targetId ?? "");
-      const rect = ref ? await measureView(ref) : null;
+      await nextPaint();
+      if (measureToken.current !== token) return;
+      const rect = ref
+        ? await measureView(ref, overlayHostRef.current ?? undefined)
+        : null;
       if (measureToken.current !== token) return;
       dispatch({ type: "SET_TARGET_RECT", rect });
       dispatch({ type: "SET_MEASURING", measuring: false });
     };
 
-    void resolve();
+    resolve();
   }, [state.currentIndex, state.isActive, state.isPaused, state.steps]);
 
   useEffect(() => {
@@ -252,6 +266,7 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
       resumeTour,
       handleBackdropPress,
       registerTarget,
+      registerOverlayHost,
       events,
     }),
     [
@@ -266,14 +281,25 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
       resumeTour,
       handleBackdropPress,
       registerTarget,
+      registerOverlayHost,
       events,
     ],
   );
 
   return (
-    <TourGuideContext.Provider value={value}>{children}</TourGuideContext.Provider>
+    <TourGuideContext.Provider value={value}>
+      <View style={styles.root} pointerEvents="box-none" collapsable={false}>
+        {children}
+      </View>
+    </TourGuideContext.Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});
 
 export function useTourGuideContext(): TourGuideContextValue {
   const ctx = useContext(TourGuideContext);

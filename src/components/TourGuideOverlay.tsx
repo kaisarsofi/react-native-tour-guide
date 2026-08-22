@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   BackHandler,
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -21,8 +20,15 @@ const DEFAULT_SPOTLIGHT_RADIUS = 12;
 const SCREEN_MARGIN = 16;
 
 export function TourGuideOverlay() {
-  const { state, nextStep, prevStep, skipTour, handleBackdropPress } =
-    useTourGuideContext();
+  const {
+    state,
+    nextStep,
+    prevStep,
+    skipTour,
+    handleBackdropPress,
+    registerOverlayHost,
+  } = useTourGuideContext();
+  const hostRef = useRef<View>(null);
   const { width: screenWidth } = useWindowDimensions();
   const [tooltipSize, setTooltipSize] = useState<{
     width: number;
@@ -31,6 +37,8 @@ export function TourGuideOverlay() {
 
   const step = state.steps[state.currentIndex] ?? null;
   const visible = state.isActive && !state.isPaused;
+
+  useEffect(() => registerOverlayHost(hostRef), [registerOverlayHost]);
 
   useEffect(() => {
     setTooltipSize(null);
@@ -63,7 +71,23 @@ export function TourGuideOverlay() {
     );
   }, [state.targetRect, step?.tooltipPosition, tooltipSize]);
 
-  if (!step) return null;
+  const handleMeasureLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setTooltipSize((prev) =>
+      prev && prev.width === width && prev.height === height ? prev : { width, height },
+    );
+  };
+
+  if (!step || !visible) {
+    return (
+      <View
+        ref={hostRef}
+        collapsable={false}
+        pointerEvents="none"
+        style={styles.host}
+      />
+    );
+  }
 
   const padding = step.spotlightPadding ?? DEFAULT_SPOTLIGHT_PADDING;
   const radius = step.spotlightBorderRadius ?? DEFAULT_SPOTLIGHT_RADIUS;
@@ -82,30 +106,15 @@ export function TourGuideOverlay() {
     onSkip: skipTour,
   };
 
-  const handleMeasureLayout = (event: LayoutChangeEvent) => {
-    const { width, height } = event.nativeEvent.layout;
-    setTooltipSize((prev) =>
-      prev && prev.width === width && prev.height === height
-        ? prev
-        : { width, height },
-    );
-  };
-
   const CustomTooltip = step.renderTooltip ?? state.config.renderTooltip;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={() => {
-        if (state.currentIndex > 0) {
-          prevStep();
-        } else {
-          skipTour();
-        }
-      }}
+    <View
+      ref={hostRef}
+      collapsable={false}
+      pointerEvents="box-none"
+      style={styles.host}
+      accessibilityViewIsModal
     >
       <Pressable
         style={StyleSheet.absoluteFill}
@@ -121,7 +130,6 @@ export function TourGuideOverlay() {
         />
       </Pressable>
 
-      {/* Rendered offscreen for one frame so it can be measured, then placed. */}
       <View
         onLayout={handleMeasureLayout}
         pointerEvents="box-none"
@@ -135,11 +143,16 @@ export function TourGuideOverlay() {
       >
         {CustomTooltip ? CustomTooltip(tooltipProps) : <Tooltip {...tooltipProps} />}
       </View>
-    </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  host: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 9999,
+    elevation: 9999,
+  },
   tooltipContainer: {
     position: "absolute",
   },

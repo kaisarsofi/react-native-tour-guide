@@ -1,9 +1,13 @@
 node_modules/
 lib/
+coverage/
 .DS_Store
-*.log
+*.tgz
+
 .turbo/
-.yarn/
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
 .expo/
 example/node_modules/
 example/.expo/

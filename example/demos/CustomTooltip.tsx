@@ -24,12 +24,22 @@ function CardTooltip({ step, isLast, onNext, onSkip }: TooltipProps) {
         Custom tooltip
       </Text>
       <Text className="mt-1 text-lg font-bold text-white">{step.title}</Text>
-      <Text className="mt-1 text-sm text-violet-100">{step.description}</Text>
-      <View className="mt-4 flex-row justify-end gap-4">
-        <Pressable onPress={onSkip} hitSlop={8}>
-          <Text className="text-sm text-violet-200">Dismiss</Text>
+      <Text className="mt-1.5 text-sm leading-5 text-violet-100">{step.description}</Text>
+
+      {/* Dismiss sits left as a recessed secondary button, matching the
+          built-in tooltip's hierarchy. Both buttons share the same vertical
+          padding so their heights line up exactly. */}
+      <View className="mt-5 flex-row items-center justify-between">
+        <Pressable
+          onPress={onSkip}
+          className="rounded-full bg-violet-500 px-4 py-2.5 active:opacity-70"
+        >
+          <Text className="text-sm font-medium text-white">Dismiss</Text>
         </Pressable>
-        <Pressable onPress={onNext} className="rounded-full bg-white px-4 py-2">
+        <Pressable
+          onPress={onNext}
+          className="rounded-full bg-white px-5 py-2.5 active:opacity-80"
+        >
           <Text className="text-sm font-semibold text-violet-700">
             {isLast ? "Got it" : "Continue"}
           </Text>
@@ -40,7 +50,7 @@ function CardTooltip({ step, isLast, onNext, onSkip }: TooltipProps) {
 }
 
 export function CustomTooltip() {
-  const { startTour, isActive } = useTourGuide();
+  const { startTour, isActive, tourId } = useTourGuide();
 
   const steps: TourStep[] = [
     {
@@ -69,10 +79,10 @@ export function CustomTooltip() {
 
       <View className="flex-row">
         <DemoButton
-          label={isActive ? "Tour running…" : "Show custom tooltip"}
+          label={isActive && tourId === "custom" ? "Tour running…" : "Show custom tooltip"}
           variant="accent"
           disabled={isActive}
-          onPress={() => startTour(steps)}
+          onPress={() => startTour(steps, { tourId: "custom" })}
         />
       </View>
     </Section>
