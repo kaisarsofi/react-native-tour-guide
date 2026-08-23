@@ -121,6 +121,16 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
   const overlayHostRef = useRef<RefObject<View | null> | null>(null);
   const events = useMemo(() => createTourEventEmitter(), []);
   const measureToken = useRef(0);
+  // A step's own callback (`onSpotlightPress`, `before`, …) is captured once
+  // into the steps array a caller hands to `startTour`, then invoked later
+  // from inside the overlay — by then, a `nextStep`/`goToStep` closed over
+  // that render's `state` would advance from a stale `currentIndex`, redoing
+  // the same transition instead of the next one. Reading through a ref kept
+  // in sync every render means these actions are always correct no matter
+  // how long ago the caller captured them, and can stay referentially stable
+  // across renders too.
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   const registerTarget = useCallback((id: string, ref: RefObject<View | null>) => {
     targetRegistry.current.set(id, ref);
@@ -151,50 +161,54 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
 
   const endTour = useCallback(
     (completed = false) => {
-      state.config.onTourEnd?.(completed);
+      stateRef.current.config.onTourEnd?.(completed);
       events.emit("end", { completed });
       dispatch({ type: "END" });
     },
-    [events, state.config],
+    [events],
   );
 
   const goToStep = useCallback(
     (index: number) => {
-      if (index < 0 || index >= state.steps.length) {
-        endTour(index >= state.steps.length);
+      const current = stateRef.current;
+      if (index < 0 || index >= current.steps.length) {
+        endTour(index >= current.steps.length);
         return;
       }
-      const from = state.currentIndex;
-      const fromStep = state.steps[from];
-      const toStep = state.steps[index];
+      const from = current.currentIndex;
+      const fromStep = current.steps[from];
+      const toStep = current.steps[index];
       const keepTarget = Boolean(
-        fromStep && toStep && isSameTourTarget(fromStep, toStep) && state.targetRect,
+        fromStep && toStep && isSameTourTarget(fromStep, toStep) && current.targetRect,
       );
-      state.config.onStepChange?.(from, index);
+      current.config.onStepChange?.(from, index);
       events.emit("stepChange", { from, to: index });
       dispatch({ type: "GOTO", index, keepTarget });
     },
-    [endTour, events, state.config, state.currentIndex, state.steps, state.targetRect],
+    [endTour, events],
   );
 
   const nextStep = useCallback(() => {
-    const step = state.steps[state.currentIndex];
+    const current = stateRef.current;
+    const step = current.steps[current.currentIndex];
     step?.onNext?.();
-    goToStep(state.currentIndex + 1);
-  }, [goToStep, state.currentIndex, state.steps]);
+    goToStep(current.currentIndex + 1);
+  }, [goToStep]);
 
   const prevStep = useCallback(() => {
-    const step = state.steps[state.currentIndex];
+    const current = stateRef.current;
+    const step = current.steps[current.currentIndex];
     step?.onPrev?.();
-    goToStep(state.currentIndex - 1);
-  }, [goToStep, state.currentIndex, state.steps]);
+    goToStep(current.currentIndex - 1);
+  }, [goToStep]);
 
   const skipTour = useCallback(() => {
-    const step = state.steps[state.currentIndex];
+    const current = stateRef.current;
+    const step = current.steps[current.currentIndex];
     step?.onSkip?.();
-    events.emit("skip", { atStep: state.currentIndex });
+    events.emit("skip", { atStep: current.currentIndex });
     endTour(false);
-  }, [endTour, events, state.currentIndex, state.steps]);
+  }, [endTour, events]);
 
   const pauseTour = useCallback(() => {
     events.emit("pause", undefined);
@@ -208,11 +222,11 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
 
   const handleBackdropPress = useCallback(
     (behavior?: BackdropBehavior) => {
-      const resolved = behavior ?? state.config.defaultBackdropBehavior;
+      const resolved = behavior ?? stateRef.current.config.defaultBackdropBehavior;
       if (resolved === "next") nextStep();
       if (resolved === "dismiss") skipTour();
     },
-    [nextStep, skipTour, state.config.defaultBackdropBehavior],
+    [nextStep, skipTour],
   );
 
   useEffect(() => {
