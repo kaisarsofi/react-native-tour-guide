@@ -9,8 +9,31 @@ Expo-first. Zero native modules. TypeScript throughout.
 [![npm downloads](https://img.shields.io/npm/dm/react-native-tour-guide.svg?style=flat-square)](https://www.npmjs.com/package/react-native-tour-guide)
 [![license](https://img.shields.io/npm/l/react-native-tour-guide.svg?style=flat-square)](./LICENSE)
 [![types](https://img.shields.io/badge/types-included-3178C6.svg?style=flat-square)](./src/index.ts)
+[![expo](https://img.shields.io/badge/Expo-Go%20%26%20dev%20builds-000.svg?style=flat-square&logo=expo)](https://docs.expo.dev/)
+[![new arch](https://img.shields.io/badge/New%20Architecture-supported-61DAFB.svg?style=flat-square)](#requirements)
 
 </div>
+
+## Demo
+
+<p align="center">
+<i>iOS simulator · Android device — the same demo, every screen a different feature: targeting by ref, id, or region, six bundled themes, custom tooltips, backdrop &amp; motion, play-once persistence, auto-scroll lists, swipe-hint gesture tours, edge-aware tooltip flips.</i>
+</p>
+
+<table>
+<tr>
+<td align="center" valign="top" width="50%">
+<h3>🎯 Targeting</h3>
+<p>Highlight any view — by <code>targetRef</code>, <code>&lt;TourTarget id&gt;</code>, or a fixed region.</p>
+<img src="docs/IOSTargetingTour.gif" width="280" alt="Target a component by ref, id, or a fixed region" />
+</td>
+<td align="center" valign="top" width="50%">
+<h3>📜 List tours</h3>
+<p>Keep the spotlight on the list. The user swipes — the hole stays put.</p>
+<img src="docs/IOSListsTour.gif" width="280" alt="Keep the spotlight on a list while the user swipes" />
+</td>
+</tr>
+</table>
 
 ---
 
@@ -43,6 +66,24 @@ startTour([
 | 📦 **Zero native code** | works in Expo Go, dev builds, and bare React Native alike — no config plugin, no prebuild |
 | 🖌️ **Looks right immediately** | the built-in tooltip is styled with real `StyleSheet` values, so it renders correctly with or without NativeWind/Tailwind in your app |
 | 🧪 **Well tested** | 140+ unit and render tests across the spotlight, tooltip, geometry, scroll, and provider |
+
+## Requirements
+
+This package is JavaScript only — no native modules, no config plugin, no
+prebuild. It runs on **both the old architecture (Paper) and the New
+Architecture (Fabric)**.
+
+| | |
+| --- | --- |
+| **React Native** | 0.71 or later (tested on 0.81) |
+| **React** | 18 or later (works with 19) |
+| **Expo** | SDK 49 or later — Expo Go, development builds, and prebuild |
+| **iOS / Android** | both |
+| **Architecture** | Paper (old) and Fabric (new) |
+| **Peers** | `react-native-reanimated` ≥ 3, `react-native-svg` ≥ 13 |
+
+Bare React Native apps need the Reanimated Babel plugin. Expo apps usually
+already have it.
 
 ## Installation
 
@@ -114,6 +155,10 @@ once at the root, right after their navigator.
 ## Guides
 
 ### Targeting a component
+
+<p align="center">
+  <img src="docs/IOSTargetingTour.gif" width="280" alt="Targeting by ref, by TourTarget id, and inside a list" />
+</p>
 
 Point a step at a component with a plain `targetRef`:
 
@@ -287,8 +332,8 @@ startTour(steps, { renderTooltip: (props) => <MyTooltip {...props} /> });
 
 `renderTooltip` is a component you write, compiled by your own app's
 bundler — so if your app uses NativeWind, Tailwind classes work fine here.
-See [NativeWind / Tailwind](#nativewind--tailwind) below for why that's not
-true of the built-in tooltip.
+See [NativeWind / Tailwind](#nativewind--tailwind) for why that's not true
+of the built-in tooltip.
 
 ### Backdrop behavior, timing & motion
 
@@ -311,6 +356,10 @@ startTour(steps, { motion: "none", animationDuration: 0 });
 ```
 
 ### Tours through lists
+
+<p align="center">
+  <img src="docs/IOSListsTour.gif" width="280" alt="Vertical list tour — spotlight stays on the list while the user swipes" />
+</p>
 
 Two patterns share the same `useTourScroll()` binding.
 
@@ -463,6 +512,15 @@ useEffect(() => {
 ```
 
 Available events: `start`, `stepChange`, `end`, `skip`, `pause`, `resume`.
+
+### NativeWind / Tailwind
+
+The built-in tooltip is styled with `StyleSheet`, so it looks correct
+whether or not your app uses NativeWind. Do not pass Tailwind `className`
+to the built-in tooltip — use `tooltipStyles` / `styles` instead.
+
+If you want Tailwind classes, replace the tooltip with `renderTooltip`.
+That component is compiled by your app, so NativeWind works there.
 
 ## API reference
 

@@ -1,5 +1,6 @@
 # Dev / repo-only
 example/
+docs/
 coverage/
 .github/
 .husky/
@@ -33,4 +34,5 @@ yarn.lock
 *.tgz
 *.log
 .DS_Store
+*.gif
 node_modules/
