@@ -173,6 +173,13 @@ export interface TourStep {
   onNext?: () => void;
   onPrev?: () => void;
   onSkip?: () => void;
+  /**
+   * Fires instead of the default backdrop-tap behavior when the user taps
+   * inside the spotlight itself (as opposed to the dimmed area around it) —
+   * lets a step require pressing the real, live control to advance rather
+   * than the tooltip's own Next button. Pair with `hideNextButton` so
+   * that's the only way forward.
+   */
   onSpotlightPress?: () => void;
   accessibilityLabel?: string;
 }

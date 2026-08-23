@@ -291,7 +291,24 @@ export function TourGuideOverlay() {
         <Pressable
           testID="tour-guide-backdrop"
           style={StyleSheet.absoluteFill}
-          onPress={() => handleBackdropPress(step.backdropBehavior)}
+          onPress={(event) => {
+            const rect = state.targetRect;
+            const pageX = event?.nativeEvent?.pageX;
+            const pageY = event?.nativeEvent?.pageY;
+            const withinSpotlight =
+              rect != null &&
+              pageX != null &&
+              pageY != null &&
+              pageX >= rect.x &&
+              pageX <= rect.x + rect.width &&
+              pageY >= rect.y &&
+              pageY <= rect.y + rect.height;
+            if (withinSpotlight && step.onSpotlightPress) {
+              step.onSpotlightPress();
+              return;
+            }
+            handleBackdropPress(step.backdropBehavior);
+          }}
         >
           {spotlight}
         </Pressable>

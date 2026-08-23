@@ -22,15 +22,20 @@ Expo-first. Zero native modules. TypeScript throughout.
 
 <table>
 <tr>
-<td align="center" valign="top" width="50%">
+<td align="center" valign="top" width="33%">
 <h3>🎯 Targeting</h3>
 <p>Highlight any view — by <code>targetRef</code>, <code>&lt;TourTarget id&gt;</code>, or a fixed region.</p>
-<img src="docs/IOSTargetingTour.gif" width="280" alt="Target a component by ref, id, or a fixed region" />
+<img src="docs/targetedTour.gif" width="100%" alt="Target a component by ref, id, or a fixed region" />
 </td>
-<td align="center" valign="top" width="50%">
+<td align="center" valign="top" width="33%">
 <h3>📜 List tours</h3>
 <p>Keep the spotlight on the list. The user swipes — the hole stays put.</p>
-<img src="docs/IOSListsTour.gif" width="280" alt="Keep the spotlight on a list while the user swipes" />
+<img src="docs/scrollTour.gif" width="100%" alt="Keep the spotlight on a list while the user swipes" />
+</td>
+<td align="center" valign="top" width="33%">
+<h3>🎛️ Controlled tour</h3>
+<p>Advance only when the user presses the highlighted button itself.</p>
+<img src="docs/ControlledTour.gif" width="100%" alt="Tour step that advances when you press the real, live button" />
 </td>
 </tr>
 </table>
@@ -163,7 +168,7 @@ once at the root, right after their navigator.
 ### Targeting a component
 
 <p align="center">
-  <img src="docs/IOSTargetingTour.gif" width="280" alt="Targeting by ref, by TourTarget id, and inside a list" />
+  <img src="docs/targetedTour.gif" width="280" alt="Targeting by ref, by TourTarget id, and inside a list" />
 </p>
 
 Point a step at a component with a plain `targetRef`:
@@ -364,7 +369,7 @@ startTour(steps, { motion: "none", animationDuration: 0 });
 ### Tours through lists
 
 <p align="center">
-  <img src="docs/IOSListsTour.gif" width="280" alt="Vertical list tour — spotlight stays on the list while the user swipes" />
+  <img src="docs/scrollTour.gif" width="280" alt="Vertical list tour — spotlight stays on the list while the user swipes" />
 </p>
 
 Two patterns share the same `useTourScroll()` binding.
@@ -485,6 +490,67 @@ dark. Override `color` / `trailColor` on a dark target. Only transform and
 opacity animate, so this stays on the UI thread. **Reduce Motion** parks the
 hand mid-swipe instead of looping.
 
+### Press the real button
+
+<p align="center">
+  <img src="docs/ControlledTour.gif" width="280" alt="Tour step that advances when you press the real, live button" />
+</p>
+
+A tap on the dimmed backdrop is not the same as a tap on the control. Use
+`onSpotlightPress` when the user must press the **highlighted button
+itself** to continue. Pair it with `hideNextButton` so the tooltip has no
+shortcut.
+
+Two patterns share the same `onSpotlightPress` callback.
+
+**1. Teach a live action.** The press both runs the real handler (like,
+save, share) and advances the tour:
+
+```tsx
+{
+  id: "like",
+  targetId: "action-like",
+  title: "Press to continue",
+  description: "Tap the Like button itself — there is no Next on the tooltip.",
+  hideNextButton: true,
+  onSpotlightPress: () => {
+    setLiked(true);
+    nextStep();
+  },
+}
+```
+
+`nextStep` is stable across renders, so it is safe to close over it inside
+the step you pass to `startTour`.
+
+**2. Drive a pager with Prev/Next.** Same spotlight-press, but the buttons
+move a carousel. See [wizard navigation](#wizard-navigation-prev--next).
+
+### Wizard navigation (Prev / Next)
+
+For a carousel driven by real Prev/Next buttons, `createWizardTourSteps`
+builds the tour from two numbers — how many times to press Next, then how
+many times to press Prev. Defaults are **2 next, then 1 prev**, after which
+the last press closes the tour.
+
+```tsx
+const steps = createWizardTourSteps({
+  nextTargetId: "wizard-next",
+  prevTargetId: "wizard-prev",
+  nextCount: 2, // default
+  prevCount: 1, // default
+  onNext: goNext,
+  onPrev: goPrev,
+  nextStep,
+});
+
+startTour(steps, { tourId: "wizard" });
+```
+
+Prev is clamped so it cannot rewind further than Next advanced: `nextCount:
+2` with `prevCount: 3` becomes Next 2, Prev 2. Invalid counts fall back to
+the defaults.
+
 ### Play a tour only once
 
 `useTourPersistence` wraps `startTour` so a tour (keyed by `tourId`) only
@@ -553,6 +619,20 @@ const { ref, scrollProps, handle, reset } = useTourScroll({
 
 // Pass `handle` on a step's `scroll` option.
 // Call `reset()` when starting a list tour so it begins at index 0.
+```
+
+### `createWizardTourSteps()`
+
+```ts
+createWizardTourSteps({
+  nextTargetId: string,
+  prevTargetId: string,
+  nextCount?: number,  // default 2
+  prevCount?: number,  // default 1, clamped to nextCount
+  onNext: () => void,
+  onPrev: () => void,
+  nextStep: () => void,
+})
 ```
 
 ### `TourStep`

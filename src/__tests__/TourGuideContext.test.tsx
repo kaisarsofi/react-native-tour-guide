@@ -138,6 +138,58 @@ describe("TourGuideProvider and useTourGuide", () => {
     expect(result.current.isPaused).toBe(false);
   });
 
+  it("keeps nextStep/prevStep/goToStep/skipTour/endTour referentially stable across steps", async () => {
+    const { result } = renderHook(() => useTourGuide(), { wrapper });
+
+    const before = {
+      nextStep: result.current.nextStep,
+      prevStep: result.current.prevStep,
+      goToStep: result.current.goToStep,
+      skipTour: result.current.skipTour,
+      endTour: result.current.endTour,
+    };
+
+    await start(result, steps(3));
+    act(() => {
+      result.current.nextStep();
+    });
+
+    expect(result.current.nextStep).toBe(before.nextStep);
+    expect(result.current.prevStep).toBe(before.prevStep);
+    expect(result.current.goToStep).toBe(before.goToStep);
+    expect(result.current.skipTour).toBe(before.skipTour);
+    expect(result.current.endTour).toBe(before.endTour);
+  });
+
+  it("advances through every step when a single stale nextStep reference is reused, as a step's own onSpotlightPress-style callback would", async () => {
+    // Regression test: a step callback captured once (e.g. from useTourGuide()
+    // in the calling component, embedded into a TourStep and invoked later
+    // from the overlay) used to close over that render's `currentIndex`.
+    // Reusing the same captured `nextStep` for a second transition redid the
+    // first transition instead of advancing, leaving the tour stuck.
+    const { result } = renderHook(() => useTourGuide(), { wrapper });
+
+    await start(result, steps(3));
+    const staleNextStep = result.current.nextStep;
+
+    act(() => {
+      staleNextStep();
+    });
+    expect(result.current.currentStepIndex).toBe(1);
+    expect(result.current.currentStep?.id).toBe("s2");
+
+    act(() => {
+      staleNextStep();
+    });
+    expect(result.current.currentStepIndex).toBe(2);
+    expect(result.current.currentStep?.id).toBe("s3");
+
+    act(() => {
+      staleNextStep();
+    });
+    expect(result.current.isActive).toBe(false);
+  });
+
   it("emits start and stepChange events", async () => {
     const onStart = jest.fn();
     const onStepChange = jest.fn();
