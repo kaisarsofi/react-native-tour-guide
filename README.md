@@ -27,30 +27,6 @@ startTour([
 ]);
 ```
 
-## Contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [Quick start](#quick-start)
-- [Guides](#guides)
-  - [Targeting a component](#targeting-a-component)
-  - [Step lifecycle](#step-lifecycle)
-  - [Themes](#themes)
-  - [Style tokens](#style-tokens)
-  - [Per-slot style overrides](#per-slot-style-overrides)
-  - [A fully custom tooltip](#a-fully-custom-tooltip)
-  - [Backdrop behavior, timing & motion](#backdrop-behavior-timing--motion)
-  - [Tours through lists](#tours-through-lists)
-  - [Swipe hints (gesture tours)](#swipe-hints-gesture-tours)
-  - [Play a tour only once](#play-a-tour-only-once)
-  - [Listening to tour events](#listening-to-tour-events)
-  - [NativeWind / Tailwind](#nativewind--tailwind)
-- [API reference](#api-reference)
-- [Example app](#example-app)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Features
 
 | | |
