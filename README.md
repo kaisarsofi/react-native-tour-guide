@@ -488,16 +488,6 @@ useEffect(() => {
 
 Available events: `start`, `stepChange`, `end`, `skip`, `pause`, `resume`.
 
-### NativeWind / Tailwind
-
-The built-in tooltip deliberately uses `StyleSheet` rather than `className`.
-NativeWind rewrites `className` into styles **at build time**, and this
-package ships precompiled — so a `className` written inside the library
-would never be transformed, and would silently do nothing in your app. Style
-it with [tokens](#style-tokens), [per-slot overrides](#per-slot-style-overrides),
-or a [custom `renderTooltip`](#a-fully-custom-tooltip) instead — that last
-one is compiled by *your* app, so Tailwind classes work there normally.
-
 ## API reference
 
 ### `useTourGuide()`

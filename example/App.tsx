@@ -1,7 +1,9 @@
 import "./global.css";
 
 import React, { useState } from "react";
-import { StyleSheet } from "react-native";
+import { LogBox, StyleSheet } from "react-native";
+
+LogBox.ignoreAllLogs(true);
 import Animated, { FadeIn, SlideInRight, SlideOutRight } from "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
