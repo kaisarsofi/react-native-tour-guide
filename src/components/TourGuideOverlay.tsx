@@ -16,6 +16,7 @@ import { useTourGuideContext } from "../TourGuideContext";
 import { resolveSwipeHint } from "../themes";
 import type { TooltipProps } from "../types";
 import { computeTooltipLayout } from "../utils/geometry";
+import { waitForScrollSettle } from "../utils/scroll";
 import {
   createDragFrameScheduler,
   dragScrollHandle,
@@ -150,12 +151,25 @@ export function TourGuideOverlay() {
             indexRef.current > 0,
           );
           progressRef.current = resolved.progress;
-          if (resolved.action === "complete") {
-            nextRef.current();
-            return;
-          }
-          if (resolved.action === "rewind") {
-            prevRef.current();
+          if (resolved.action === "complete" || resolved.action === "rewind") {
+            const isComplete = resolved.action === "complete";
+            // `resolved.progress` is deliberately left unchanged on
+            // "complete" (the count is done, not advancing further) — but
+            // snapping back to it would undo this last drag's forward
+            // motion right as the tour hides, reading as a rejected swipe.
+            // Let the transition the user's finger was already mid-way
+            // through finish forward instead, then hide once it settles.
+            const settleProgress = isComplete
+              ? resolved.progress + 1
+              : resolved.progress;
+            snapScrollToProgress(current, settleProgress, stepOriginRef.current);
+            const advance = isComplete ? nextRef.current : prevRef.current;
+            const handle = handleRef.current;
+            if (handle) {
+              waitForScrollSettle(handle).then(advance);
+            } else {
+              advance();
+            }
             return;
           }
           snapScrollToProgress(current, resolved.progress, stepOriginRef.current);

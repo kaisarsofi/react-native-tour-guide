@@ -1,74 +1,44 @@
 import "./global.css";
 
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import React, { useState } from "react";
+import { StyleSheet } from "react-native";
+import Animated, { FadeIn, SlideInRight, SlideOutRight } from "react-native-reanimated";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { TourGuideProvider, TourGuideOverlay } from "react-native-tour-guide";
 
-import { BackdropAndMotion } from "./demos/BackdropAndMotion";
-import { BasicTargeting } from "./demos/BasicTargeting";
-import { CustomTooltip } from "./demos/CustomTooltip";
-import { EventLog } from "./demos/EventLog";
-import { HorizontalListTour } from "./demos/HorizontalListTour";
-import { PaginatedCardsTour } from "./demos/PaginatedCardsTour";
-import { Persistence } from "./demos/Persistence";
-import { Themes } from "./demos/Themes";
-import { VerticalListTour } from "./demos/VerticalListTour";
-
-function Hero() {
-  return (
-    <View className="mb-6">
-      <Text className="text-xs font-semibold uppercase tracking-widest text-violet-600">
-        React Native · Expo · TypeScript
-      </Text>
-      <Text className="mt-2 text-[28px] font-bold leading-8 text-neutral-900">
-        react-native-tour-guide
-      </Text>
-      <Text className="mt-2 text-[13px] leading-5 text-neutral-500">
-        Spotlight tours and coach marks for Expo & React Native. Six demos below — each
-        starts its own tour in isolation.
-      </Text>
-
-      <View className="mt-4 flex-row items-center gap-2 rounded-lg bg-neutral-900 px-3.5 py-2.5">
-        <Text className="font-mono text-[13px] text-emerald-400">$</Text>
-        <Text className="font-mono text-[13px] text-neutral-100">
-          npx expo install react-native-tour-guide
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-function Demo() {
-  return (
-    <SafeAreaView className="flex-1 bg-neutral-50" edges={["top", "bottom"]}>
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="px-4 pb-12 pt-4"
-        automaticallyAdjustContentInsets={false}
-        contentInsetAdjustmentBehavior="never"
-      >
-        <Hero />
-
-        <BasicTargeting />
-        <Themes />
-        <CustomTooltip />
-        <BackdropAndMotion />
-        <Persistence />
-        <EventLog />
-        <VerticalListTour />
-        <HorizontalListTour />
-        <PaginatedCardsTour />
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+import { DetailScreen } from "./screens/DetailScreen";
+import { HomeScreen } from "./screens/HomeScreen";
+import type { CategoryId, SectionMeta } from "./data/sections";
 
 export default function App() {
+  const [activeSection, setActiveSection] = useState<SectionMeta | null>(null);
+  // Lifted out of HomeScreen so the active tab survives navigating to a
+  // demo and back — HomeScreen unmounts while a DetailScreen is showing,
+  // which would otherwise reset its own local state to the default tab.
+  const [category, setCategory] = useState<CategoryId>("targeting");
+
   return (
     <SafeAreaProvider>
       <TourGuideProvider>
-        <Demo />
+        {activeSection ? (
+          <Animated.View
+            entering={SlideInRight.duration(220)}
+            exiting={SlideOutRight.duration(180)}
+            style={StyleSheet.absoluteFill}
+          >
+            <DetailScreen section={activeSection} onBack={() => setActiveSection(null)} />
+          </Animated.View>
+        ) : (
+          <Animated.View entering={FadeIn.duration(180)} style={StyleSheet.absoluteFill}>
+            <HomeScreen
+              category={category}
+              onChangeCategory={setCategory}
+              onSelectSection={setActiveSection}
+            />
+          </Animated.View>
+        )}
+
         <TourGuideOverlay />
         <StatusBar style="auto" />
       </TourGuideProvider>

@@ -124,7 +124,7 @@ const wait = (ms: number) =>
  * and return once it stops changing — falling back to `MAX_SETTLE_WAIT` so a
  * list that never reports (e.g. `scrollProps` wasn't spread) can't hang.
  */
-async function waitForScrollSettle(
+export async function waitForScrollSettle(
   handle: TourScrollOptions["handle"],
   maxWait = MAX_SETTLE_WAIT,
 ): Promise<void> {
