@@ -101,7 +101,13 @@ yarn add react-native-tour-guide react-native-svg react-native-reanimated
 
 Reanimated needs its Babel plugin — see the
 [Reanimated install guide](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/)
-if it isn't already set up (most Expo apps have it).
+if it isn't already set up (most Expo apps have it). Put the plugin last in
+your Babel config, using the setup for your Reanimated and Expo versions.
+
+This package is JavaScript only, but it **does** require those two peers in
+the app. Metro compiles this library from `src` (the `react-native` export
+points at `src/index.ts`) so the app's Reanimated plugin can process
+worklets. Do not add a Reanimated plugin to a library copy of Babel.
 
 ## Quick start
 
