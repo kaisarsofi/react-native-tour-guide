@@ -49,7 +49,7 @@ export const DEFAULT_SWIPE_HINT: Omit<ResolvedSwipeHint, "direction"> = {
   distance: 64,
   duration: 1400,
   repeatDelay: 400,
-  size: 48,
+  size: 60,
   color: "#0F172A",
   showTrail: true,
   trailColor: "#0F172A",
