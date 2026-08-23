@@ -8,8 +8,10 @@ import { EventLog } from "../demos/EventLog";
 import { HorizontalListTour } from "../demos/HorizontalListTour";
 import { PaginatedCardsTour } from "../demos/PaginatedCardsTour";
 import { Persistence } from "../demos/Persistence";
+import { PressableControlsTour } from "../demos/PressableControlsTour";
 import { Themes } from "../demos/Themes";
 import { VerticalListTour } from "../demos/VerticalListTour";
+import { WizardNavigationTour } from "../demos/WizardNavigationTour";
 
 export type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -131,6 +133,25 @@ export const SECTIONS: SectionMeta[] = [
     icon: "albums-outline",
     category: "scrolling",
     component: PaginatedCardsTour,
+    fullBleed: true,
+  },
+  {
+    id: "pressable-controls",
+    index: 10,
+    title: "Pressable controls",
+    tagline: "A step only advances when you press the real, live control.",
+    icon: "hand-left-outline",
+    category: "behavior",
+    component: PressableControlsTour,
+  },
+  {
+    id: "wizard-navigation",
+    index: 11,
+    title: "Wizard navigation",
+    tagline: "Same pager as Paginated cards, driven by circular Prev/Next.",
+    icon: "chevron-forward-circle-outline",
+    category: "scrolling",
+    component: WizardNavigationTour,
     fullBleed: true,
   },
 ];

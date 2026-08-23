@@ -35,6 +35,14 @@ export {
 
 export { cn } from "./utils/cn";
 export { DEFAULT_SWIPE_COUNT } from "./utils/swipe";
+export {
+  DEFAULT_WIZARD_NEXT_COUNT,
+  DEFAULT_WIZARD_PREV_COUNT,
+  createWizardTourSteps,
+  resolveWizardTourCounts,
+  type CreateWizardTourStepsOptions,
+  type WizardTourCounts,
+} from "./utils/wizard";
 
 export type {
   BackdropBehavior,

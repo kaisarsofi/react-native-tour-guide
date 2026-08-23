@@ -151,4 +151,48 @@ describe("TourGuideOverlay rendering", () => {
 
     expect(tour.api.isActive).toBe(false);
   });
+
+  it("fires onSpotlightPress instead of the backdrop behavior when the tap lands inside the spotlight", async () => {
+    const onSpotlightPress = jest.fn();
+    const tour = renderTour();
+    // makeStep()'s targetRegion is { x: 10, y: 20, width: 100, height: 50 }.
+    await tour.start([makeStep({ onSpotlightPress })], {
+      defaultBackdropBehavior: "next",
+    });
+
+    fireEvent.press(screen.getByTestId("tour-guide-backdrop"), {
+      nativeEvent: { pageX: 50, pageY: 40 },
+    });
+
+    expect(onSpotlightPress).toHaveBeenCalledTimes(1);
+    // defaultBackdropBehavior would have advanced past a single-step tour —
+    // still here confirms the normal backdrop path didn't also run.
+    expect(screen.getByText("Hello")).toBeTruthy();
+  });
+
+  it("falls back to the normal backdrop behavior when the tap lands outside the spotlight", async () => {
+    const onSpotlightPress = jest.fn();
+    const tour = renderTour();
+    await tour.start([makeStep({ onSpotlightPress })], {
+      defaultBackdropBehavior: "dismiss",
+    });
+
+    fireEvent.press(screen.getByTestId("tour-guide-backdrop"), {
+      nativeEvent: { pageX: 300, pageY: 300 },
+    });
+
+    expect(onSpotlightPress).not.toHaveBeenCalled();
+    expect(tour.api.isActive).toBe(false);
+  });
+
+  it("falls back to the normal backdrop behavior when a step has no onSpotlightPress", async () => {
+    const tour = renderTour();
+    await tour.start([makeStep()], { defaultBackdropBehavior: "dismiss" });
+
+    fireEvent.press(screen.getByTestId("tour-guide-backdrop"), {
+      nativeEvent: { pageX: 50, pageY: 40 },
+    });
+
+    expect(tour.api.isActive).toBe(false);
+  });
 });
