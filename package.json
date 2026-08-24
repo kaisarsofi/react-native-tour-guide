@@ -42,7 +42,7 @@
     "test:coverage": "jest --coverage",
     "validate": "eslint \"src/**/*.{ts,tsx}\" && prettier --check \"src/**/*.{ts,tsx}\" && tsc --noEmit && jest",
     "pack:list": "npm pack --dry-run",
-    "release": "yarn validate && yarn build && yarn npm publish"
+    "release": "yarn validate && yarn build && yarn pack:list && yarn npm publish"
   },
   "keywords": [
     "react-native",
@@ -84,15 +84,6 @@
     "tutorial",
     "user-guide",
     "help-overlay",
-    "copilot",
-    "joyride",
-    "intro.js",
-    "react-native-walkthrough",
-    "react-native-spotlight",
-    "react-native-tooltip",
-    "react-native-onboarding",
-    "react-native-coachmark",
-    "react-native-tutorial",
     "nativewind",
     "tailwind",
     "typescript",
@@ -171,7 +162,12 @@
     "source": "src",
     "output": "lib",
     "targets": [
-      "commonjs",
+      [
+        "commonjs",
+        {
+          "esm": true
+        }
+      ],
       [
         "module",
         {
