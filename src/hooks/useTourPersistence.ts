@@ -28,7 +28,7 @@ export function useTourPersistence(storage: TourStorageAdapter) {
         ...config,
         onTourEnd: (isCompleted) => {
           config.onTourEnd?.(isCompleted);
-          if (isCompleted) void storage.setItem(key, "true");
+          if (isCompleted) storage.setItem(key, "true");
         },
       });
     },
@@ -39,9 +39,9 @@ export function useTourPersistence(storage: TourStorageAdapter) {
     (tourId: string) => {
       const key = `${STORAGE_PREFIX}${tourId}`;
       if (storage.removeItem) {
-        void storage.removeItem(key);
+        storage.removeItem(key);
       } else {
-        void storage.setItem(key, "false");
+        storage.setItem(key, "false");
       }
     },
     [storage],
