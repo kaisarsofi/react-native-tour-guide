@@ -110,6 +110,68 @@ forwards every other prop straight to `FlashList` — swap in `LegendList` or
 plain `FlatList` with no other change. Behind a tab navigator? `active`
 keeps the tour from firing on a screen that's mounted but off-screen.
 
+**Need the tour to also point at something *outside* the list** — nav
+arrows next to a carousel, a filter chip above it? `<TourScrollList>` only
+builds one step, for the list itself. Drop to `useTourScroll()` +
+`TourTarget` and write the steps yourself — the arrows below drive the
+same `handle` the list's own step scrolls with:
+
+```tsx
+import { useTourScroll, TourTarget, useTourGuide } from "react-native-tour-guide";
+
+const { ref, scrollProps, handle, reset } = useTourScroll({ horizontal: true });
+const { startTour, nextStep } = useTourGuide();
+
+const scrollByPage = (delta: number) => {
+  const page = Math.round(handle.offsetRef.current.x / pageWidth) + delta;
+  handle.ref.current?.scrollToOffset?.({ offset: page * pageWidth, animated: true });
+};
+
+const steps = [
+  {
+    id: "rail",
+    targetId: "category-rail",
+    title: "Swipe the cards",
+    description: "One card per screen.",
+    swipeHint: "left",
+    scroll: { handle, index: 0 },
+  },
+  {
+    id: "prev",
+    targetId: "rail-prev",
+    title: "Previous",
+    description: "Tap the highlighted arrow.",
+    hideNextButton: true,
+    onSpotlightPress: () => { scrollByPage(-1); nextStep(); },
+  },
+  {
+    id: "next",
+    targetId: "rail-next",
+    title: "Next",
+    description: "Tap this arrow to finish.",
+    hideNextButton: true,
+    onSpotlightPress: () => { scrollByPage(1); nextStep(); },
+  },
+];
+
+reset();
+startTour(steps, { tourId: "rail" });
+
+<TourTarget id="category-rail">
+  <FlatList ref={ref} {...scrollProps} horizontal pagingEnabled data={items} ... />
+</TourTarget>
+<TourTarget id="rail-prev">
+  <Pressable onPress={() => scrollByPage(-1)}>{/* ‹ */}</Pressable>
+</TourTarget>
+<TourTarget id="rail-next">
+  <Pressable onPress={() => scrollByPage(1)}>{/* › */}</Pressable>
+</TourTarget>
+```
+
+Full working version, including waiting for the rail's real width before
+starting:
+[`example/demos/HorizontalListControlsTour.tsx`](example/demos/HorizontalListControlsTour.tsx).
+
 ## Install
 
 ```bash
