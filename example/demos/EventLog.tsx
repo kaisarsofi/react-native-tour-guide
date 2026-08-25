@@ -12,10 +12,12 @@ import { Section } from "../components/Section";
  * ("start" | "stepChange" | "end" | "skip" | "pause" | "resume") and
  * returns an unsubscribe function — handy for analytics.
  */
+const TOUR_ID = "events";
+
 export function EventLog() {
-  const { startTour, isActive, tourId, events } = useTourGuide();
+  const { startTour, resetTour, isActive, tourId, events } = useTourGuide();
   const [log, setLog] = useState<string[]>([]);
-  const isThisTour = isActive && tourId === "events";
+  const isThisTour = isActive && tourId === TOUR_ID;
 
   useEffect(() => {
     const append = (line: string) =>
@@ -44,6 +46,11 @@ export function EventLog() {
       description: "Skip or finish the tour to see the corresponding event.",
     },
   ];
+
+  useEffect(() => {
+    startTour(steps, { tourId: TOUR_ID, persist: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Section
@@ -83,11 +90,13 @@ export function EventLog() {
 
       <View className="flex-row">
         <DemoButton
-          label={isThisTour ? "Tour running…" : "Start tour"}
+          label={isThisTour ? "Tour running…" : "Reset"}
+          variant="secondary"
           disabled={isActive}
           onPress={() => {
             setLog([]);
-            startTour(steps, { tourId: "events" });
+            resetTour(TOUR_ID);
+            startTour(steps, { tourId: TOUR_ID, persist: true });
           }}
         />
       </View>

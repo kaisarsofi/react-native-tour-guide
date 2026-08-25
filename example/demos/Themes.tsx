@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
   TourTarget,
@@ -33,7 +33,7 @@ const THEMES: { label: string; theme: TourGuideTheme; swatch: string }[] = [
  */
 export function Themes() {
   const { startTour, isActive } = useTourGuide();
-  const [active, setActive] = useState("Light");
+  const [active, setActive] = useState("Sunset");
 
   const steps: TourStep[] = [
     {
@@ -50,6 +50,14 @@ export function Themes() {
       description: "Swap the theme object passed to startTour — the widgets underneath never change.",
     },
   ];
+
+  // Auto-plays the default (Sunset) theme once, like the rest of the
+  // example — the other swatches stay manual, so you can still browse
+  // every theme freely on repeat visits.
+  useEffect(() => {
+    startTour(steps, { ...sunsetTheme, tourId: "themes", persist: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Section

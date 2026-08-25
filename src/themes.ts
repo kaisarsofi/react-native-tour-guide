@@ -31,6 +31,8 @@ export const DEFAULT_TOOLTIP_STYLES: Required<TooltipStyles> = {
 export const DEFAULT_SPOTLIGHT_STYLES: Required<SpotlightStyles> = {
   overlayColor: "#0F172A",
   overlayOpacity: 0.72,
+  spotlightColor: "#FFFFFF",
+  spotlightOpacity: 0,
   borderColor: "#FFFFFF",
   borderWidth: 2,
   enablePulse: true,

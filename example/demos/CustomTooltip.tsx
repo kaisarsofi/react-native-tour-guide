@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
   TourTarget,
@@ -49,8 +49,10 @@ function CardTooltip({ step, isLast, onNext, onSkip }: TooltipProps) {
   );
 }
 
+const TOUR_ID = "custom";
+
 export function CustomTooltip() {
-  const { startTour, isActive, tourId } = useTourGuide();
+  const { startTour, resetTour, isActive, tourId } = useTourGuide();
 
   const steps: TourStep[] = [
     {
@@ -62,6 +64,11 @@ export function CustomTooltip() {
       renderTooltip: (props) => <CardTooltip {...props} />,
     },
   ];
+
+  useEffect(() => {
+    startTour(steps, { tourId: TOUR_ID, persist: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Section
@@ -82,10 +89,13 @@ export function CustomTooltip() {
 
       <View className="flex-row">
         <DemoButton
-          label={isActive && tourId === "custom" ? "Tour running…" : "Show custom tooltip"}
+          label={isActive && tourId === TOUR_ID ? "Tour running…" : "Reset"}
           variant="accent"
           disabled={isActive}
-          onPress={() => startTour(steps, { tourId: "custom" })}
+          onPress={() => {
+            resetTour(TOUR_ID);
+            startTour(steps, { tourId: TOUR_ID, persist: true });
+          }}
         />
       </View>
     </Section>

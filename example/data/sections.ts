@@ -5,7 +5,7 @@ import { BackdropAndMotion } from "../demos/BackdropAndMotion";
 import { BasicTargeting } from "../demos/BasicTargeting";
 import { CustomTooltip } from "../demos/CustomTooltip";
 import { EventLog } from "../demos/EventLog";
-import { HorizontalListTour } from "../demos/HorizontalListTour";
+import { HorizontalListControlsTour } from "../demos/HorizontalListControlsTour";
 import { PaginatedCardsTour } from "../demos/PaginatedCardsTour";
 import { Persistence } from "../demos/Persistence";
 import { PressableControlsTour } from "../demos/PressableControlsTour";
@@ -48,6 +48,8 @@ export interface SectionMeta {
   component: ComponentType;
   /** Renders full-screen, without the boxed card or outer scroll padding. */
   fullBleed?: boolean;
+  /** Matches the `tourId` each demo passes to `startTour`/`persist`. */
+  tourId: string;
 }
 
 export const SECTIONS: SectionMeta[] = [
@@ -59,6 +61,7 @@ export const SECTIONS: SectionMeta[] = [
     icon: "locate-outline",
     category: "targeting",
     component: BasicTargeting,
+    tourId: "targeting",
   },
   {
     id: "themes",
@@ -68,6 +71,7 @@ export const SECTIONS: SectionMeta[] = [
     icon: "color-palette-outline",
     category: "targeting",
     component: Themes,
+    tourId: "themes",
   },
   {
     id: "custom-tooltip",
@@ -77,6 +81,7 @@ export const SECTIONS: SectionMeta[] = [
     icon: "chatbubble-ellipses-outline",
     category: "targeting",
     component: CustomTooltip,
+    tourId: "custom",
   },
   {
     id: "backdrop-motion",
@@ -86,6 +91,7 @@ export const SECTIONS: SectionMeta[] = [
     icon: "flash-outline",
     category: "behavior",
     component: BackdropAndMotion,
+    tourId: "backdrop-motion",
   },
   {
     id: "persistence",
@@ -95,6 +101,7 @@ export const SECTIONS: SectionMeta[] = [
     icon: "save-outline",
     category: "behavior",
     component: Persistence,
+    tourId: "example-onboarding",
   },
   {
     id: "event-log",
@@ -104,6 +111,7 @@ export const SECTIONS: SectionMeta[] = [
     icon: "pulse-outline",
     category: "behavior",
     component: EventLog,
+    tourId: "events",
   },
   {
     id: "vertical-list",
@@ -114,16 +122,18 @@ export const SECTIONS: SectionMeta[] = [
     category: "scrolling",
     component: VerticalListTour,
     fullBleed: true,
+    tourId: "vertical-list",
   },
   {
-    id: "horizontal-list",
+    id: "horizontal-list-controls",
     index: 8,
-    title: "Horizontal list",
-    tagline: "Swipe hints drive a horizontally scrolling row.",
+    title: "Horizontal + controls",
+    tagline: "Paged cards. Swipe twice, then one step each on prev and next.",
     icon: "swap-horizontal-outline",
     category: "scrolling",
-    component: HorizontalListTour,
+    component: HorizontalListControlsTour,
     fullBleed: true,
+    tourId: "horizontal-list-controls",
   },
   {
     id: "paginated-cards",
@@ -134,6 +144,7 @@ export const SECTIONS: SectionMeta[] = [
     category: "scrolling",
     component: PaginatedCardsTour,
     fullBleed: true,
+    tourId: "paginated",
   },
   {
     id: "pressable-controls",
@@ -143,6 +154,7 @@ export const SECTIONS: SectionMeta[] = [
     icon: "hand-left-outline",
     category: "behavior",
     component: PressableControlsTour,
+    tourId: "pressable-controls",
   },
   {
     id: "wizard-navigation",
@@ -153,6 +165,7 @@ export const SECTIONS: SectionMeta[] = [
     category: "scrolling",
     component: WizardNavigationTour,
     fullBleed: true,
+    tourId: "wizard-navigation",
   },
 ];
 

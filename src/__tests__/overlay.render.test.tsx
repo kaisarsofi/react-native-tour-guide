@@ -1,6 +1,6 @@
 import React from "react";
-import { Text } from "react-native";
-import { fireEvent, screen } from "@testing-library/react-native";
+import { StyleSheet, Text } from "react-native";
+import { act, fireEvent, screen } from "@testing-library/react-native";
 
 import type { TooltipProps } from "../types";
 import { makeStep, measurableRef, renderTour } from "./helpers";
@@ -183,6 +183,38 @@ describe("TourGuideOverlay rendering", () => {
 
     expect(onSpotlightPress).not.toHaveBeenCalled();
     expect(tour.api.isActive).toBe(false);
+  });
+
+  it("re-measures a new tour's tooltip even when it also starts at index 0 (regression: stale size reused, could position off-screen)", async () => {
+    const tour = renderTour();
+    await tour.start([makeStep({ id: "a", title: "First tour" })]);
+
+    fireEvent(screen.getByTestId("tour-guide-tooltip-container"), "layout", {
+      nativeEvent: { layout: { width: 240, height: 96 } },
+    });
+
+    // First tour's tooltip is measured and positioned.
+    expect(
+      StyleSheet.flatten(screen.getByTestId("tour-guide-tooltip-container").props.style)
+        .opacity,
+    ).toBe(1);
+
+    act(() => {
+      tour.api.endTour(true);
+    });
+
+    // A second, unrelated single-step tour also starts at index 0 — the
+    // same currentIndex the first tour ended on.
+    await tour.start([makeStep({ id: "b", title: "Second tour" })]);
+
+    // Without a fresh layout event, it must not reuse the first tour's
+    // stale measured size: TourGuideOverlay is a single app-lifetime
+    // instance, so leaking that size here would silently mis-position
+    // every tour that happens to also start at index 0.
+    expect(
+      StyleSheet.flatten(screen.getByTestId("tour-guide-tooltip-container").props.style)
+        .opacity,
+    ).toBe(0);
   });
 
   it("falls back to the normal backdrop behavior when a step has no onSpotlightPress", async () => {

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { TourTarget, cn, useTourGuide, type TourStep } from "react-native-tour-guide";
 
@@ -72,12 +72,14 @@ function ActionButton({
  * the user to actually press the real, live control to move on, instead of
  * a tooltip's own Next button standing in for it.
  */
+const TOUR_ID = "pressable-controls";
+
 export function PressableControlsTour() {
-  const { startTour, nextStep, isActive, currentStep, tourId } = useTourGuide();
+  const { startTour, resetTour, nextStep, isActive, currentStep, tourId } = useTourGuide();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [shared, setShared] = useState(false);
-  const isThisTour = isActive && tourId === "pressable-controls";
+  const isThisTour = isActive && tourId === TOUR_ID;
 
   const steps: TourStep[] = [
     {
@@ -117,6 +119,14 @@ export function PressableControlsTour() {
       },
     },
   ];
+
+  useEffect(() => {
+    setLiked(false);
+    setSaved(false);
+    setShared(false);
+    startTour(steps, { tourId: TOUR_ID, persist: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Section
@@ -181,13 +191,15 @@ export function PressableControlsTour() {
 
       <View className="flex-row">
         <DemoButton
-          label={isThisTour ? "Tour running…" : "Start tour"}
+          label={isThisTour ? "Tour running…" : "Reset"}
+          variant="secondary"
           disabled={isActive}
           onPress={() => {
             setLiked(false);
             setSaved(false);
             setShared(false);
-            startTour(steps, { tourId: "pressable-controls" });
+            resetTour(TOUR_ID);
+            startTour(steps, { tourId: TOUR_ID, persist: true });
           }}
         />
       </View>

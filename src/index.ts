@@ -1,6 +1,6 @@
 import "./rn-classname";
 
-export { TourGuideProvider } from "./TourGuideContext";
+export { TourGuideProvider, type TourGuideProviderProps } from "./TourGuideContext";
 export { TourGuideOverlay } from "./components/TourGuideOverlay";
 export { TourTarget, type TourTargetProps } from "./components/TourTarget";
 export { Tooltip } from "./components/Tooltip";
@@ -34,6 +34,7 @@ export {
 } from "./themes";
 
 export { cn } from "./utils/cn";
+export { createMemoryStorage } from "./utils/storage";
 export { DEFAULT_SWIPE_COUNT } from "./utils/swipe";
 export {
   DEFAULT_WIZARD_NEXT_COUNT,

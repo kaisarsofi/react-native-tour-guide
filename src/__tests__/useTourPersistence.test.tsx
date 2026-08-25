@@ -44,6 +44,7 @@ const mockContext: TourGuideContextValue = {
   handleBackdropPress: jest.fn(),
   registerTarget: jest.fn(),
   registerOverlayHost: jest.fn(),
+  resetTour: jest.fn(),
   events: { on: jest.fn(() => jest.fn()) },
 };
 

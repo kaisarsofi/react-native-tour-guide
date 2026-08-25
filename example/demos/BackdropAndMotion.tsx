@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View } from "react-native";
 import { TourTarget, useTourGuide, type TourStep } from "react-native-tour-guide";
 
@@ -31,6 +31,32 @@ export function BackdropAndMotion() {
     },
   ];
 
+  // Spells out what tapping the dimmed backdrop actually does — that's not
+  // obvious from the tooltip alone. Skip stays available too (the built-in
+  // tooltip shows it by default on every step but the last).
+  const backdropSteps = (behavior: "next" | "dismiss"): TourStep[] =>
+    baseSteps().map((step, index) => ({
+      ...step,
+      description:
+        behavior === "next"
+          ? index === 0
+            ? "Tap anywhere on the dimmed background to continue — or use Skip."
+            : "Tap anywhere to finish, or Skip."
+          : "Tap anywhere on the dimmed background to dismiss the tour — or use Skip.",
+    }));
+
+  // Auto-plays the first variant (tap backdrop → next) once, like the rest
+  // of the example — the other three buttons stay manual, so every variant
+  // is still explorable on repeat visits.
+  useEffect(() => {
+    startTour(backdropSteps("next"), {
+      defaultBackdropBehavior: "next",
+      tourId: "backdrop-motion",
+      persist: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <Section
       index={4}
@@ -57,7 +83,7 @@ export function BackdropAndMotion() {
           variant="secondary"
           disabled={isActive}
           onPress={() =>
-            startTour(baseSteps(), { defaultBackdropBehavior: "next" })
+            startTour(backdropSteps("next"), { defaultBackdropBehavior: "next" })
           }
         />
         <DemoButton
@@ -65,7 +91,7 @@ export function BackdropAndMotion() {
           variant="secondary"
           disabled={isActive}
           onPress={() =>
-            startTour(baseSteps(), { defaultBackdropBehavior: "dismiss" })
+            startTour(backdropSteps("dismiss"), { defaultBackdropBehavior: "dismiss" })
           }
         />
         <DemoButton

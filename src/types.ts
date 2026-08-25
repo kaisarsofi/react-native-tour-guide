@@ -239,6 +239,14 @@ export interface TooltipSlotStyles {
 export interface SpotlightStyles {
   overlayColor?: string;
   overlayOpacity?: number;
+  /**
+   * Tints the cutout itself — the highlighted area is transparent (shows
+   * the real content underneath) by default; this paints a color wash over
+   * it instead, e.g. to match a brand color. Off (fully see-through) unless
+   * `spotlightOpacity` is set above 0.
+   */
+  spotlightColor?: string;
+  spotlightOpacity?: number;
   /** Ring drawn immediately around the cutout. */
   borderColor?: string;
   borderWidth?: number;
@@ -290,6 +298,13 @@ export interface TourGuideConfig {
    * Default 3.
    */
   swipeCount?: number;
+  /**
+   * Show this tour once, then remember it via the provider's `storage`
+   * (an in-memory adapter for the session by default; pass a real one to
+   * `TourGuideProvider` — AsyncStorage, MMKV, ... — to persist across
+   * restarts). Requires `tourId`; ignored without one.
+   */
+  persist?: boolean;
   onTourStart?: () => void;
   onTourEnd?: (completed: boolean) => void;
   onStepChange?: (from: number, to: number) => void;
