@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import {
   TourTarget,
@@ -78,10 +78,12 @@ function Row({ item }: { item: (typeof INBOX)[number] }) {
  * the tour. The visible viewport is measured at layout time so the guided
  * swipe always scrolls exactly one screenful, whatever the device size.
  */
+const TOUR_ID = "vertical-list";
+
 export function VerticalListTour() {
-  const { startTour, isActive, tourId } = useTourGuide();
+  const { startTour, resetTour, isActive, tourId } = useTourGuide();
   const { ref, scrollProps, handle, reset } = useTourScroll();
-  const isThisTour = isActive && tourId === "vertical-list";
+  const isThisTour = isActive && tourId === TOUR_ID;
   const [viewportHeight, setViewportHeight] = useState(0);
   const pageSize = viewportHeight || MIN_VISIBLE_ROWS * ROW_HEIGHT;
 
@@ -96,6 +98,12 @@ export function VerticalListTour() {
       spotlightBorderRadius: 20,
     },
   ];
+
+  useEffect(() => {
+    reset();
+    startTour(steps, { tourId: TOUR_ID, persist: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <View className="flex-1 px-4 pt-1">
@@ -134,11 +142,13 @@ export function VerticalListTour() {
 
       <View className="mb-4 mt-3 flex-row">
         <DemoButton
-          label={isThisTour ? "Tour running…" : "Start tour"}
+          label={isThisTour ? "Tour running…" : "Reset"}
+          variant="secondary"
           disabled={isActive}
           onPress={() => {
             reset();
-            startTour(steps, { tourId: "vertical-list" });
+            resetTour(TOUR_ID);
+            startTour(steps, { tourId: TOUR_ID, persist: true });
           }}
         />
       </View>

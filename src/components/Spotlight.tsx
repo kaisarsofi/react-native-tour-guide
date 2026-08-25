@@ -138,6 +138,17 @@ export function Spotlight({
           mask="url(#tour-guide-spotlight-mask)"
         />
 
+        {/* The cutout is transparent (shows the real content) by default;
+            this optionally washes it with a color instead, e.g. to match a
+            brand color. Same geometry as the mask, drawn on top of it. */}
+        {s.spotlightOpacity > 0 && (
+          <AnimatedRect
+            animatedProps={maskProps}
+            fill={s.spotlightColor}
+            fillOpacity={s.spotlightOpacity}
+          />
+        )}
+
         {s.enablePulse && (
           <AnimatedRect
             animatedProps={pulseProps}

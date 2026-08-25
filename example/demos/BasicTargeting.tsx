@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { View } from "react-native";
 import { TourTarget, useTourGuide, type TourStep } from "react-native-tour-guide";
 
@@ -14,8 +14,9 @@ import { Section } from "../components/Section";
  */
 export function BasicTargeting() {
   const avatarRef = useRef<View>(null);
-  const { startTour, isActive, tourId } = useTourGuide();
+  const { startTour, resetTour, isActive, tourId } = useTourGuide();
   const isThisTour = isActive && tourId === "targeting";
+  const TOUR_ID = "targeting";
 
   const steps: TourStep[] = [
     {
@@ -40,6 +41,13 @@ export function BasicTargeting() {
       tooltipPosition: "top",
     },
   ];
+
+  // Mirrors a real app: a tour plays itself the first time this screen is
+  // seen, then never again — persist:true remembers it, no button needed.
+  useEffect(() => {
+    startTour(steps, { tourId: TOUR_ID, persist: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Section
@@ -67,9 +75,13 @@ export function BasicTargeting() {
 
       <View className="flex-row">
         <DemoButton
-          label={isThisTour ? "Tour running…" : "Start tour"}
+          label={isThisTour ? "Tour running…" : "Reset"}
+          variant="secondary"
           disabled={isActive}
-          onPress={() => startTour(steps, { tourId: "targeting" })}
+          onPress={() => {
+            resetTour(TOUR_ID);
+            startTour(steps, { tourId: TOUR_ID, persist: true });
+          }}
         />
       </View>
     </Section>

@@ -1,44 +1,28 @@
-<div align="center">
+
 
 # react-native-tour-guide
 
 **Spotlight tours, coach marks, and onboarding walkthroughs for React Native.**
 Expo-first. Zero native modules. TypeScript throughout.
 
-[![npm version](https://img.shields.io/npm/v/react-native-tour-guide.svg?style=flat-square)](https://www.npmjs.com/package/react-native-tour-guide)
-[![npm downloads](https://img.shields.io/npm/dm/react-native-tour-guide.svg?style=flat-square)](https://www.npmjs.com/package/react-native-tour-guide)
-[![license](https://img.shields.io/npm/l/react-native-tour-guide.svg?style=flat-square)](./LICENSE)
-[![types](https://img.shields.io/badge/types-included-3178C6.svg?style=flat-square)](./src/index.ts)
-[![expo](https://img.shields.io/badge/Expo-Go%20%26%20dev%20builds-000.svg?style=flat-square&logo=expo)](https://docs.expo.dev/)
-[![new arch](https://img.shields.io/badge/New%20Architecture-supported-61DAFB.svg?style=flat-square)](#requirements)
+![npm version](https://img.shields.io/npm/v/react-native-tour-guide.svg?style=flat-square)
+![npm downloads](https://img.shields.io/npm/dm/react-native-tour-guide.svg?style=flat-square)
+![license](https://img.shields.io/npm/l/react-native-tour-guide.svg?style=flat-square)
+![types](https://img.shields.io/badge/types-included-3178C6.svg?style=flat-square)
+![expo](https://img.shields.io/badge/Expo-Go%20%26%20dev%20builds-000.svg?style=flat-square&logo=expo)
+![new arch](https://img.shields.io/badge/New%20Architecture-supported-61DAFB.svg?style=flat-square)
 
-</div>
+
 
 ## Demo
 
-<p align="center">
-<i>iOS simulator · Android device — the same demo, every screen a different feature: targeting by ref, id, or region, six bundled themes, custom tooltips, backdrop &amp; motion, play-once persistence, auto-scroll lists, swipe-hint gesture tours, edge-aware tooltip flips.</i>
-</p>
 
-<table>
-<tr>
-<td align="center" valign="top" width="33%">
-<h3>🎯 Targeting</h3>
-<p>Highlight any view — by <code>targetRef</code>, <code>&lt;TourTarget id&gt;</code>, or a fixed region.</p>
-<img src="docs/targetedTour.gif" width="100%" alt="Target a component by ref, id, or a fixed region" />
-</td>
-<td align="center" valign="top" width="33%">
-<h3>📜 List tours</h3>
-<p>Keep the spotlight on the list. The user swipes — the hole stays put.</p>
-<img src="docs/scrollTour.gif" width="100%" alt="Keep the spotlight on a list while the user swipes" />
-</td>
-<td align="center" valign="top" width="33%">
-<h3>🎛️ Controlled tour</h3>
-<p>Advance only when the user presses the highlighted button itself.</p>
-<img src="docs/ControlledTour.gif" width="100%" alt="Tour step that advances when you press the real, live button" />
-</td>
-</tr>
-</table>
+|                                                                                                                                                                                     |                                                                                                                                                                                                     |                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 🎯 TargetingHighlight by `targetRef` or , swap themes, or render your own tooltip.![Targeting tab — ref or TourTarget id, themes, and a custom tooltip](docs/TargetTourGuide.gif) | ⚙️ BehaviorBackdrop taps, auto-advance, play-once persistence, events, and press-the-real-button steps.![Behavior tab — backdrop, persistence, events, and live controls](docs/behaviourTour.gif) | 📜 ScrollingVertical and horizontal lists, paged cards, swipe hints, and wizard Prev/Next.![Scrolling tab — list tours, paging, swipe hints, and wizard navigation](docs/scrollTour.gif) |
+
+
+*iOS simulator · Android device — the same example app, three tabs. Targeting: ref or* `TourTarget` *id, six themes, custom tooltips. Behavior: backdrop & motion, play-once persistence, events, press-the-real-button. Scrolling: auto-scroll lists, swipe-hint gesture tours, paged cards, wizard Prev/Next.*
 
 ---
 
@@ -57,20 +41,22 @@ startTour([
 
 ## Features
 
-| | |
-| --- | --- |
-| 🎯 **Three ways to target** | a `targetRef`, a `<TourTarget id>` wrapper, or a fixed `targetRegion` — no ref plumbing required |
-| ✨ **Animated spotlight** | an SVG mask cut out of the scrim, morphing between steps with Reanimated, with an optional ring and pulse |
-| 💬 **Auto-placed tooltip** | flips to whichever side of the target has room, and keeps its caret pointed at the target even when clamped to the screen edge |
-| 🎨 **Six bundled themes** | `light`, `dark`, `minimal`, `vibrant`, `ocean`, `sunset` — or compose your own with `createTheme()` |
-| 🧩 **Full step lifecycle** | async `before`, `delayBefore`, `autoAdvance`, per-step callbacks, configurable backdrop behavior, conditional steps |
-| 📡 **Events** | `start`, `stepChange`, `end`, `skip`, `pause`, `resume` — subscribe with `events.on(...)` |
-| 📜 **List tours** | `useTourScroll()` brings off-screen rows into view, or keeps the spotlight on a list while the user swipes through it |
-| ✋ **Gesture demos** | `swipeHint` mimes a swipe with an animated hand — no Next/Back; the list moves, the hole stays put |
-| 💾 **Play-once persistence** | `useTourPersistence` works with any AsyncStorage/MMKV-shaped adapter |
-| 📦 **Zero native code** | works in Expo Go, dev builds, and bare React Native alike — no config plugin, no prebuild |
+
+|                                 |                                                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 🎯 **Three ways to target**     | a `targetRef`, a `<TourTarget id>` wrapper, or a fixed `targetRegion` — no ref plumbing required                                      |
+| ✨ **Animated spotlight**        | an SVG mask cut out of the scrim, morphing between steps with Reanimated, with an optional ring and pulse                             |
+| 💬 **Auto-placed tooltip**      | flips to whichever side of the target has room, and keeps its caret pointed at the target even when clamped to the screen edge        |
+| 🎨 **Six bundled themes**       | `light`, `dark`, `minimal`, `vibrant`, `ocean`, `sunset` — or compose your own with `createTheme()`                                   |
+| 🧩 **Full step lifecycle**      | async `before`, `delayBefore`, `autoAdvance`, per-step callbacks, configurable backdrop behavior, conditional steps                   |
+| 📡 **Events**                   | `start`, `stepChange`, `end`, `skip`, `pause`, `resume` — subscribe with `events.on(...)`                                             |
+| 📜 **List tours**               | `useTourScroll()` brings off-screen rows into view, or keeps the spotlight on a list while the user swipes through it                 |
+| ✋ **Gesture demos**             | `swipeHint` mimes a swipe with an animated hand — no Next/Back; the list moves, the hole stays put                                    |
+| 💾 **Play-once persistence**    | `persist: true` — zero setup, or give the provider a real storage adapter to survive restarts                                         |
+| 📦 **Zero native code**         | works in Expo Go, dev builds, and bare React Native alike — no config plugin, no prebuild                                             |
 | 🖌️ **Looks right immediately** | the built-in tooltip is styled with real `StyleSheet` values, so it renders correctly with or without NativeWind/Tailwind in your app |
-| 🧪 **Well tested** | 140+ unit and render tests across the spotlight, tooltip, geometry, scroll, and provider |
+| 🧪 **Well tested**              | 140+ unit and render tests across the spotlight, tooltip, geometry, scroll, and provider                                              |
+
 
 ## Requirements
 
@@ -78,14 +64,16 @@ This package is JavaScript only — no native modules, no config plugin, no
 prebuild. It runs on **both the old architecture (Paper) and the New
 Architecture (Fabric)**.
 
-| | |
-| --- | --- |
-| **React Native** | 0.71 or later (tested on 0.81) |
-| **React** | 18 or later (works with 19) |
-| **Expo** | SDK 49 or later — Expo Go, development builds, and prebuild |
-| **iOS / Android** | both |
-| **Architecture** | Paper (old) and Fabric (new) |
-| **Peers** | `react-native-reanimated` ≥ 3, `react-native-svg` ≥ 13 |
+
+|                   |                                                             |
+| ----------------- | ----------------------------------------------------------- |
+| **React Native**  | 0.71 or later (tested on 0.81)                              |
+| **React**         | 18 or later (works with 19)                                 |
+| **Expo**          | SDK 49 or later — Expo Go, development builds, and prebuild |
+| **iOS / Android** | both                                                        |
+| **Architecture**  | Paper (old) and Fabric (new)                                |
+| **Peers**         | `react-native-reanimated` ≥ 3, `react-native-svg` ≥ 13      |
+
 
 Bare React Native apps need the Reanimated Babel plugin. Expo apps usually
 already have it.
@@ -167,9 +155,7 @@ once at the root, right after their navigator.
 
 ### Targeting a component
 
-<p align="center">
-  <img src="docs/targetedTour.gif" width="280" alt="Targeting by ref, by TourTarget id, and inside a list" />
-</p>
+![Targeting tab — ref or TourTarget id, themes, and a custom tooltip](docs/TargetTourGuide.gif)
 
 Point a step at a component with a plain `targetRef`:
 
@@ -270,8 +256,7 @@ startTour(steps, {
 });
 ```
 
-<details>
-<summary><strong>All tooltip tokens</strong></summary>
+**All tooltip tokens**
 
 `backgroundColor`, `borderRadius`, `borderColor`, `borderWidth`, `titleColor`,
 `descriptionColor`, `stepCounterColor`, `primaryButtonColor`,
@@ -279,15 +264,19 @@ startTour(steps, {
 `skipButtonTextColor`, `progressDotColor`, `progressDotActiveColor`,
 `showArrow`, `shadow`, `maxWidth`.
 
-</details>
 
-<details>
-<summary><strong>All spotlight tokens</strong></summary>
 
-`overlayColor`, `overlayOpacity`, `borderColor`, `borderWidth`, `enablePulse`,
-`pulseColor`, `pulseWidth`, `pulseDuration`.
+**All spotlight tokens**
 
-</details>
+`overlayColor`, `overlayOpacity`, `spotlightColor`, `spotlightOpacity`,
+`borderColor`, `borderWidth`, `enablePulse`, `pulseColor`, `pulseWidth`,
+`pulseDuration`.
+
+The cutout itself is transparent (it shows the real content underneath) by
+default. Set `spotlightOpacity` above `0` to wash it with `spotlightColor`
+instead — e.g. `spotlightStyles: { spotlightColor: "#F97316", spotlightOpacity: 0.2 }`.
+
+
 
 ### Per-slot style overrides
 
@@ -306,14 +295,13 @@ startTour(steps, {
 });
 ```
 
-<details>
-<summary><strong>All style slots</strong></summary>
+**All style slots**
 
 `container`, `stepCounter`, `progressDot`, `progressDotActive`, `title`,
 `description`, `footer`, `primaryButton`, `primaryButtonText`,
 `secondaryButton`, `secondaryButtonText`, `skipButtonText`.
 
-</details>
+
 
 ### A fully custom tooltip
 
@@ -348,6 +336,8 @@ of the built-in tooltip.
 
 ### Backdrop behavior, timing & motion
 
+![Behavior tab — backdrop, persistence, events, and live controls](docs/behaviourTour.gif)
+
 Configure what tapping outside the spotlight does — per step, or as the
 default for the whole tour:
 
@@ -368,9 +358,7 @@ startTour(steps, { motion: "none", animationDuration: 0 });
 
 ### Tours through lists
 
-<p align="center">
-  <img src="docs/scrollTour.gif" width="280" alt="Vertical list tour — spotlight stays on the list while the user swipes" />
-</p>
+![Scrolling tab — list tours, paging, swipe hints, and wizard navigation](docs/scrollTour.gif)
 
 Two patterns share the same `useTourScroll()` binding.
 
@@ -472,12 +460,12 @@ startTour(steps, { swipeCount: 2 })
 ```
 
 - **Paging lists** — `scroll.index` is the start page; each swipe does
-  `index + n`. The third swipe (by default) ends the tour.
+`index + n`. The third swipe (by default) ends the tour.
 - **Vertical / horizontal lists** — `scroll.pageSize` is how far one swipe
-  scrolls, in px. The spotlight stays on the list, not on a child row.
+scrolls, in px. The spotlight stays on the list, not on a child row.
 - **Skip** stays in the top-right, below the status bar.
 - Call `reset()` from `useTourScroll()` when starting so the list returns to
-  index 0 and swipe counting starts over.
+index 0 and swipe counting starts over.
 
 To keep a tooltip and buttons instead of a gesture:
 
@@ -491,10 +479,6 @@ opacity animate, so this stays on the UI thread. **Reduce Motion** parks the
 hand mid-swipe instead of looping.
 
 ### Press the real button
-
-<p align="center">
-  <img src="docs/ControlledTour.gif" width="280" alt="Tour step that advances when you press the real, live button" />
-</p>
 
 A tap on the dimmed backdrop is not the same as a tap on the control. Use
 `onSpotlightPress` when the user must press the **highlighted button
@@ -547,25 +531,63 @@ const steps = createWizardTourSteps({
 startTour(steps, { tourId: "wizard" });
 ```
 
-Prev is clamped so it cannot rewind further than Next advanced: `nextCount:
-2` with `prevCount: 3` becomes Next 2, Prev 2. Invalid counts fall back to
+Prev is clamped so it cannot rewind further than Next advanced: `nextCount: 2` with `prevCount: 3` becomes Next 2, Prev 2. Invalid counts fall back to
 the defaults.
 
 ### Play a tour only once
 
-`useTourPersistence` wraps `startTour` so a tour (keyed by `tourId`) only
-plays once, using any `{ getItem, setItem, removeItem? }` storage adapter —
-AsyncStorage, MMKV, or your own:
+Pass `persist: true` alongside `tourId` and it just won't show again — no
+storage wiring required:
+
+```tsx
+startTour(onboardingSteps, { tourId: "onboarding-v1", persist: true });
+```
+
+With zero setup this remembers it for the app session (an in-memory default —
+it won't survive a restart). To persist across restarts, give
+`TourGuideProvider` a real storage adapter once, app-wide — AsyncStorage's
+shape already matches, so this is usually the entire integration:
 
 ```tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { TourGuideProvider } from "react-native-tour-guide";
+
+<TourGuideProvider storage={AsyncStorage}>
+  <App />
+</TourGuideProvider>;
+```
+
+Any adapter matching the exported `TourStorageAdapter` type works — MMKV, a
+custom backend, whatever you already use:
+
+```ts
+interface TourStorageAdapter {
+  getItem: (key: string) => string | null | Promise<string | null>;
+  setItem: (key: string, value: string) => void | Promise<void>;
+  removeItem?: (key: string) => void | Promise<void>;
+}
+```
+
+`useTourGuide()` also exposes `resetTour(tourId)` to clear the "seen" flag
+(e.g. a "replay tour" button). The library also exports `createMemoryStorage()`
+— the same in-memory adapter used by default when no `storage` is passed —
+in case you want it explicitly (tests, storybooks, etc.).
+
+**Per-tour storage instead of one app-wide adapter**
+
+`useTourPersistence` wraps `startTour` with its own adapter, for a tour that
+needs a different storage or key scheme than the provider's:
+
+```tsx
 import { useTourPersistence } from "react-native-tour-guide";
 
-const { startTour, resetTour } = useTourPersistence(AsyncStorage);
+const { startTour, resetTour } = useTourPersistence(someOtherAdapter);
 
 startTour(onboardingSteps, { tourId: "onboarding-v1" });
-resetTour("onboarding-v1"); // clear the flag — show it again next time
+resetTour("onboarding-v1");
 ```
+
+
 
 ### Listening to tour events
 
@@ -637,54 +659,75 @@ createWizardTourSteps({
 
 ### `TourStep`
 
-| Property | Type | Default | Purpose |
-| --- | --- | --- | --- |
-| `id` | `string` | required | Unique step id |
-| `targetRef` | `RefObject<View>` | — | Component to highlight |
-| `targetId` | `string` | — | Id of a `<TourTarget>` wrapper |
-| `targetRegion` | `{x,y,width,height}` | — | Fixed region, no ref needed |
-| `title` / `description` | `string` | required | Tooltip copy |
-| `tooltipPosition` | `'top'\|'bottom'\|'left'\|'right'\|'auto'` | `'auto'` | Preferred side |
-| `spotlightPadding` | `number` | `8` | Space around the cutout |
-| `spotlightBorderRadius` | `number` | `12` | Cutout corner radius (`999` = circle) |
-| `active` | `boolean` | `true` | Exclude from the tour when `false` |
-| `backdropBehavior` | `'next'\|'dismiss'\|'none'` | `'none'` | Tap-outside behavior |
-| `autoAdvance` | `number` | — | Auto-advance after N ms |
-| `before` | `() => Promise<void>\|void` | — | Awaited before measuring |
-| `delayBefore` | `number` | — | Static delay after `before` |
-| `scroll` | `TourScrollOptions \| TourScrollOptions[]` | — | Scroll a list before spotlighting |
-| `swipeHint` | `'up'\|'down'\|'left'\|'right' \| SwipeHintConfig` | — | Animated hand + gesture tour |
-| `renderTooltip` | `(props) => ReactNode` | — | Per-step custom tooltip |
-| `motion` | `'morph'\|'fade'\|'none'` | config | Transition style |
-| `hideNextButton` / `hidePrevButton` / `hideSkipButton` / `hideControls` | `boolean` | `false` | Hide controls |
-| `hideTooltip` | `boolean` | `true` when `swipeHint` is set | Hide the whole tooltip card |
-| `advanceOnSwipe` | `boolean` | `true` when `swipeHint` is set | Swipe in the hinted direction to scroll / count |
-| `swipeCount` | `number` | `3` when `swipeHint` is set | Swipes before this step advances |
-| `onNext` / `onPrev` / `onSkip` / `onSpotlightPress` | `() => void` | — | Callbacks |
-| `accessibilityLabel` | `string` | — | Screen reader label |
+
+| Property                                                                | Type                                           | Default                        | Purpose                                         |
+| ----------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------ | ----------------------------------------------- |
+| `id`                                                                    | `string`                                       | required                       | Unique step id                                  |
+| `targetRef`                                                             | `RefObject<View>`                              | —                              | Component to highlight                          |
+| `targetId`                                                              | `string`                                       | —                              | Id of a `<TourTarget>` wrapper                  |
+| `targetRegion`                                                          | `{x,y,width,height}`                           | —                              | Fixed region, no ref needed                     |
+| `title` / `description`                                                 | `string`                                       | required                       | Tooltip copy                                    |
+| `tooltipPosition`                                                       | `'top'|'bottom'|'left'|'right'|'auto'`         | `'auto'`                       | Preferred side                                  |
+| `spotlightPadding`                                                      | `number`                                       | `8`                            | Space around the cutout                         |
+| `spotlightBorderRadius`                                                 | `number`                                       | `12`                           | Cutout corner radius (`999` = circle)           |
+| `active`                                                                | `boolean`                                      | `true`                         | Exclude from the tour when `false`              |
+| `backdropBehavior`                                                      | `'next'|'dismiss'|'none'`                      | `'none'`                       | Tap-outside behavior                            |
+| `autoAdvance`                                                           | `number`                                       | —                              | Auto-advance after N ms                         |
+| `before`                                                                | `() => Promise<void>|void`                     | —                              | Awaited before measuring                        |
+| `delayBefore`                                                           | `number`                                       | —                              | Static delay after `before`                     |
+| `scroll`                                                                | `TourScrollOptions | TourScrollOptions[]`      | —                              | Scroll a list before spotlighting               |
+| `swipeHint`                                                             | `'up'|'down'|'left'|'right' | SwipeHintConfig` | —                              | Animated hand + gesture tour                    |
+| `renderTooltip`                                                         | `(props) => ReactNode`                         | —                              | Per-step custom tooltip                         |
+| `motion`                                                                | `'morph'|'fade'|'none'`                        | config                         | Transition style                                |
+| `hideNextButton` / `hidePrevButton` / `hideSkipButton` / `hideControls` | `boolean`                                      | `false`                        | Hide controls                                   |
+| `hideTooltip`                                                           | `boolean`                                      | `true` when `swipeHint` is set | Hide the whole tooltip card                     |
+| `advanceOnSwipe`                                                        | `boolean`                                      | `true` when `swipeHint` is set | Swipe in the hinted direction to scroll / count |
+| `swipeCount`                                                            | `number`                                       | `3` when `swipeHint` is set    | Swipes before this step advances                |
+| `onNext` / `onPrev` / `onSkip` / `onSpotlightPress`                     | `() => void`                                   | —                              | Callbacks                                       |
+| `accessibilityLabel`                                                    | `string`                                       | —                              | Screen reader label                             |
+
 
 ### `TourGuideConfig`
 
-| Property | Type | Default |
-| --- | --- | --- |
-| `tooltipStyles` | `TooltipStyles` | see [tokens](#style-tokens) |
-| `spotlightStyles` | `SpotlightStyles` | see [tokens](#style-tokens) |
-| `styles` | `TooltipSlotStyles` | see [per-slot overrides](#per-slot-style-overrides) |
-| `renderTooltip` | `(props) => ReactNode` | — |
-| `showProgressDots` | `boolean` | `true` |
-| `showStepCounter` | `boolean` | `true` |
-| `nextButtonText` / `prevButtonText` / `skipButtonText` / `doneButtonText` | `string` | `Next` / `Back` / `Skip` / `Done` |
-| `animationDuration` | `number` | `320` |
-| `motion` | `'morph'\|'fade'\|'none'` | `'morph'` |
-| `tourId` | `string` | — |
-| `defaultBackdropBehavior` | `'next'\|'dismiss'\|'none'` | `'none'` |
-| `swipeCount` | `number` | `3` |
-| `onTourStart` / `onTourEnd` / `onStepChange` | callbacks | — |
+
+| Property                                                                  | Type                      | Default                                                       |
+| ------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------- |
+| `tooltipStyles`                                                           | `TooltipStyles`           | see [tokens](#style-tokens)                                   |
+| `spotlightStyles`                                                         | `SpotlightStyles`         | see [tokens](#style-tokens)                                   |
+| `styles`                                                                  | `TooltipSlotStyles`       | see [per-slot overrides](#per-slot-style-overrides)           |
+| `renderTooltip`                                                           | `(props) => ReactNode`    | —                                                             |
+| `showProgressDots`                                                        | `boolean`                 | `true`                                                        |
+| `showStepCounter`                                                         | `boolean`                 | `true`                                                        |
+| `nextButtonText` / `prevButtonText` / `skipButtonText` / `doneButtonText` | `string`                  | `Next` / `Back` / `Skip` / `Done`                             |
+| `animationDuration`                                                       | `number`                  | `320`                                                         |
+| `motion`                                                                  | `'morph'|'fade'|'none'`   | `'morph'`                                                     |
+| `tourId`                                                                  | `string`                  | —                                                             |
+| `persist`                                                                 | `boolean`                 | `false` — see [Play a tour only once](#play-a-tour-only-once) |
+| `defaultBackdropBehavior`                                                 | `'next'|'dismiss'|'none'` | `'none'`                                                      |
+| `swipeCount`                                                              | `number`                  | `3`                                                           |
+| `onTourStart` / `onTourEnd` / `onStepChange`                              | callbacks                 | —                                                             |
+
+
+### `TourStorageAdapter`
+
+Shape required by `TourGuideProvider`'s `storage` prop and
+`useTourPersistence()` — see [Play a tour only once](#play-a-tour-only-once).
+
+```ts
+interface TourStorageAdapter {
+  getItem: (key: string) => string | null | Promise<string | null>;
+  setItem: (key: string, value: string) => void | Promise<void>;
+  removeItem?: (key: string) => void | Promise<void>;
+}
+```
+
+`createMemoryStorage()` returns the default in-memory implementation.
 
 ## Example app
 
-A full showcase — targeting, themes, custom tooltips, persistence, plus
-vertical, horizontal, and paginated list tours:
+A full showcase grouped like the GIFs above: **Targeting**, **Behavior**,
+and **Scrolling** — themes, custom tooltips, persistence, pressable
+controls, plus vertical, horizontal, paginated, and wizard list tours:
 
 ```bash
 git clone https://github.com/kaisarsofi/react-native-tour-guide.git
@@ -695,9 +738,19 @@ npx expo run:ios      # or: npx expo start
 
 ## Roadmap
 
-- [ ] Interactive spotlight (pass touches through the cutout)
-- [x] Auto-scroll / gesture tours for `ScrollView` / `FlatList`
-- [ ] Blur backdrop option
+Shipped in `0.1.0` and the current example:
+
+- [x] Auto-scroll / gesture tours (`useTourScroll`, `swipeHint`)
+- [x] Press the real control (`onSpotlightPress`, wizard Prev/Next)
+- [x] Play-once persistence (`persist` + storage adapters)
+- [x] Themes, custom tooltips, and per-slot style overrides
+
+Next up:
+
+- [ ] Pass touches through the spotlight cutout to the live view
+- [ ] Optional blur backdrop
+- [ ] Multi-hole / multi-target steps
+- [ ] Stronger a11y (announce step, focus trap, Reduce Motion polish)
 
 Have a feature request? [Open an issue](https://github.com/kaisarsofi/react-native-tour-guide/issues).
 

@@ -82,6 +82,57 @@ describe("Spotlight", () => {
     expect(() => unmount()).not.toThrow();
   });
 
+  it("omits the spotlight tint by default (spotlightOpacity: 0)", () => {
+    const withoutTint = render(
+      <Spotlight
+        rect={rect}
+        radius={12}
+        padding={8}
+        duration={300}
+        motion="morph"
+        styles={DEFAULT_SPOTLIGHT_STYLES}
+      />,
+    ).toJSON();
+
+    const withTint = render(
+      <Spotlight
+        rect={rect}
+        radius={12}
+        padding={8}
+        duration={300}
+        motion="morph"
+        styles={{
+          ...DEFAULT_SPOTLIGHT_STYLES,
+          spotlightColor: "#7C3AED",
+          spotlightOpacity: 0.2,
+        }}
+      />,
+    ).toJSON();
+
+    expect(JSON.stringify(withTint).length).toBeGreaterThan(
+      JSON.stringify(withoutTint).length,
+    );
+  });
+
+  it("renders a custom spotlight tint color without throwing", () => {
+    expect(() =>
+      render(
+        <Spotlight
+          rect={rect}
+          radius={12}
+          padding={8}
+          duration={300}
+          motion="morph"
+          styles={{
+            ...DEFAULT_SPOTLIGHT_STYLES,
+            spotlightColor: "#F97316",
+            spotlightOpacity: 0.25,
+          }}
+        />,
+      ),
+    ).not.toThrow();
+  });
+
   it("re-renders cleanly when the target rect changes (re-triggers the timing effect)", () => {
     const { rerender } = render(
       <Spotlight

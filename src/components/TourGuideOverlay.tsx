@@ -14,7 +14,7 @@ import {
 
 import { useTourGuideContext } from "../TourGuideContext";
 import { resolveSwipeHint } from "../themes";
-import type { TooltipProps } from "../types";
+import type { TooltipProps, TourStep } from "../types";
 import { computeTooltipLayout } from "../utils/geometry";
 import { waitForScrollSettle } from "../utils/scroll";
 import {
@@ -59,6 +59,24 @@ export function TourGuideOverlay() {
     width: number;
     height: number;
   } | null>(null);
+  // Reset tooltipSize synchronously during render (not in an effect) when a
+  // new step or tour starts. TourGuideOverlay lives for the whole app, so a
+  // *separate* effect resetting this raced with the tooltip's own first
+  // onLayout measurement for the new step — both are ordinary state updates
+  // batched from the same commit, and whichever queued last won, sometimes
+  // wiping out the fresh measurement and leaving the tooltip stuck invisible
+  // (styles.tooltipPending) until something else forced a re-measure.
+  // Adjusting state during render happens before that commit, so there's
+  // nothing left to race by the time onLayout fires afterward.
+  const measurementKeyRef = useRef<{ steps: TourStep[]; index: number } | null>(null);
+  if (
+    tooltipSize !== null &&
+    (measurementKeyRef.current?.steps !== state.steps ||
+      measurementKeyRef.current?.index !== state.currentIndex)
+  ) {
+    setTooltipSize(null);
+  }
+  measurementKeyRef.current = { steps: state.steps, index: state.currentIndex };
 
   const step = state.steps[state.currentIndex] ?? null;
   const visible = state.isActive && !state.isPaused;
@@ -189,10 +207,6 @@ export function TourGuideOverlay() {
   );
 
   useEffect(() => registerOverlayHost(hostRef), [registerOverlayHost]);
-
-  useEffect(() => {
-    setTooltipSize(null);
-  }, [state.currentIndex]);
 
   useEffect(() => {
     if (Platform.OS !== "android" || !visible) return;
@@ -333,6 +347,7 @@ export function TourGuideOverlay() {
 
       {!hideTooltip && (
         <View
+          testID="tour-guide-tooltip-container"
           onLayout={handleMeasureLayout}
           pointerEvents="box-none"
           style={[

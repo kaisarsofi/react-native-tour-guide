@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 import { View } from "react-native";
-import {
-  TourTarget,
-  useTourPersistence,
-  type TourStep,
-  type TourStorageAdapter,
-} from "react-native-tour-guide";
+import { TourTarget, useTourGuide, type TourStep } from "react-native-tour-guide";
 
 import { Badge, Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
@@ -21,32 +16,13 @@ const STATUS_LABEL = {
 } as const;
 
 /**
- * A minimal in-memory stand-in for AsyncStorage/MMKV, just so this demo has
- * no extra native dependency. Swap this for `@react-native-async-storage/
- * async-storage` (or MMKV) in a real app — same {getItem,setItem,removeItem}
- * shape either way.
- */
-function createMemoryStorage(): TourStorageAdapter {
-  const store = new Map<string, string>();
-  return {
-    getItem: (key) => store.get(key) ?? null,
-    setItem: (key, value) => {
-      store.set(key, value);
-    },
-    removeItem: (key) => {
-      store.delete(key);
-    },
-  };
-}
-
-const memoryStorage = createMemoryStorage();
-
-/**
- * useTourPersistence wraps startTour so a tour keyed by `tourId` only plays
- * once; onTourEnd(completed) marks it done. resetTour() clears that flag.
+ * `persist: true` is all this takes — no storage adapter, no wrapper hook.
+ * It's remembered in-memory for this app session by default; pass a real
+ * adapter (AsyncStorage, MMKV, ...) to <TourGuideProvider storage={...}>
+ * once, app-wide, to survive restarts too.
  */
 export function Persistence() {
-  const { startTour, resetTour } = useTourPersistence(memoryStorage);
+  const { startTour, resetTour, isActive } = useTourGuide();
   const [status, setStatus] = useState<"idle" | "shown" | "skipped">("idle");
 
   const steps: TourStep[] = [
@@ -65,8 +41,8 @@ export function Persistence() {
       title="Play once (persistence)"
       description={
         <>
-          <Code>useTourPersistence(storage)</Code> skips <Code>startTour</Code> if this{" "}
-          tourId already completed, and lets you reset it.
+          <Code>{"persist: true"}</Code> on <Code>startTour</Code> skips a tour that
+          already completed — no storage setup required.
         </>
       }
     >
@@ -75,7 +51,9 @@ export function Persistence() {
       </TourTarget>
 
       <View className="flex-row items-center justify-between">
-        <Badge tone={status === "shown" ? "success" : status === "skipped" ? "accent" : "neutral"}>
+        <Badge
+          tone={status === "shown" ? "success" : status === "skipped" ? "accent" : "neutral"}
+        >
           {STATUS_LABEL[status]}
         </Badge>
       </View>
@@ -83,13 +61,16 @@ export function Persistence() {
       <View className="flex-row gap-2">
         <DemoButton
           label="Show onboarding"
-          onPress={async () => {
-            const already = (await memoryStorage.getItem(`react-native-tour-guide:${TOUR_ID}`)) === "true";
-            await startTour(steps, {
+          disabled={isActive}
+          onPress={() => {
+            if (status === "shown") setStatus("skipped");
+            startTour(steps, {
               tourId: TOUR_ID,
-              onTourEnd: () => setStatus("shown"),
+              persist: true,
+              onTourEnd: (completed) => {
+                if (completed) setStatus("shown");
+              },
             });
-            if (already) setStatus("skipped");
           }}
         />
         <DemoButton

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FlatList, Text, View, useWindowDimensions } from "react-native";
 import {
   TourTarget,
@@ -18,12 +18,14 @@ import { ONBOARDING_PAGES as PAGES } from "../data/onboardingPages";
  * Full-screen paged carousel. One spotlight stays on the pager; each swipe
  * advances a page. The third swipe ends the tour.
  */
+const TOUR_ID = "paginated";
+
 export function PaginatedCardsTour() {
-  const { startTour, isActive, tourId } = useTourGuide();
+  const { startTour, resetTour, isActive, tourId } = useTourGuide();
   const { ref, scrollProps, handle, reset } = useTourScroll({ horizontal: true });
   const { width } = useWindowDimensions();
   const [page, setPage] = useState(0);
-  const isThisTour = isActive && tourId === "paginated";
+  const isThisTour = isActive && tourId === TOUR_ID;
 
   // The pager sits inside the screen's own side padding.
   const pageWidth = width - 32;
@@ -40,6 +42,13 @@ export function PaginatedCardsTour() {
       spotlightBorderRadius: 24,
     },
   ];
+
+  useEffect(() => {
+    reset();
+    setPage(0);
+    startTour(steps, { tourId: TOUR_ID, persist: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <View className="flex-1 px-4 pt-1">
@@ -104,13 +113,14 @@ export function PaginatedCardsTour() {
 
       <View className="mb-4 mt-3 flex-row">
         <DemoButton
-          label={isThisTour ? "Tour running…" : "Start tour"}
+          label={isThisTour ? "Tour running…" : "Reset"}
           variant="accent"
           disabled={isActive}
           onPress={() => {
             reset();
             setPage(0);
-            startTour(steps, { tourId: "paginated" });
+            resetTour(TOUR_ID);
+            startTour(steps, { tourId: TOUR_ID, persist: true });
           }}
         />
       </View>

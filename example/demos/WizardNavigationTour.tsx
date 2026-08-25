@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -35,14 +35,16 @@ const BUTTON_SHADOW = {
  * Pass `nextCount` / `prevCount` to change it; Prev is clamped so it cannot
  * rewind further than Next advanced.
  */
+const TOUR_ID = "wizard-navigation";
+
 export function WizardNavigationTour() {
-  const { startTour, nextStep, isActive, tourId } = useTourGuide();
+  const { startTour, resetTour, nextStep, isActive, tourId } = useTourGuide();
   const listRef = useRef<FlatList<(typeof PAGES)[number]>>(null);
   const pageRef = useRef(0);
   const { width } = useWindowDimensions();
   const [page, setPage] = useState(0);
   const [pagerWidth, setPagerWidth] = useState(width - 56);
-  const isThisTour = isActive && tourId === "wizard-navigation";
+  const isThisTour = isActive && tourId === TOUR_ID;
 
   const goTo = (index: number) => {
     const next = Math.max(0, Math.min(index, PAGES.length - 1));
@@ -65,6 +67,14 @@ export function WizardNavigationTour() {
 
   const atStart = page === 0;
   const atEnd = page === PAGES.length - 1;
+
+  useEffect(() => {
+    pageRef.current = 0;
+    setPage(0);
+    listRef.current?.scrollToIndex({ index: 0, animated: false });
+    startTour(steps, { tourId: TOUR_ID, persist: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onMomentumScrollEnd = (
     event: NativeSyntheticEvent<NativeScrollEvent>,
@@ -179,13 +189,15 @@ export function WizardNavigationTour() {
 
       <View className="mb-4 mt-4 flex-row">
         <DemoButton
-          label={isThisTour ? "Tour running…" : "Start tour"}
+          label={isThisTour ? "Tour running…" : "Reset"}
+          variant="secondary"
           disabled={isActive}
           onPress={() => {
             pageRef.current = 0;
             setPage(0);
             listRef.current?.scrollToIndex({ index: 0, animated: false });
-            startTour(steps, { tourId: "wizard-navigation" });
+            resetTour(TOUR_ID);
+            startTour(steps, { tourId: TOUR_ID, persist: true });
           }}
         />
       </View>

@@ -26,6 +26,11 @@ import type {
 import { createTourEventEmitter } from "./utils/eventEmitter";
 import { measureView, nextPaint, rectsEqual } from "./utils/geometry";
 import { scrollStepIntoView } from "./utils/scroll";
+import {
+  createMemoryStorage,
+  storageKey,
+  type TourStorageAdapter,
+} from "./utils/storage";
 import { isSameTourTarget } from "./utils/swipe";
 
 interface TourGuideState {
@@ -99,6 +104,8 @@ export interface TourGuideContextValue {
   handleBackdropPress: (behavior?: BackdropBehavior) => void;
   registerTarget: (id: string, ref: RefObject<View | null>) => () => void;
   registerOverlayHost: (ref: RefObject<View | null>) => () => void;
+  /** Clears a `persist: true` tour's "already seen" record, so it shows again. */
+  resetTour: (tourId: string) => void;
   events: TourEventEmitter;
 }
 
@@ -115,8 +122,21 @@ function resolveConfig(config?: TourGuideConfig): ResolvedTourGuideConfig {
   };
 }
 
-export function TourGuideProvider({ children }: { children: React.ReactNode }) {
+export interface TourGuideProviderProps {
+  children: React.ReactNode;
+  /**
+   * Backs `persist: true` tours. Defaults to an in-memory adapter (works
+   * for the app session, not across restarts) so persistence works with
+   * zero setup. Pass a real adapter — AsyncStorage, MMKV, ... — to persist
+   * across restarts; its shape (`getItem`/`setItem`/`removeItem`) already
+   * matches AsyncStorage, so this is usually just `storage={AsyncStorage}`.
+   */
+  storage?: TourStorageAdapter;
+}
+
+export function TourGuideProvider({ children, storage }: TourGuideProviderProps) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const resolvedStorage = useMemo(() => storage ?? createMemoryStorage(), [storage]);
   const targetRegistry = useRef(new Map<string, RefObject<View | null>>());
   const overlayHostRef = useRef<RefObject<View | null> | null>(null);
   const events = useMemo(() => createTourEventEmitter(), []);
@@ -131,6 +151,12 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
   // across renders too.
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // Set by `endTour` right before it fires `onTourEnd`, so the persistence
+  // wiring in `startTour` can tell a skip (still "seen") apart from backing
+  // out before the first step (not "seen") without changing the public
+  // `completed` value handed to consumers' `onTourEnd`.
+  const markSeenRef = useRef(false);
 
   const registerTarget = useCallback((id: string, ref: RefObject<View | null>) => {
     targetRegistry.current.set(id, ref);
@@ -152,15 +178,62 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
     (steps: TourStep[], config?: TourGuideConfig) => {
       const activeSteps = steps.filter((step) => step.active !== false);
       const resolved = resolveConfig(config);
-      dispatch({ type: "START", steps: activeSteps, config: resolved });
-      resolved.onTourStart?.();
-      events.emit("start", { steps: activeSteps });
+
+      const begin = () => {
+        dispatch({ type: "START", steps: activeSteps, config: resolved });
+        resolved.onTourStart?.();
+        events.emit("start", { steps: activeSteps });
+      };
+
+      if (config?.persist && config.tourId) {
+        const key = storageKey(config.tourId);
+        // Mark it seen on completion or skip, so the check below skips it
+        // next time either way — only backing out before the first step
+        // (goToStep below index 0) leaves it unseen.
+        const onTourEnd = resolved.onTourEnd;
+        resolved.onTourEnd = (completed) => {
+          onTourEnd?.(completed);
+          if (markSeenRef.current) resolvedStorage.setItem(key, "true");
+        };
+        // `getItem` is typed to allow a plain synchronous return (the
+        // in-memory default storage does this) as well as a Promise (a real
+        // adapter like AsyncStorage). Only defer to a microtask when the
+        // adapter actually returned one — an unconditional `Promise.resolve`
+        // wrapper would push every persisted `startTour` call one tick later
+        // than a normal one for no reason, even on the common, fully
+        // synchronous default path.
+        const maybeSeen = resolvedStorage.getItem(key);
+        if (maybeSeen instanceof Promise) {
+          maybeSeen.then((seen) => {
+            if (seen === "true") return;
+            begin();
+          });
+        } else if (maybeSeen !== "true") {
+          begin();
+        }
+        return;
+      }
+
+      begin();
     },
-    [events],
+    [events, resolvedStorage],
+  );
+
+  const resetTour = useCallback(
+    (tourId: string) => {
+      const key = storageKey(tourId);
+      if (resolvedStorage.removeItem) {
+        resolvedStorage.removeItem(key);
+      } else {
+        resolvedStorage.setItem(key, "false");
+      }
+    },
+    [resolvedStorage],
   );
 
   const endTour = useCallback(
-    (completed = false) => {
+    (completed = false, markSeen = completed) => {
+      markSeenRef.current = markSeen;
       stateRef.current.config.onTourEnd?.(completed);
       events.emit("end", { completed });
       dispatch({ type: "END" });
@@ -207,7 +280,7 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
     const step = current.steps[current.currentIndex];
     step?.onSkip?.();
     events.emit("skip", { atStep: current.currentIndex });
-    endTour(false);
+    endTour(false, true);
   }, [endTour, events]);
 
   const pauseTour = useCallback(() => {
@@ -298,6 +371,7 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
       handleBackdropPress,
       registerTarget,
       registerOverlayHost,
+      resetTour,
       events,
     }),
     [
@@ -313,6 +387,7 @@ export function TourGuideProvider({ children }: { children: React.ReactNode }) {
       handleBackdropPress,
       registerTarget,
       registerOverlayHost,
+      resetTour,
       events,
     ],
   );

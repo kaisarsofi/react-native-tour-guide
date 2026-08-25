@@ -16,6 +16,7 @@ export function useTourGuide() {
     endTour: ctx.endTour,
     pauseTour: ctx.pauseTour,
     resumeTour: ctx.resumeTour,
+    resetTour: ctx.resetTour,
     isActive: state.isActive,
     isPaused: state.isPaused,
     currentStep,
