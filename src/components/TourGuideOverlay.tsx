@@ -22,10 +22,8 @@ import {
   dragScrollHandle,
   isSwipeAdvanceEnabled,
   isTooltipHidden,
-  pageIndexFromOffset,
   resolveCountedSwipe,
-  resolvePassivePageGesture,
-  resolveStepScrollOptions,
+  resolveScrollGesture,
   resolveSwipeCount,
   resolveSwipeGesture,
   resolveTourScrollHandle,
@@ -87,39 +85,18 @@ export function TourGuideOverlay() {
   const hideTooltip = step ? isTooltipHidden(step) : false;
   const swipeAdvance = step ? isSwipeAdvanceEnabled(step) : false;
   const scrollHandle = resolveTourScrollHandle(state.steps, state.currentIndex);
-  const stepScrollOptions = resolveStepScrollOptions(step ?? undefined);
 
   // A target with a bound, subscribable scroll handle is already natively
-  // scrollable — count swipes by watching where the list actually settles
-  // instead of capturing touches with a gesture responder. This only holds
-  // for a list that genuinely settles onto discrete pages by itself
-  // (`pagingEnabled`, or a step that scrolls to an explicit `index`): a
-  // free-scrolling list given a `pageSize` alone doesn't snap to
-  // `pageSize`-multiples at all, so passively watching for crossings of
-  // them would over- or under-count relative to how far one physical swipe
-  // actually carried it (a fast fling can cross several at once; a short
-  // deliberate swipe can cross none). That documented pattern — "spotlight
-  // stays on a plain ScrollView/FlatList, `scroll.pageSize` is a virtual
-  // per-swipe distance" — still needs the deterministic one-swipe-per-
-  // gesture counting the capture path below provides, so it's deliberately
-  // excluded here even though its handle can be subscribed to.
-  const passivePageSize = (() => {
-    if (!scrollHandle?.subscribe) return null;
-    const isPaging = scrollHandle.pagingEnabled || stepScrollOptions?.index != null;
-    if (!isPaging) return null;
-    // An explicit `pageSize` on an otherwise-paging step overrides the
-    // measured target size; otherwise a full-bleed paging list's page *is*
-    // its target, so fall back to that.
-    if (stepScrollOptions?.pageSize != null) return stepScrollOptions.pageSize;
-    const rect = state.targetRect;
-    if (!rect) return null;
-    return scrollHandle.horizontal ? rect.width : rect.height;
-  })();
+  // scrollable — count swipes by watching how far one completed gesture
+  // (drag, plus any momentum) actually carried the list, instead of
+  // capturing touches with a gesture responder and driving the scroll
+  // ourselves. This works the same way regardless of whether the list is
+  // paging: it's not watching for offset thresholds mid-scroll, just how
+  // far the list moved between "the finger went down" and "the list came
+  // to rest" — the same thing a captured touch's dx/dy measured, just read
+  // off the list's own real movement instead of a synthetic one.
   const passiveModeActive =
-    visible &&
-    swipeAdvance &&
-    scrollHandle?.subscribe != null &&
-    passivePageSize != null;
+    visible && swipeAdvance && scrollHandle?.subscribeGesture != null;
 
   const nextRef = useRef(nextStep);
   const prevRef = useRef(prevStep);
@@ -165,30 +142,17 @@ export function TourGuideOverlay() {
   useEffect(() => () => dragSchedulerRef.current.cancel(), []);
 
   // Passive counterpart to the PanResponder below: no touch is ever
-  // captured here. A page-index change observed from the list's own
-  // `onScroll` is counted exactly like a captured swipe would be, but the
-  // native list is the only thing driving its own scroll — nothing here
-  // ever calls `scrollTo`/`scrollToIndex` on it.
+  // captured here. Each completed native gesture (drag, plus any momentum)
+  // is counted exactly like a captured touch's dx/dy would be — just read
+  // off the list's own real scroll delta instead of a synthetic one.
+  // Nothing here ever calls `scrollTo`/`scrollToIndex` on the list.
   useEffect(() => {
-    if (!passiveModeActive || !scrollHandle?.subscribe || passivePageSize == null)
-      return;
+    if (!passiveModeActive || !scrollHandle?.subscribeGesture) return;
 
-    const axis = scrollHandle.horizontal ? "x" : "y";
-    let lastIndex = pageIndexFromOffset(
-      scrollHandle.offsetRef.current[axis],
-      passivePageSize,
-    );
-
-    return scrollHandle.subscribe((offset) => {
+    return scrollHandle.subscribeGesture((delta) => {
       const hint = hintRef.current;
       if (!hint) return;
-      const currentIndex = pageIndexFromOffset(offset[axis], passivePageSize);
-      if (currentIndex === lastIndex) return;
-      const gesture = resolvePassivePageGesture(
-        hint.direction,
-        currentIndex - lastIndex,
-      );
-      lastIndex = currentIndex;
+      const gesture = resolveScrollGesture(hint.direction, delta.x, delta.y);
       if (!gesture) return;
 
       const resolved = resolveCountedSwipe(
@@ -208,7 +172,7 @@ export function TourGuideOverlay() {
     });
     // Re-subscribe whenever the step (and so the hint/count/handle) changes;
     // everything else this reads comes off refs kept current above.
-  }, [passiveModeActive, scrollHandle, passivePageSize, state.currentIndex]);
+  }, [passiveModeActive, scrollHandle, state.currentIndex]);
 
   const spotlightStyles = useMemo(
     () =>

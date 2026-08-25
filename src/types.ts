@@ -103,15 +103,18 @@ export interface TourScrollHandle {
    */
   pagingEnabled: boolean;
   /**
-   * Subscribe to live offset updates — the same values `offsetRef` holds,
-   * pushed synchronously each time the wrapped `onScroll` fires. Lets a
-   * `swipeHint` step on an already-scrollable target count swipes by
-   * watching the list's own native scroll movement instead of capturing
-   * touches with a gesture responder. Optional so a handle built by hand
-   * (without `useTourScroll`) still type-checks — such a handle just falls
-   * back to the touch-capturing path.
+   * Subscribe to completed scroll gestures — fires once per drag (plus any
+   * following momentum) that settles, with the net offset delta over that
+   * whole session. Lets a `swipeHint` step on an already-scrollable target
+   * count swipes by watching how far the list's own native scroll actually
+   * moved per gesture, instead of capturing touches with a gesture
+   * responder and driving the scroll itself. Optional so a handle built by
+   * hand (without `useTourScroll`) still type-checks — such a handle just
+   * falls back to the touch-capturing path.
    */
-  subscribe?: (listener: (offset: { x: number; y: number }) => void) => () => void;
+  subscribeGesture?: (
+    listener: (delta: { x: number; y: number }) => void,
+  ) => () => void;
 }
 
 export interface TourScrollOptions {

@@ -78,40 +78,96 @@ describe("useTourScroll", () => {
     expect(scrollTo).toHaveBeenCalledWith({ y: 0, animated: false });
   });
 
-  it("notifies subscribers with each scroll tick", () => {
-    const { result } = renderHook(() => useTourScroll());
-    const listener = jest.fn();
+  describe("subscribeGesture", () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
 
-    let unsubscribe: () => void = () => {};
-    act(() => {
-      unsubscribe = result.current.handle.subscribe!(listener);
-      result.current.scrollProps.onScroll(scrollEvent(0, 96));
+    it("emits the net offset delta once a drag with no momentum settles", () => {
+      const { result } = renderHook(() => useTourScroll());
+      const listener = jest.fn();
+
+      act(() => {
+        result.current.handle.subscribeGesture!(listener);
+        result.current.scrollProps.onScrollBeginDrag();
+        result.current.scrollProps.onScroll(scrollEvent(0, 40));
+        result.current.scrollProps.onScroll(scrollEvent(0, 96));
+        result.current.scrollProps.onScrollEndDrag();
+      });
+
+      // Still inside the "might this have momentum?" grace window.
+      expect(listener).not.toHaveBeenCalled();
+
+      act(() => {
+        jest.advanceTimersByTime(60);
+      });
+
+      expect(listener).toHaveBeenCalledWith({ x: 0, y: 96 });
     });
 
-    expect(listener).toHaveBeenCalledWith({ x: 0, y: 96 });
+    it("waits for onMomentumScrollEnd instead when the drag has momentum", () => {
+      const { result } = renderHook(() => useTourScroll());
+      const listener = jest.fn();
 
-    act(() => {
-      unsubscribe();
-      result.current.scrollProps.onScroll(scrollEvent(0, 192));
+      act(() => {
+        result.current.handle.subscribeGesture!(listener);
+        result.current.scrollProps.onScrollBeginDrag();
+        result.current.scrollProps.onScroll(scrollEvent(0, 50));
+        result.current.scrollProps.onScrollEndDrag();
+        result.current.scrollProps.onMomentumScrollBegin();
+      });
+
+      // The no-momentum grace window passes with nothing emitted — momentum
+      // beginning preempted it.
+      act(() => {
+        jest.advanceTimersByTime(60);
+      });
+      expect(listener).not.toHaveBeenCalled();
+
+      act(() => {
+        result.current.scrollProps.onScroll(scrollEvent(0, 220));
+        result.current.scrollProps.onMomentumScrollEnd();
+      });
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledWith({ x: 0, y: 220 });
     });
 
-    expect(listener).toHaveBeenCalledTimes(1);
-  });
+    it("stops notifying once unsubscribed", () => {
+      const { result } = renderHook(() => useTourScroll());
+      const listener = jest.fn();
 
-  it("gives each subscriber its own offset snapshot, not the live ref", () => {
-    const { result } = renderHook(() => useTourScroll());
-    const seen: Array<{ x: number; y: number }> = [];
+      let unsubscribe: () => void = () => {};
+      act(() => {
+        unsubscribe = result.current.handle.subscribeGesture!(listener);
+        result.current.scrollProps.onScrollBeginDrag();
+        result.current.scrollProps.onScroll(scrollEvent(0, 60));
+        result.current.scrollProps.onScrollEndDrag();
+        jest.advanceTimersByTime(60);
+      });
+      expect(listener).toHaveBeenCalledTimes(1);
 
-    act(() => {
-      result.current.handle.subscribe!((offset) => seen.push(offset));
-      result.current.scrollProps.onScroll(scrollEvent(0, 10));
-      result.current.scrollProps.onScroll(scrollEvent(0, 20));
+      act(() => {
+        unsubscribe();
+        result.current.scrollProps.onScrollBeginDrag();
+        result.current.scrollProps.onScroll(scrollEvent(0, 120));
+        result.current.scrollProps.onScrollEndDrag();
+        jest.advanceTimersByTime(60);
+      });
+      expect(listener).toHaveBeenCalledTimes(1);
     });
 
-    expect(seen).toEqual([
-      { x: 0, y: 10 },
-      { x: 0, y: 20 },
-    ]);
+    it("never emits for a scroll with no drag session (e.g. a programmatic scroll)", () => {
+      const { result } = renderHook(() => useTourScroll());
+      const listener = jest.fn();
+
+      act(() => {
+        result.current.handle.subscribeGesture!(listener);
+        result.current.scrollProps.onScroll(scrollEvent(0, 300));
+        jest.advanceTimersByTime(200);
+      });
+
+      expect(listener).not.toHaveBeenCalled();
+    });
   });
 
   it("accepts FlatList and ScrollView refs without a generic", () => {

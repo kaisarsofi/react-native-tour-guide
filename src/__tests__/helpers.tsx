@@ -42,28 +42,31 @@ export function makeStep(over: Partial<TourStep> = {}): TourStep {
 }
 
 /**
- * A `TourScrollHandle` whose `subscribe` is a real, test-driven event
- * emitter — `emit` pushes an offset to every subscriber exactly like a
- * `useTourScroll`-wrapped `onScroll` tick would, so a passive swipe-hint
- * test can simulate "the list scrolled" without a real native list.
+ * A `TourScrollHandle` whose `subscribeGesture` is a real, test-driven
+ * event emitter — `emitGesture` pushes a completed-gesture delta to every
+ * subscriber exactly like a `useTourScroll`-wrapped drag(+momentum)
+ * session settling would, so a passive swipe-hint test can simulate "the
+ * user swiped the real list" without a real native list or real touch
+ * timing.
  */
 export function makeSubscribableHandle(
   over: Partial<TourScrollHandle> = {},
-): TourScrollHandle & { emit: (offset: { x: number; y: number }) => void } {
-  const listeners = new Set<(offset: { x: number; y: number }) => void>();
+): TourScrollHandle & {
+  emitGesture: (delta: { x: number; y: number }) => void;
+} {
+  const listeners = new Set<(delta: { x: number; y: number }) => void>();
   const offsetRef = { current: { x: 0, y: 0 } };
   return {
     ref: { current: { scrollToIndex: jest.fn(), scrollTo: jest.fn() } },
     offsetRef,
     horizontal: false,
     pagingEnabled: true,
-    subscribe: (listener) => {
+    subscribeGesture: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    emit(offset) {
-      offsetRef.current = offset;
-      listeners.forEach((listener) => listener(offset));
+    emitGesture(delta) {
+      listeners.forEach((listener) => listener(delta));
     },
     ...over,
   };

@@ -4,9 +4,8 @@ import {
   dragScrollHandle,
   isSameTourTarget,
   isTooltipHidden,
-  pageIndexFromOffset,
   resolveCountedSwipe,
-  resolvePassivePageGesture,
+  resolveScrollGesture,
   resolveSwipeCount,
   resolveSwipeGesture,
   resolveTourScrollHandle,
@@ -243,43 +242,32 @@ describe("snapScrollToProgress", () => {
   });
 });
 
-describe("pageIndexFromOffset", () => {
-  it("rounds an offset to the nearest whole page", () => {
-    expect(pageIndexFromOffset(0, 800)).toBe(0);
-    expect(pageIndexFromOffset(800, 800)).toBe(1);
-    expect(pageIndexFromOffset(1600, 800)).toBe(2);
+describe("resolveScrollGesture", () => {
+  it("reads a large-enough increasing offset as next for up/left hints", () => {
+    expect(resolveScrollGesture("up", 0, 96)).toBe("next");
+    expect(resolveScrollGesture("left", 96, 0)).toBe("next");
   });
 
-  it("absorbs sub-pixel settle jitter", () => {
-    expect(pageIndexFromOffset(799.6, 800)).toBe(1);
-    expect(pageIndexFromOffset(800.4, 800)).toBe(1);
-  });
-
-  it("treats a zero or invalid page size as page 0", () => {
-    expect(pageIndexFromOffset(400, 0)).toBe(0);
-    expect(pageIndexFromOffset(400, Number.NaN)).toBe(0);
-    expect(pageIndexFromOffset(400, -10)).toBe(0);
-  });
-});
-
-describe("resolvePassivePageGesture", () => {
-  it("reads an increasing offset as next for up/left hints", () => {
-    expect(resolvePassivePageGesture("up", 1)).toBe("next");
-    expect(resolvePassivePageGesture("left", 2)).toBe("next");
-  });
-
-  it("reads a decreasing offset as prev for up/left hints", () => {
-    expect(resolvePassivePageGesture("up", -1)).toBe("prev");
-    expect(resolvePassivePageGesture("left", -1)).toBe("prev");
+  it("reads a large-enough decreasing offset as prev for up/left hints", () => {
+    expect(resolveScrollGesture("up", 0, -96)).toBe("prev");
+    expect(resolveScrollGesture("left", -96, 0)).toBe("prev");
   });
 
   it("mirrors the sign for down/right hints", () => {
-    expect(resolvePassivePageGesture("down", -1)).toBe("next");
-    expect(resolvePassivePageGesture("right", -1)).toBe("next");
-    expect(resolvePassivePageGesture("down", 1)).toBe("prev");
+    expect(resolveScrollGesture("down", 0, -96)).toBe("next");
+    expect(resolveScrollGesture("right", -96, 0)).toBe("next");
+    expect(resolveScrollGesture("down", 0, 96)).toBe("prev");
   });
 
-  it("reports no gesture when the page hasn't changed", () => {
-    expect(resolvePassivePageGesture("up", 0)).toBeNull();
+  it("ignores a delta under the threshold", () => {
+    expect(resolveScrollGesture("up", 0, 10)).toBeNull();
+  });
+
+  it("ignores a delta that's mostly on the other axis", () => {
+    expect(resolveScrollGesture("up", 200, 60)).toBeNull();
+  });
+
+  it("accepts a custom threshold", () => {
+    expect(resolveScrollGesture("up", 0, 30, 20)).toBe("next");
   });
 });

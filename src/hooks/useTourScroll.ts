@@ -1,8 +1,18 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 
 import type { ScrollableNode, TourScrollHandle } from "../types";
 import { scrollNodeToIndex, scrollNodeToOffset } from "../utils/scroll";
+
+/**
+ * `onScrollEndDrag` fires the instant a finger lifts; `onMomentumScrollBegin`
+ * only follows it if the release still had velocity. This is how long to
+ * wait for that follow-up before deciding the drag ended with no momentum —
+ * long enough to never miss a real `onMomentumScrollBegin` (which follows
+ * within a frame or two on both platforms), short enough that a genuinely
+ * momentum-free release still reads as "done" almost immediately.
+ */
+const NO_MOMENTUM_GRACE_MS = 50;
 
 export interface UseTourScrollOptions {
   /** Set for a horizontal list / carousel. Default false. */
@@ -35,6 +45,10 @@ export interface UseTourScrollResult {
   /** Spread onto the list so the tour can read the live scroll offset. */
   scrollProps: {
     onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onScrollBeginDrag: () => void;
+    onScrollEndDrag: () => void;
+    onMomentumScrollBegin: () => void;
+    onMomentumScrollEnd: () => void;
     scrollEventThrottle: number;
   };
   /** Pass to a step's `scroll.handle`. */
@@ -64,7 +78,11 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
 
   const nodeRef = useRef<ScrollableNode | null>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
-  const listenersRef = useRef(new Set<(offset: { x: number; y: number }) => void>());
+  const gestureListenersRef = useRef(
+    new Set<(delta: { x: number; y: number }) => void>(),
+  );
+  const dragStartOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const noMomentumTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const userOnScrollRef = useRef(userOnScroll);
   userOnScrollRef.current = userOnScroll;
@@ -73,15 +91,36 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
     nodeRef.current = instance;
   }, []);
 
-  const subscribe = useCallback(
-    (listener: (offset: { x: number; y: number }) => void) => {
-      listenersRef.current.add(listener);
+  const subscribeGesture = useCallback(
+    (listener: (delta: { x: number; y: number }) => void) => {
+      gestureListenersRef.current.add(listener);
       return () => {
-        listenersRef.current.delete(listener);
+        gestureListenersRef.current.delete(listener);
       };
     },
     [],
   );
+
+  const clearNoMomentumTimer = () => {
+    if (noMomentumTimerRef.current) {
+      clearTimeout(noMomentumTimerRef.current);
+      noMomentumTimerRef.current = null;
+    }
+  };
+
+  // Redefined each render, but only ever reads/writes through a ref, so
+  // whichever render's copy React captures here still clears whatever timer
+  // is actually pending at unmount time.
+  useEffect(() => clearNoMomentumTimer, []);
+
+  const emitGestureEnd = useCallback(() => {
+    const start = dragStartOffsetRef.current;
+    dragStartOffsetRef.current = null;
+    if (!start) return;
+    const end = offsetRef.current;
+    const delta = { x: end.x - start.x, y: end.y - start.y };
+    gestureListenersRef.current.forEach((listener) => listener(delta));
+  }, []);
 
   const scrollProps = useMemo(
     () => ({
@@ -89,20 +128,38 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
         const { x, y } = event.nativeEvent.contentOffset;
         offsetRef.current.x = x;
         offsetRef.current.y = y;
-        // Snapshot the values (not the mutable ref) so a listener that
-        // reads them later can't observe a subsequent tick's numbers.
-        const snapshot = { x, y };
-        listenersRef.current.forEach((listener) => listener(snapshot));
         userOnScrollRef.current?.(event);
+      },
+      onScrollBeginDrag: () => {
+        clearNoMomentumTimer();
+        dragStartOffsetRef.current = { ...offsetRef.current };
+      },
+      onScrollEndDrag: () => {
+        // If this drag has momentum, onMomentumScrollBegin preempts this
+        // timer and the session isn't over yet — wait for
+        // onMomentumScrollEnd instead. If nothing preempts it, this was
+        // the end of the gesture.
+        clearNoMomentumTimer();
+        noMomentumTimerRef.current = setTimeout(() => {
+          noMomentumTimerRef.current = null;
+          emitGestureEnd();
+        }, NO_MOMENTUM_GRACE_MS);
+      },
+      onMomentumScrollBegin: () => {
+        clearNoMomentumTimer();
+      },
+      onMomentumScrollEnd: () => {
+        clearNoMomentumTimer();
+        emitGestureEnd();
       },
       scrollEventThrottle: 16,
     }),
-    [],
+    [emitGestureEnd],
   );
 
   const handle = useMemo<TourScrollHandle>(
-    () => ({ ref: nodeRef, offsetRef, horizontal, pagingEnabled, subscribe }),
-    [horizontal, pagingEnabled, subscribe],
+    () => ({ ref: nodeRef, offsetRef, horizontal, pagingEnabled, subscribeGesture }),
+    [horizontal, pagingEnabled, subscribeGesture],
   );
 
   const reset = useCallback(() => {
