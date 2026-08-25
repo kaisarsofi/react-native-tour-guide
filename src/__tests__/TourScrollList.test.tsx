@@ -125,6 +125,86 @@ describe("TourScrollList", () => {
     expect(steps[0]!.scroll).toBeTruthy();
   });
 
+  it("does not start the tour while inactive, even once data is present", async () => {
+    const onStart = jest.fn();
+
+    render(
+      <TourGuideProvider>
+        <StartedStepsListener onStart={onStart} />
+        <TourScrollList
+          as={FakeList}
+          id="list"
+          title="Your list"
+          description="Scroll on"
+          data={[1, 2, 3]}
+          active={false}
+        />
+      </TourGuideProvider>,
+    );
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it("starts the tour when `active` flips to true while data is already present (a backgrounded tab screen gaining focus)", async () => {
+    const onStart = jest.fn();
+
+    function Harness({ active }: { active: boolean }) {
+      return (
+        <TourGuideProvider>
+          <StartedStepsListener onStart={onStart} />
+          <TourScrollList
+            as={FakeList}
+            id="list"
+            title="Your list"
+            description="Scroll on"
+            data={[1, 2, 3]}
+            active={active}
+          />
+        </TourGuideProvider>
+      );
+    }
+
+    const { rerender } = render(<Harness active={false} />);
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+    expect(onStart).not.toHaveBeenCalled();
+
+    await act(async () => {
+      rerender(<Harness active={true} />);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+
+    expect(onStart).toHaveBeenCalledTimes(1);
+
+    // Flipping active again (e.g. leaving and re-entering the tab) while
+    // data stays present re-fires — the same "became ready" transition.
+    await act(async () => {
+      rerender(<Harness active={false} />);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      rerender(<Harness active={true} />);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+
+    expect(onStart).toHaveBeenCalledTimes(2);
+  });
+
   it("marks the generated step's scroll handle paging when pagingEnabled is set, without an explicit index", async () => {
     const onStart = jest.fn();
 
