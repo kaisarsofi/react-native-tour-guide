@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { ScrollView, Text, View } from "react-native";
 import {
   TourTarget,
@@ -13,7 +13,6 @@ import { DemoButton } from "../components/DemoButton";
 import { DemoHeader } from "../components/DemoHeader";
 
 const ROW_HEIGHT = 76;
-const MIN_VISIBLE_ROWS = 4;
 
 const NAMES = [
   "Ava Chen",
@@ -73,10 +72,9 @@ function Row({ item }: { item: (typeof INBOX)[number] }) {
 }
 
 /**
- * Full-screen spotlight demo. The spotlight stays on the list; each swipe
- * scrolls a viewport, and the third swipe (the default `swipeCount`) ends
- * the tour. The visible viewport is measured at layout time so the guided
- * swipe always scrolls exactly one screenful, whatever the device size.
+ * Full-screen spotlight demo. The spotlight stays on the list; the list
+ * scrolls natively under the user's own finger, and the tour just counts
+ * — the third swipe (the default `swipeCount`) ends the tour.
  */
 const TOUR_ID = "vertical-list";
 
@@ -84,8 +82,6 @@ export function VerticalListTour() {
   const { startTour, resetTour, isActive, tourId } = useTourGuide();
   const { ref, scrollProps, handle, reset } = useTourScroll();
   const isThisTour = isActive && tourId === TOUR_ID;
-  const [viewportHeight, setViewportHeight] = useState(0);
-  const pageSize = viewportHeight || MIN_VISIBLE_ROWS * ROW_HEIGHT;
 
   const steps: TourStep[] = [
     {
@@ -94,7 +90,7 @@ export function VerticalListTour() {
       title: "Your inbox",
       description: "Swipe up to move through messages.",
       swipeHint: "up",
-      scroll: { handle, pageSize },
+      scroll: { handle },
       spotlightBorderRadius: 20,
     },
   ];
@@ -118,20 +114,15 @@ export function VerticalListTour() {
         }
       />
 
-      <View
-        className="flex-1"
-        onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
-      >
-        <TourTarget id="inbox-list" style={{ flex: 1 }}>
-          <View className="flex-1 overflow-hidden rounded-2xl border border-neutral-200">
-            <ScrollView ref={ref} {...scrollProps} style={{ flex: 1 }} nestedScrollEnabled>
-              {INBOX.map((item) => (
-                <Row key={item.id} item={item} />
-              ))}
-            </ScrollView>
-          </View>
-        </TourTarget>
-      </View>
+      <TourTarget id="inbox-list" style={{ flex: 1 }}>
+        <View className="flex-1 overflow-hidden rounded-2xl border border-neutral-200">
+          <ScrollView ref={ref} {...scrollProps} style={{ flex: 1 }} nestedScrollEnabled>
+            {INBOX.map((item) => (
+              <Row key={item.id} item={item} />
+            ))}
+          </ScrollView>
+        </View>
+      </TourTarget>
 
       <View className="mt-3 flex-row items-center gap-1.5">
         <Ionicons name="information-circle-outline" size={14} color="#A3A3A3" />

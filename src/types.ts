@@ -131,8 +131,14 @@ export interface TourScrollOptions {
   /** Where the row lands when using `index`: 0 = start, 0.5 = centre, 1 = end. */
   viewPosition?: number;
   /**
-   * How far one counted swipe scrolls a non-paging list, in px. Ignored when
-   * `index` is set — those steps page by index instead.
+   * How far one counted swipe scrolls a non-paging list, in px, when the
+   * bound `handle` can't be watched passively (a hand-built
+   * `TourScrollHandle` with no `subscribeGesture`, unlike one from
+   * `useTourScroll()`) and the tour has to capture the touch and drive the
+   * scroll itself. Ignored when `index` is set (those steps page by index
+   * instead) or when the handle supports `subscribeGesture` — there, the
+   * list scrolls itself and one physical swipe always counts as one,
+   * however far it actually travels.
    */
   pageSize?: number;
 }

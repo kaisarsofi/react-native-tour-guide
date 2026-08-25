@@ -165,7 +165,7 @@ list scrolls itself, exactly as it would with no tour running.
   title: "Your inbox",
   description: "Swipe up to catch up.",
   swipeHint: "up",
-  scroll: { handle, pageSize: 192 },
+  scroll: { handle },
 }
 ```
 
