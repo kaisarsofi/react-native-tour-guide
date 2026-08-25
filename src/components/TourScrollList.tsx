@@ -12,6 +12,7 @@ import { useTourGuide } from "../hooks/useTourGuide";
 import { useTourScroll } from "../hooks/useTourScroll";
 import type {
   ScrollableNode,
+  SpotlightPadding,
   SwipeDirection,
   SwipeHintConfig,
   TourGuideConfig,
@@ -49,6 +50,17 @@ export type TourScrollListProps<P extends BaseListProps> = Omit<P, "ref"> & {
   title: string;
   description: string;
   swipeHint?: SwipeDirection | SwipeHintConfig;
+  /**
+   * Extra space (px) between the list's bounds and the spotlight cutout.
+   * Default `8` on both axes (the overlay's own default, applied to
+   * whichever axis is left unset). A plain number pads both axes equally;
+   * pass `{ horizontal, vertical }` when the list already fits tightly on
+   * one axis (a full-width card, say) but needs different breathing room on
+   * the other (a tab bar right above it, bottom navigation right below).
+   */
+  spotlightPadding?: SpotlightPadding;
+  /** Corner radius (px) of the spotlight cutout. Default `12`. */
+  spotlightBorderRadius?: number;
   /** Style for the `TourTarget` wrapper (defaults to `{ flex: 1 }`). */
   wrapperStyle?: StyleProp<ViewStyle>;
   /** Merged over the generated step — use to override any field, including `scroll`. */
@@ -81,6 +93,8 @@ function TourScrollListInner<P extends BaseListProps>(
     title,
     description,
     swipeHint,
+    spotlightPadding,
+    spotlightBorderRadius,
     wrapperStyle,
     tourStep,
     tourConfig,
@@ -138,6 +152,8 @@ function TourScrollListInner<P extends BaseListProps>(
           title,
           description,
           swipeHint,
+          spotlightPadding,
+          spotlightBorderRadius,
           scroll: { handle },
           ...tourStep,
         },

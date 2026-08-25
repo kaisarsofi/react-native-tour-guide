@@ -15,14 +15,17 @@ import {
 import { useTourGuideContext } from "../TourGuideContext";
 import { resolveSwipeHint } from "../themes";
 import type { TooltipProps, TourStep } from "../types";
-import { computeTooltipLayout } from "../utils/geometry";
+import { computeTooltipLayout, resolveSpotlightPadding } from "../utils/geometry";
 import { waitForScrollSettle } from "../utils/scroll";
 import {
   createDragFrameScheduler,
   dragScrollHandle,
   isSwipeAdvanceEnabled,
   isTooltipHidden,
+  pageIndexFromOffset,
   resolveCountedSwipe,
+  resolvePassivePageGesture,
+  resolveStepScrollOptions,
   resolveSwipeCount,
   resolveSwipeGesture,
   resolveTourScrollHandle,
@@ -84,6 +87,39 @@ export function TourGuideOverlay() {
   const hideTooltip = step ? isTooltipHidden(step) : false;
   const swipeAdvance = step ? isSwipeAdvanceEnabled(step) : false;
   const scrollHandle = resolveTourScrollHandle(state.steps, state.currentIndex);
+  const stepScrollOptions = resolveStepScrollOptions(step ?? undefined);
+
+  // A target with a bound, subscribable scroll handle is already natively
+  // scrollable — count swipes by watching where the list actually settles
+  // instead of capturing touches with a gesture responder. This only holds
+  // for a list that genuinely settles onto discrete pages by itself
+  // (`pagingEnabled`, or a step that scrolls to an explicit `index`): a
+  // free-scrolling list given a `pageSize` alone doesn't snap to
+  // `pageSize`-multiples at all, so passively watching for crossings of
+  // them would over- or under-count relative to how far one physical swipe
+  // actually carried it (a fast fling can cross several at once; a short
+  // deliberate swipe can cross none). That documented pattern — "spotlight
+  // stays on a plain ScrollView/FlatList, `scroll.pageSize` is a virtual
+  // per-swipe distance" — still needs the deterministic one-swipe-per-
+  // gesture counting the capture path below provides, so it's deliberately
+  // excluded here even though its handle can be subscribed to.
+  const passivePageSize = (() => {
+    if (!scrollHandle?.subscribe) return null;
+    const isPaging = scrollHandle.pagingEnabled || stepScrollOptions?.index != null;
+    if (!isPaging) return null;
+    // An explicit `pageSize` on an otherwise-paging step overrides the
+    // measured target size; otherwise a full-bleed paging list's page *is*
+    // its target, so fall back to that.
+    if (stepScrollOptions?.pageSize != null) return stepScrollOptions.pageSize;
+    const rect = state.targetRect;
+    if (!rect) return null;
+    return scrollHandle.horizontal ? rect.width : rect.height;
+  })();
+  const passiveModeActive =
+    visible &&
+    swipeAdvance &&
+    scrollHandle?.subscribe != null &&
+    passivePageSize != null;
 
   const nextRef = useRef(nextStep);
   const prevRef = useRef(prevStep);
@@ -127,6 +163,52 @@ export function TourGuideOverlay() {
   }, [scrollHandle, state.isActive, state.currentIndex]);
 
   useEffect(() => () => dragSchedulerRef.current.cancel(), []);
+
+  // Passive counterpart to the PanResponder below: no touch is ever
+  // captured here. A page-index change observed from the list's own
+  // `onScroll` is counted exactly like a captured swipe would be, but the
+  // native list is the only thing driving its own scroll — nothing here
+  // ever calls `scrollTo`/`scrollToIndex` on it.
+  useEffect(() => {
+    if (!passiveModeActive || !scrollHandle?.subscribe || passivePageSize == null)
+      return;
+
+    const axis = scrollHandle.horizontal ? "x" : "y";
+    let lastIndex = pageIndexFromOffset(
+      scrollHandle.offsetRef.current[axis],
+      passivePageSize,
+    );
+
+    return scrollHandle.subscribe((offset) => {
+      const hint = hintRef.current;
+      if (!hint) return;
+      const currentIndex = pageIndexFromOffset(offset[axis], passivePageSize);
+      if (currentIndex === lastIndex) return;
+      const gesture = resolvePassivePageGesture(
+        hint.direction,
+        currentIndex - lastIndex,
+      );
+      lastIndex = currentIndex;
+      if (!gesture) return;
+
+      const resolved = resolveCountedSwipe(
+        progressRef.current,
+        countRef.current,
+        gesture,
+        indexRef.current > 0,
+      );
+      progressRef.current = resolved.progress;
+      if (resolved.action === "complete") {
+        nextRef.current();
+      } else if (resolved.action === "rewind") {
+        prevRef.current();
+      }
+      // "scroll"/"idle" need no action here — the list already moved
+      // itself; there is nothing left for the tour to snap or drive.
+    });
+    // Re-subscribe whenever the step (and so the hint/count/handle) changes;
+    // everything else this reads comes off refs kept current above.
+  }, [passiveModeActive, scrollHandle, passivePageSize, state.currentIndex]);
 
   const spotlightStyles = useMemo(
     () =>
@@ -253,7 +335,10 @@ export function TourGuideOverlay() {
     );
   }
 
-  const padding = step.spotlightPadding ?? DEFAULT_SPOTLIGHT_PADDING;
+  const padding = resolveSpotlightPadding(
+    step.spotlightPadding,
+    DEFAULT_SPOTLIGHT_PADDING,
+  );
   const radius = step.spotlightBorderRadius ?? DEFAULT_SPOTLIGHT_RADIUS;
   const showSkip = hideTooltip && !step.hideControls && !step.hideSkipButton;
 
@@ -293,14 +378,50 @@ export function TourGuideOverlay() {
       accessibilityViewIsModal
       accessibilityLabel={step.accessibilityLabel ?? step.title}
     >
-      {swipeAdvance ? (
+      {passiveModeActive ? (
+        // Nothing is captured here: `pointerEvents="none"` lets every touch
+        // fall straight through to the real list beneath. Swipes are being
+        // counted from the list's own scroll offset (see the effect above),
+        // not from anything this view sees.
         <View
           testID="tour-guide-backdrop"
           style={StyleSheet.absoluteFill}
-          {...panResponder.panHandlers}
+          pointerEvents="none"
         >
           {spotlight}
         </View>
+      ) : swipeAdvance ? (
+        <>
+          {/* The dimmed scrim is purely visual and spans the screen the way
+              `Spotlight` needs to draw its cutout — but it never receives a
+              touch, so it can't widen the gesture's capture area. */}
+          <View
+            testID="tour-guide-backdrop"
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          >
+            {spotlight}
+          </View>
+          {/* Touches are captured only over the spotlighted target itself,
+              not the whole screen — a gesture tour should only ever touch
+              what it's teaching. Falls back to the full screen only for the
+              one frame before the target has a measured rect. */}
+          <View
+            testID="tour-guide-gesture-capture"
+            style={[
+              styles.gestureCapture,
+              state.targetRect
+                ? {
+                    left: state.targetRect.x,
+                    top: state.targetRect.y,
+                    width: state.targetRect.width,
+                    height: state.targetRect.height,
+                  }
+                : StyleSheet.absoluteFill,
+            ]}
+            {...panResponder.panHandlers}
+          />
+        </>
       ) : (
         <Pressable
           testID="tour-guide-backdrop"
@@ -369,6 +490,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 9999,
     elevation: 9999,
+  },
+  gestureCapture: {
+    position: "absolute",
   },
   tooltipContainer: {
     position: "absolute",

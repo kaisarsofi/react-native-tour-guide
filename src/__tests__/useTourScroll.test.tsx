@@ -78,6 +78,42 @@ describe("useTourScroll", () => {
     expect(scrollTo).toHaveBeenCalledWith({ y: 0, animated: false });
   });
 
+  it("notifies subscribers with each scroll tick", () => {
+    const { result } = renderHook(() => useTourScroll());
+    const listener = jest.fn();
+
+    let unsubscribe: () => void = () => {};
+    act(() => {
+      unsubscribe = result.current.handle.subscribe!(listener);
+      result.current.scrollProps.onScroll(scrollEvent(0, 96));
+    });
+
+    expect(listener).toHaveBeenCalledWith({ x: 0, y: 96 });
+
+    act(() => {
+      unsubscribe();
+      result.current.scrollProps.onScroll(scrollEvent(0, 192));
+    });
+
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives each subscriber its own offset snapshot, not the live ref", () => {
+    const { result } = renderHook(() => useTourScroll());
+    const seen: Array<{ x: number; y: number }> = [];
+
+    act(() => {
+      result.current.handle.subscribe!((offset) => seen.push(offset));
+      result.current.scrollProps.onScroll(scrollEvent(0, 10));
+      result.current.scrollProps.onScroll(scrollEvent(0, 20));
+    });
+
+    expect(seen).toEqual([
+      { x: 0, y: 10 },
+      { x: 0, y: 20 },
+    ]);
+  });
+
   it("accepts FlatList and ScrollView refs without a generic", () => {
     function Demo() {
       const list = useTourScroll({ horizontal: true });

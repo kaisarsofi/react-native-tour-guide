@@ -4,12 +4,13 @@ import {
   dragScrollHandle,
   isSameTourTarget,
   isTooltipHidden,
+  pageIndexFromOffset,
   resolveCountedSwipe,
+  resolvePassivePageGesture,
   resolveSwipeCount,
   resolveSwipeGesture,
   resolveTourScrollHandle,
   snapScrollToProgress,
-  snapScrollToStep,
 } from "../utils/swipe";
 import { makeStep } from "./helpers";
 import type { TourScrollHandle } from "../types";
@@ -127,25 +128,6 @@ describe("isSameTourTarget", () => {
   });
 });
 
-describe("snapScrollToStep", () => {
-  it("scrolls to the step's index", () => {
-    const scrollToIndex = jest.fn();
-    const handle = makeHandle({ scrollToIndex });
-    snapScrollToStep(makeStep({ scroll: { handle, index: 2, viewPosition: 0 } }));
-    expect(scrollToIndex).toHaveBeenCalledWith({
-      index: 2,
-      animated: true,
-      viewPosition: 0,
-    });
-  });
-
-  it("no-ops when the step has no index", () => {
-    const scrollToIndex = jest.fn();
-    snapScrollToStep(makeStep({ scroll: { handle: makeHandle({ scrollToIndex }) } }));
-    expect(scrollToIndex).not.toHaveBeenCalled();
-  });
-});
-
 describe("resolveSwipeCount", () => {
   it("defaults to 3 on a swipe-hint step", () => {
     expect(resolveSwipeCount(makeStep({ swipeHint: "left" }))).toBe(
@@ -258,5 +240,46 @@ describe("snapScrollToProgress", () => {
       y: 10,
     });
     expect(scrollTo).toHaveBeenCalledWith({ y: 202, animated: true });
+  });
+});
+
+describe("pageIndexFromOffset", () => {
+  it("rounds an offset to the nearest whole page", () => {
+    expect(pageIndexFromOffset(0, 800)).toBe(0);
+    expect(pageIndexFromOffset(800, 800)).toBe(1);
+    expect(pageIndexFromOffset(1600, 800)).toBe(2);
+  });
+
+  it("absorbs sub-pixel settle jitter", () => {
+    expect(pageIndexFromOffset(799.6, 800)).toBe(1);
+    expect(pageIndexFromOffset(800.4, 800)).toBe(1);
+  });
+
+  it("treats a zero or invalid page size as page 0", () => {
+    expect(pageIndexFromOffset(400, 0)).toBe(0);
+    expect(pageIndexFromOffset(400, Number.NaN)).toBe(0);
+    expect(pageIndexFromOffset(400, -10)).toBe(0);
+  });
+});
+
+describe("resolvePassivePageGesture", () => {
+  it("reads an increasing offset as next for up/left hints", () => {
+    expect(resolvePassivePageGesture("up", 1)).toBe("next");
+    expect(resolvePassivePageGesture("left", 2)).toBe("next");
+  });
+
+  it("reads a decreasing offset as prev for up/left hints", () => {
+    expect(resolvePassivePageGesture("up", -1)).toBe("prev");
+    expect(resolvePassivePageGesture("left", -1)).toBe("prev");
+  });
+
+  it("mirrors the sign for down/right hints", () => {
+    expect(resolvePassivePageGesture("down", -1)).toBe("next");
+    expect(resolvePassivePageGesture("right", -1)).toBe("next");
+    expect(resolvePassivePageGesture("down", 1)).toBe("prev");
+  });
+
+  it("reports no gesture when the page hasn't changed", () => {
+    expect(resolvePassivePageGesture("up", 0)).toBeNull();
   });
 });

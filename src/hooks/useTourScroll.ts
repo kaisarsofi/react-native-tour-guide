@@ -64,6 +64,7 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
 
   const nodeRef = useRef<ScrollableNode | null>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
+  const listenersRef = useRef(new Set<(offset: { x: number; y: number }) => void>());
 
   const userOnScrollRef = useRef(userOnScroll);
   userOnScrollRef.current = userOnScroll;
@@ -72,12 +73,26 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
     nodeRef.current = instance;
   }, []);
 
+  const subscribe = useCallback(
+    (listener: (offset: { x: number; y: number }) => void) => {
+      listenersRef.current.add(listener);
+      return () => {
+        listenersRef.current.delete(listener);
+      };
+    },
+    [],
+  );
+
   const scrollProps = useMemo(
     () => ({
       onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const { x, y } = event.nativeEvent.contentOffset;
         offsetRef.current.x = x;
         offsetRef.current.y = y;
+        // Snapshot the values (not the mutable ref) so a listener that
+        // reads them later can't observe a subsequent tick's numbers.
+        const snapshot = { x, y };
+        listenersRef.current.forEach((listener) => listener(snapshot));
         userOnScrollRef.current?.(event);
       },
       scrollEventThrottle: 16,
@@ -86,8 +101,8 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
   );
 
   const handle = useMemo<TourScrollHandle>(
-    () => ({ ref: nodeRef, offsetRef, horizontal, pagingEnabled }),
-    [horizontal, pagingEnabled],
+    () => ({ ref: nodeRef, offsetRef, horizontal, pagingEnabled, subscribe }),
+    [horizontal, pagingEnabled, subscribe],
   );
 
   const reset = useCallback(() => {

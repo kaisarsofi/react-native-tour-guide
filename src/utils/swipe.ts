@@ -94,6 +94,9 @@ function firstScrollOptions(step: TourStep | undefined) {
   return Array.isArray(step.scroll) ? (step.scroll[0] ?? null) : step.scroll;
 }
 
+/** Public alias — the overlay reads a step's own `scroll` config by this name. */
+export const resolveStepScrollOptions = firstScrollOptions;
+
 function handleFromStep(step: TourStep | undefined): TourScrollHandle | null {
   return firstScrollOptions(step)?.handle ?? null;
 }
@@ -216,9 +219,42 @@ export function snapScrollToProgress(
 }
 
 /**
- * Snap a paging list to a step's `scroll.index` immediately, so the pager
- * doesn't bounce back to the current page before the tour advances.
+ * `up`/`left` count a swipe as the list's own offset (and so its page
+ * index) *increasing* — the same direction `dragScrollHandle` moves the
+ * offset for those hints. `down`/`right` are the mirror image. Kept
+ * separate from `NEXT_SIGN` above: that one reads a raw touch delta
+ * (dx/dy), this one reads an already-settled scroll offset, and the two
+ * point opposite ways for the same hinted direction.
  */
-export function snapScrollToStep(step: TourStep | undefined): void {
-  snapScrollToProgress(step, 0, { x: 0, y: 0 });
+const OFFSET_NEXT_SIGN: Record<SwipeDirection, number> = {
+  up: 1,
+  left: 1,
+  down: -1,
+  right: -1,
+};
+
+/**
+ * A paging list always comes to rest on a whole multiple of its own page
+ * size, so the page index is just the offset divided by that size, rounded
+ * to absorb the sub-pixel jitter a native scroll settle leaves behind.
+ */
+export function pageIndexFromOffset(offset: number, pageSize: number): number {
+  if (!Number.isFinite(pageSize) || pageSize <= 0) return 0;
+  return Math.round(offset / pageSize);
+}
+
+/**
+ * The passive counterpart to `resolveSwipeGesture`: instead of reading a
+ * captured touch's dx/dy, this reads how far the list's own page index
+ * moved between two observed scroll ticks. Used when the swipe-hint's
+ * target is already natively scrollable, so counting swipes never needs to
+ * capture a single touch — the list is left to scroll (and page-snap)
+ * exactly as if no tour were running.
+ */
+export function resolvePassivePageGesture(
+  direction: SwipeDirection,
+  indexDelta: number,
+): "next" | "prev" | null {
+  if (indexDelta === 0) return null;
+  return Math.sign(indexDelta) === OFFSET_NEXT_SIGN[direction] ? "next" : "prev";
 }

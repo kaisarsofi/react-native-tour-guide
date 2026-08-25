@@ -9,10 +9,6 @@ export { SwipeHint, type SwipeHintProps } from "./components/SwipeHint";
 
 export { useTourGuide } from "./hooks/useTourGuide";
 export {
-  useTourPersistence,
-  type TourStorageAdapter,
-} from "./hooks/useTourPersistence";
-export {
   useTourScroll,
   type TourScrollListRef,
   type UseTourScrollOptions,
@@ -35,7 +31,7 @@ export {
 } from "./themes";
 
 export { cn } from "./utils/cn";
-export { createMemoryStorage } from "./utils/storage";
+export { createMemoryStorage, type TourStorageAdapter } from "./utils/storage";
 export { DEFAULT_SWIPE_COUNT } from "./utils/swipe";
 export {
   DEFAULT_WIZARD_NEXT_COUNT,

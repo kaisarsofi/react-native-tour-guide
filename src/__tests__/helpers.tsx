@@ -5,7 +5,7 @@ import type { View } from "react-native";
 import { TourGuideOverlay } from "../components/TourGuideOverlay";
 import { useTourGuide } from "../hooks/useTourGuide";
 import { TourGuideProvider } from "../TourGuideContext";
-import type { TourGuideConfig, TourStep } from "../types";
+import type { TourGuideConfig, TourScrollHandle, TourStep } from "../types";
 
 export function measurableRef(
   x = 10,
@@ -37,6 +37,34 @@ export function makeStep(over: Partial<TourStep> = {}): TourStep {
     title: "Hello",
     description: "World",
     targetRegion: { x: 10, y: 20, width: 100, height: 50 },
+    ...over,
+  };
+}
+
+/**
+ * A `TourScrollHandle` whose `subscribe` is a real, test-driven event
+ * emitter — `emit` pushes an offset to every subscriber exactly like a
+ * `useTourScroll`-wrapped `onScroll` tick would, so a passive swipe-hint
+ * test can simulate "the list scrolled" without a real native list.
+ */
+export function makeSubscribableHandle(
+  over: Partial<TourScrollHandle> = {},
+): TourScrollHandle & { emit: (offset: { x: number; y: number }) => void } {
+  const listeners = new Set<(offset: { x: number; y: number }) => void>();
+  const offsetRef = { current: { x: 0, y: 0 } };
+  return {
+    ref: { current: { scrollToIndex: jest.fn(), scrollTo: jest.fn() } },
+    offsetRef,
+    horizontal: false,
+    pagingEnabled: true,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    emit(offset) {
+      offsetRef.current = offset;
+      listeners.forEach((listener) => listener(offset));
+    },
     ...over,
   };
 }
