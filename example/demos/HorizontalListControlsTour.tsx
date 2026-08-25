@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect } from "react";
-import { FlatList, Pressable, Text, View, useWindowDimensions } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { FlatList, Pressable, Text, View } from "react-native";
 import {
   TourTarget,
   useTourGuide,
@@ -15,21 +15,57 @@ import { DemoHeader } from "../components/DemoHeader";
 const CARD_HEIGHT = 360;
 
 const CATEGORIES = [
-  { id: "c0", icon: "sparkles-outline" as const, label: "For you", body: "Picks based on what you open most.", tint: "#EDE9FE", accent: "#6D28D9" },
-  { id: "c1", icon: "flame-outline" as const, label: "Trending", body: "What people are browsing right now.", tint: "#FEF3C7", accent: "#B45309" },
-  { id: "c2", icon: "star-outline" as const, label: "New", body: "Just added this week.", tint: "#DCFCE7", accent: "#15803D" },
-  { id: "c3", icon: "color-palette-outline" as const, label: "Design", body: "Layouts, type, and color systems.", tint: "#DBEAFE", accent: "#1D4ED8" },
-  { id: "c4", icon: "code-slash-outline" as const, label: "Engineering", body: "APIs, tooling, and architecture.", tint: "#FCE7F3", accent: "#BE185D" },
-  { id: "c5", icon: "archive-outline" as const, label: "Archive", body: "Older collections, still searchable.", tint: "#F1F5F9", accent: "#475569" },
+  {
+    id: "c0",
+    icon: "sparkles-outline" as const,
+    label: "For you",
+    body: "Picks based on what you open most.",
+    tint: "#EDE9FE",
+    accent: "#6D28D9",
+  },
+  {
+    id: "c1",
+    icon: "flame-outline" as const,
+    label: "Trending",
+    body: "What people are browsing right now.",
+    tint: "#FEF3C7",
+    accent: "#B45309",
+  },
+  {
+    id: "c2",
+    icon: "star-outline" as const,
+    label: "New",
+    body: "Just added this week.",
+    tint: "#DCFCE7",
+    accent: "#15803D",
+  },
+  {
+    id: "c3",
+    icon: "color-palette-outline" as const,
+    label: "Design",
+    body: "Layouts, type, and color systems.",
+    tint: "#DBEAFE",
+    accent: "#1D4ED8",
+  },
+  {
+    id: "c4",
+    icon: "code-slash-outline" as const,
+    label: "Engineering",
+    body: "APIs, tooling, and architecture.",
+    tint: "#FCE7F3",
+    accent: "#BE185D",
+  },
+  {
+    id: "c5",
+    icon: "archive-outline" as const,
+    label: "Archive",
+    body: "Older collections, still searchable.",
+    tint: "#F1F5F9",
+    accent: "#475569",
+  },
 ];
 
-function Card({
-  item,
-  width,
-}: {
-  item: (typeof CATEGORIES)[number];
-  width: number;
-}) {
+function Card({ item, width }: { item: (typeof CATEGORIES)[number]; width: number }) {
   return (
     <View style={{ width }} className="px-1">
       <View
@@ -76,13 +112,15 @@ export function HorizontalListControlsTour() {
   const { startTour, resetTour, nextStep, isActive, tourId } = useTourGuide();
   const { ref, scrollProps, handle, reset } = useTourScroll({ horizontal: true });
   const isThisTour = isActive && tourId === TOUR_ID;
-  // The rail sits inside `mx-10` (40px each side) — computing this from the
-  // window synchronously, instead of measuring the rail with `onLayout`,
-  // avoids a race where the tour's initial `scroll: { index: 0 }` step could
-  // fire against a stale width and land the list mid-page (two cards, each
-  // showing half).
-  const { width: windowWidth } = useWindowDimensions();
-  const pageWidth = windowWidth - 80;
+  // `pagingEnabled` snaps to the *list's own viewport width*, so a card any
+  // wider or narrower than that viewport leaves the neighbouring card partly
+  // on screen after a swipe. Deriving this from the window means restating
+  // every ancestor's padding here (the screen's `px-4`, the rail's `mx-10`,
+  // ...) and silently drifting the moment any of them changes — so measure
+  // the rail itself instead, and let the effect below hold the tour until
+  // that measurement lands.
+  const [pageWidth, setPageWidth] = useState(0);
+  const hasStartedRef = useRef(false);
 
   const scrollByPage = (delta: number) => {
     if (pageWidth <= 0) return;
@@ -133,11 +171,16 @@ export function HorizontalListControlsTour() {
     },
   ];
 
+  // Wait for the rail's real width before starting: the first step's
+  // `scroll: { index: 0 }` would otherwise fire against a zero width and
+  // land the list mid-page.
   useEffect(() => {
+    if (pageWidth <= 0 || hasStartedRef.current) return;
+    hasStartedRef.current = true;
     reset();
     startTour(steps, { tourId: TOUR_ID, persist: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pageWidth]);
 
   return (
     <View className="flex-1 px-4 pt-1">
@@ -146,8 +189,8 @@ export function HorizontalListControlsTour() {
         title="Horizontal + controls"
         description={
           <>
-            Paged cards (one per screen). Swipe twice, then tap each arrow —
-            those steps use <Code>onSpotlightPress</Code> with no tooltip Next.
+            Paged cards (one per screen). Swipe twice, then tap each arrow — those steps
+            use <Code>onSpotlightPress</Code> with no tooltip Next.
           </>
         }
       />
@@ -155,22 +198,32 @@ export function HorizontalListControlsTour() {
       <View className="flex-1 justify-center">
         <View className="mx-10">
           <TourTarget id="category-rail">
-            <View className="overflow-hidden rounded-3xl">
-              <FlatList
-                ref={ref}
-                {...scrollProps}
-                horizontal
-                pagingEnabled
-                data={CATEGORIES}
-                keyExtractor={(item) => item.id}
-                showsHorizontalScrollIndicator={false}
-                getItemLayout={(_, index) => ({
-                  length: pageWidth,
-                  offset: pageWidth * index,
-                  index,
-                })}
-                renderItem={({ item }) => <Card item={item} width={pageWidth} />}
-              />
+            {/* This view *is* the pager's viewport, so its measured width is
+                by definition the width `pagingEnabled` snaps to. The explicit
+                height keeps the rail from collapsing on the first frame,
+                before that measurement arrives. */}
+            <View
+              className="overflow-hidden rounded-3xl"
+              style={{ height: CARD_HEIGHT }}
+              onLayout={(event) => setPageWidth(event.nativeEvent.layout.width)}
+            >
+              {pageWidth > 0 ? (
+                <FlatList
+                  ref={ref}
+                  {...scrollProps}
+                  horizontal
+                  pagingEnabled
+                  data={CATEGORIES}
+                  keyExtractor={(item) => item.id}
+                  showsHorizontalScrollIndicator={false}
+                  getItemLayout={(_, index) => ({
+                    length: pageWidth,
+                    offset: pageWidth * index,
+                    index,
+                  })}
+                  renderItem={({ item }) => <Card item={item} width={pageWidth} />}
+                />
+              ) : null}
             </View>
           </TourTarget>
 

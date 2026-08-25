@@ -5,7 +5,7 @@ import type { View } from "react-native";
 import { TourGuideOverlay } from "../components/TourGuideOverlay";
 import { useTourGuide } from "../hooks/useTourGuide";
 import { TourGuideProvider } from "../TourGuideContext";
-import type { TourGuideConfig, TourStep } from "../types";
+import type { TourGuideConfig, TourScrollHandle, TourStep } from "../types";
 
 export function measurableRef(
   x = 10,
@@ -37,6 +37,37 @@ export function makeStep(over: Partial<TourStep> = {}): TourStep {
     title: "Hello",
     description: "World",
     targetRegion: { x: 10, y: 20, width: 100, height: 50 },
+    ...over,
+  };
+}
+
+/**
+ * A `TourScrollHandle` whose `subscribeGesture` is a real, test-driven
+ * event emitter — `emitGesture` pushes a completed-gesture delta to every
+ * subscriber exactly like a `useTourScroll`-wrapped drag(+momentum)
+ * session settling would, so a passive swipe-hint test can simulate "the
+ * user swiped the real list" without a real native list or real touch
+ * timing.
+ */
+export function makeSubscribableHandle(
+  over: Partial<TourScrollHandle> = {},
+): TourScrollHandle & {
+  emitGesture: (delta: { x: number; y: number }) => void;
+} {
+  const listeners = new Set<(delta: { x: number; y: number }) => void>();
+  const offsetRef = { current: { x: 0, y: 0 } };
+  return {
+    ref: { current: { scrollToIndex: jest.fn(), scrollTo: jest.fn() } },
+    offsetRef,
+    horizontal: false,
+    pagingEnabled: true,
+    subscribeGesture: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    emitGesture(delta) {
+      listeners.forEach((listener) => listener(delta));
+    },
     ...over,
   };
 }

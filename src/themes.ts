@@ -46,26 +46,39 @@ export const DEFAULT_SPOTLIGHT_STYLES: Required<SpotlightStyles> = {
  * scrim doesn't dim — so it has to read against ordinary app content, not
  * against the dark backdrop. Hence a dark default rather than a white one.
  * Override `color` / `trailColor` when spotlighting a dark element.
+ *
+ * `trailLength` isn't listed here — it defaults to `distance * 1.15`, a
+ * value that depends on the *resolved* `distance` (which may itself have
+ * come from the caller), not a fixed constant. `resolveSwipeHint` computes
+ * it after merging everything else.
  */
-export const DEFAULT_SWIPE_HINT: Omit<ResolvedSwipeHint, "direction"> = {
-  distance: 64,
-  duration: 1400,
-  repeatDelay: 400,
-  size: 60,
-  color: "#0F172A",
-  showTrail: true,
-  trailColor: "#0F172A",
-};
+export const DEFAULT_SWIPE_HINT: Omit<ResolvedSwipeHint, "direction" | "trailLength"> =
+  {
+    distance: 64,
+    duration: 1400,
+    repeatDelay: 400,
+    size: 60,
+    color: "#0F172A",
+    fillColor: "#FFFFFF",
+    showTrail: true,
+    trailColor: "#0F172A",
+  };
+
+/** How much longer the trail is than the hand's own travel, when `trailLength` isn't set explicitly. */
+const DEFAULT_TRAIL_LENGTH_RATIO = 1.15;
 
 /** Accepts the `"left"` shorthand as well as the full config object. */
 export function resolveSwipeHint(
   hint: SwipeDirection | SwipeHintConfig | undefined,
 ): ResolvedSwipeHint | null {
   if (!hint) return null;
-  if (typeof hint === "string") {
-    return { ...DEFAULT_SWIPE_HINT, direction: hint };
-  }
-  return { ...DEFAULT_SWIPE_HINT, ...hint };
+  const config = typeof hint === "string" ? { direction: hint } : hint;
+  const distance = config.distance ?? DEFAULT_SWIPE_HINT.distance;
+  return {
+    ...DEFAULT_SWIPE_HINT,
+    trailLength: distance * DEFAULT_TRAIL_LENGTH_RATIO,
+    ...config,
+  };
 }
 
 export const DEFAULT_CONFIG: Omit<

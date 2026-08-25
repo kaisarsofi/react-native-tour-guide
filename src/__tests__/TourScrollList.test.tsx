@@ -125,6 +125,111 @@ describe("TourScrollList", () => {
     expect(steps[0]!.scroll).toBeTruthy();
   });
 
+  it("leaves spotlightPadding/spotlightBorderRadius unset by default, so the overlay's own defaults apply", async () => {
+    const onStart = jest.fn();
+
+    function Harness({ data }: { data: number[] }) {
+      return (
+        <TourGuideProvider>
+          <StartedStepsListener onStart={onStart} />
+          <TourScrollList
+            as={FakeList}
+            id="matches-list"
+            title="Your matches"
+            description="Swipe up to see more profiles."
+            data={data}
+          />
+          <TourGuideOverlay />
+        </TourGuideProvider>
+      );
+    }
+
+    const { rerender } = render(<Harness data={[]} />);
+    await act(async () => {
+      rerender(<Harness data={[1, 2, 3]} />);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+
+    const steps = onStart.mock.calls[0]![0] as TourStep[];
+    expect(steps[0]!.spotlightPadding).toBeUndefined();
+    expect(steps[0]!.spotlightBorderRadius).toBeUndefined();
+  });
+
+  it("forwards spotlightPadding and spotlightBorderRadius onto the generated step", async () => {
+    const onStart = jest.fn();
+
+    function Harness({ data }: { data: number[] }) {
+      return (
+        <TourGuideProvider>
+          <StartedStepsListener onStart={onStart} />
+          <TourScrollList
+            as={FakeList}
+            id="matches-list"
+            title="Your matches"
+            description="Swipe up to see more profiles."
+            spotlightPadding={0}
+            spotlightBorderRadius={36}
+            data={data}
+          />
+          <TourGuideOverlay />
+        </TourGuideProvider>
+      );
+    }
+
+    const { rerender } = render(<Harness data={[]} />);
+    await act(async () => {
+      rerender(<Harness data={[1, 2, 3]} />);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+
+    const steps = onStart.mock.calls[0]![0] as TourStep[];
+    expect(steps[0]!.spotlightPadding).toBe(0);
+    expect(steps[0]!.spotlightBorderRadius).toBe(36);
+  });
+
+  it("lets tourStep override spotlightPadding/spotlightBorderRadius when both are set", async () => {
+    const onStart = jest.fn();
+
+    function Harness({ data }: { data: number[] }) {
+      return (
+        <TourGuideProvider>
+          <StartedStepsListener onStart={onStart} />
+          <TourScrollList
+            as={FakeList}
+            id="matches-list"
+            title="Your matches"
+            description="Swipe up to see more profiles."
+            spotlightPadding={0}
+            tourStep={{ spotlightPadding: 20 }}
+            data={data}
+          />
+          <TourGuideOverlay />
+        </TourGuideProvider>
+      );
+    }
+
+    const { rerender } = render(<Harness data={[]} />);
+    await act(async () => {
+      rerender(<Harness data={[1, 2, 3]} />);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+
+    const steps = onStart.mock.calls[0]![0] as TourStep[];
+    expect(steps[0]!.spotlightPadding).toBe(20);
+  });
+
   it("does not start the tour while inactive, even once data is present", async () => {
     const onStart = jest.fn();
 

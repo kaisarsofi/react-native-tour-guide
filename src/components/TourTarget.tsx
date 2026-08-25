@@ -6,7 +6,6 @@ import { useTourGuideContext } from "../TourGuideContext";
 export interface TourTargetProps extends ViewProps {
   /** Referenced from a `TourStep` via `targetId`. */
   id: string;
-  className?: string;
 }
 
 /**

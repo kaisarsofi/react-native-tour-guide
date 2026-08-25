@@ -3,7 +3,7 @@ import { StyleSheet, Text } from "react-native";
 import { act, fireEvent, screen } from "@testing-library/react-native";
 
 import type { TooltipProps } from "../types";
-import { makeStep, measurableRef, renderTour } from "./helpers";
+import { makeStep, makeSubscribableHandle, measurableRef, renderTour } from "./helpers";
 
 describe("TourGuideOverlay rendering", () => {
   it("shows the tooltip for a targetRegion", async () => {
@@ -150,6 +150,73 @@ describe("TourGuideOverlay rendering", () => {
     fireEvent.press(screen.getByTestId("tour-guide-skip"));
 
     expect(tour.api.isActive).toBe(false);
+  });
+
+  it("counts swipes from a bound scroll handle's own completed gestures instead of capturing touches", async () => {
+    const handle = makeSubscribableHandle();
+    await renderTour().start([makeStep({ swipeHint: "up", scroll: { handle } })]);
+
+    const backdrop = screen.getByTestId("tour-guide-backdrop");
+    // Nothing here should be able to receive a touch: no PanResponder
+    // handlers were attached, so nothing but pointerEvents="none" is doing
+    // the work of leaving the real list untouched.
+    expect(backdrop.props.pointerEvents).toBe("none");
+    expect(backdrop.props.onStartShouldSetResponder).toBeUndefined();
+    expect(backdrop.props.onMoveShouldSetResponder).toBeUndefined();
+
+    act(() => handle.emitGesture({ x: 0, y: 96 }));
+    act(() => handle.emitGesture({ x: 0, y: 96 }));
+    // Still on the (only) step — two swipes counted, one to go.
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeTruthy();
+
+    act(() => handle.emitGesture({ x: 0, y: 96 }));
+    // Third swipe on a single-step tour ends it — exactly like a captured
+    // gesture would, just derived from the list's own real movement.
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeNull();
+  });
+
+  it("counts one swipe no matter how far a single gesture actually scrolled the list", async () => {
+    // This is what over-counted under the old offset-crossing design: a
+    // single long native scroll (a fast fling, or a non-paging list with a
+    // small virtual `scroll.pageSize`) must still land as exactly one
+    // swipe, since it came from exactly one physical gesture.
+    const handle = makeSubscribableHandle({ pagingEnabled: false });
+    await renderTour().start([
+      makeStep({ swipeHint: "up", scroll: { handle, pageSize: 50 } }),
+    ]);
+
+    act(() => handle.emitGesture({ x: 0, y: 650 }));
+    // One swipe counted (of three), not thirteen (650 / 50) — still on the
+    // (only) step.
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeTruthy();
+
+    act(() => handle.emitGesture({ x: 0, y: 96 }));
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeTruthy();
+
+    act(() => handle.emitGesture({ x: 0, y: 96 }));
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeNull();
+  });
+
+  it("falls back to capturing touches when the handle can't be subscribed to", async () => {
+    // A hand-built TourScrollHandle (no `subscribeGesture`, as
+    // `useTourScroll` always provides) can't be watched passively, so the
+    // gesture tour still needs to capture touches the old way.
+    const handle = {
+      ref: { current: { scrollToIndex: jest.fn() } },
+      offsetRef: { current: { x: 0, y: 0 } },
+      horizontal: false,
+      pagingEnabled: true,
+    };
+    await renderTour().start([makeStep({ swipeHint: "up", scroll: { handle } })]);
+
+    // The dimmed scrim stays purely visual even in the capturing path —
+    // only the target-scoped capture view (see the next assertion) claims
+    // touches, per the "shrink the capture surface" fix.
+    const backdrop = screen.getByTestId("tour-guide-backdrop");
+    expect(backdrop.props.pointerEvents).toBe("none");
+
+    const capture = screen.getByTestId("tour-guide-gesture-capture");
+    expect(typeof capture.props.onStartShouldSetResponder).toBe("function");
   });
 
   it("fires onSpotlightPress instead of the backdrop behavior when the tap lands inside the spotlight", async () => {

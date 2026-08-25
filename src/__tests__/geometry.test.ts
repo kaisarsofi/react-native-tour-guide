@@ -4,8 +4,8 @@ import { Dimensions, type View } from "react-native";
 import {
   computeTooltipLayout,
   measureView,
-  padRect,
   rectsEqual,
+  resolveSpotlightPadding,
 } from "../utils/geometry";
 
 function viewRef(
@@ -38,19 +38,38 @@ function pageRef(
   } as RefObject<View | null>;
 }
 
-describe("padRect", () => {
-  it("expands a rect equally on every side", () => {
-    expect(padRect({ x: 10, y: 20, width: 100, height: 40 }, 8)).toEqual({
-      x: 2,
-      y: 12,
-      width: 116,
-      height: 56,
+describe("resolveSpotlightPadding", () => {
+  it("falls back to the same value on both axes when unset", () => {
+    expect(resolveSpotlightPadding(undefined, 8)).toEqual({
+      horizontal: 8,
+      vertical: 8,
     });
   });
 
-  it("returns the original geometry when padding is 0", () => {
-    const rect = { x: 4, y: 8, width: 16, height: 24 };
-    expect(padRect(rect, 0)).toEqual(rect);
+  it("applies a plain number to both axes equally", () => {
+    expect(resolveSpotlightPadding(12, 8)).toEqual({ horizontal: 12, vertical: 12 });
+  });
+
+  it("honours independent horizontal/vertical overrides", () => {
+    expect(resolveSpotlightPadding({ horizontal: 0, vertical: 20 }, 8)).toEqual({
+      horizontal: 0,
+      vertical: 20,
+    });
+  });
+
+  it("falls back per-axis when only one side of the object is set", () => {
+    expect(resolveSpotlightPadding({ vertical: 20 }, 8)).toEqual({
+      horizontal: 8,
+      vertical: 20,
+    });
+    expect(resolveSpotlightPadding({ horizontal: 0 }, 8)).toEqual({
+      horizontal: 0,
+      vertical: 8,
+    });
+  });
+
+  it("allows a negative value to inset the spotlight instead of padding it", () => {
+    expect(resolveSpotlightPadding(-8, 8)).toEqual({ horizontal: -8, vertical: -8 });
   });
 });
 

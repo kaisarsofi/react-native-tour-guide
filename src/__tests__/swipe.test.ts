@@ -5,11 +5,11 @@ import {
   isSameTourTarget,
   isTooltipHidden,
   resolveCountedSwipe,
+  resolveScrollGesture,
   resolveSwipeCount,
   resolveSwipeGesture,
   resolveTourScrollHandle,
   snapScrollToProgress,
-  snapScrollToStep,
 } from "../utils/swipe";
 import { makeStep } from "./helpers";
 import type { TourScrollHandle } from "../types";
@@ -127,25 +127,6 @@ describe("isSameTourTarget", () => {
   });
 });
 
-describe("snapScrollToStep", () => {
-  it("scrolls to the step's index", () => {
-    const scrollToIndex = jest.fn();
-    const handle = makeHandle({ scrollToIndex });
-    snapScrollToStep(makeStep({ scroll: { handle, index: 2, viewPosition: 0 } }));
-    expect(scrollToIndex).toHaveBeenCalledWith({
-      index: 2,
-      animated: true,
-      viewPosition: 0,
-    });
-  });
-
-  it("no-ops when the step has no index", () => {
-    const scrollToIndex = jest.fn();
-    snapScrollToStep(makeStep({ scroll: { handle: makeHandle({ scrollToIndex }) } }));
-    expect(scrollToIndex).not.toHaveBeenCalled();
-  });
-});
-
 describe("resolveSwipeCount", () => {
   it("defaults to 3 on a swipe-hint step", () => {
     expect(resolveSwipeCount(makeStep({ swipeHint: "left" }))).toBe(
@@ -258,5 +239,35 @@ describe("snapScrollToProgress", () => {
       y: 10,
     });
     expect(scrollTo).toHaveBeenCalledWith({ y: 202, animated: true });
+  });
+});
+
+describe("resolveScrollGesture", () => {
+  it("reads a large-enough increasing offset as next for up/left hints", () => {
+    expect(resolveScrollGesture("up", 0, 96)).toBe("next");
+    expect(resolveScrollGesture("left", 96, 0)).toBe("next");
+  });
+
+  it("reads a large-enough decreasing offset as prev for up/left hints", () => {
+    expect(resolveScrollGesture("up", 0, -96)).toBe("prev");
+    expect(resolveScrollGesture("left", -96, 0)).toBe("prev");
+  });
+
+  it("mirrors the sign for down/right hints", () => {
+    expect(resolveScrollGesture("down", 0, -96)).toBe("next");
+    expect(resolveScrollGesture("right", -96, 0)).toBe("next");
+    expect(resolveScrollGesture("down", 0, 96)).toBe("prev");
+  });
+
+  it("ignores a delta under the threshold", () => {
+    expect(resolveScrollGesture("up", 0, 10)).toBeNull();
+  });
+
+  it("ignores a delta that's mostly on the other axis", () => {
+    expect(resolveScrollGesture("up", 200, 60)).toBeNull();
+  });
+
+  it("accepts a custom threshold", () => {
+    expect(resolveScrollGesture("up", 0, 30, 20)).toBe("next");
   });
 });

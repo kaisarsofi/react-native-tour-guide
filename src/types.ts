@@ -33,13 +33,39 @@ export interface SwipeHintConfig {
   repeatDelay?: number;
   /** Hand size in px. Default 44. */
   size?: number;
+  /** Color of the hand's outline (stroke). Default `#0F172A`. */
   color?: string;
+  /**
+   * Color of the hand's palm (fill), separate from the outline. Default
+   * `#FFFFFF` — a white fill reads clearly against most content regardless
+   * of the outline color, but set this if white clashes with what's
+   * spotlit.
+   */
+  fillColor?: string;
   /** Draw a fading track behind the hand showing the path. Default true. */
   showTrail?: boolean;
   trailColor?: string;
+  /**
+   * Length of the fading trail, in px. Defaults to `distance * 1.15` — the
+   * trail slightly overruns the hand's own travel on both ends. Set this to
+   * make the trail longer or shorter without changing how far the hand
+   * itself travels (that's `distance`); trail *thickness* still scales with
+   * `size` and isn't independently configurable.
+   */
+  trailLength?: number;
 }
 
 export type ResolvedSwipeHint = Required<SwipeHintConfig>;
+
+/**
+ * Space (px) between the target's own bounds and the spotlight cutout. A
+ * plain number pads (or, negative, insets) both axes equally — the common
+ * case. Pass `{ horizontal, vertical }` when a target already fits tightly
+ * on one axis (a full-width card, say) but needs different breathing room
+ * on the other (a tab bar right above it, bottom navigation right below) —
+ * either axis left unset falls back to the same default as a plain number.
+ */
+export type SpotlightPadding = number | { horizontal?: number; vertical?: number };
 
 /**
  * Anything with the scroll methods we need. Covers `ScrollView`, `FlatList`,
@@ -76,6 +102,19 @@ export interface TourScrollHandle {
    * can.
    */
   pagingEnabled: boolean;
+  /**
+   * Subscribe to completed scroll gestures — fires once per drag (plus any
+   * following momentum) that settles, with the net offset delta over that
+   * whole session. Lets a `swipeHint` step on an already-scrollable target
+   * count swipes by watching how far the list's own native scroll actually
+   * moved per gesture, instead of capturing touches with a gesture
+   * responder and driving the scroll itself. Optional so a handle built by
+   * hand (without `useTourScroll`) still type-checks — such a handle just
+   * falls back to the touch-capturing path.
+   */
+  subscribeGesture?: (
+    listener: (delta: { x: number; y: number }) => void,
+  ) => () => void;
 }
 
 export interface TourScrollOptions {
@@ -92,8 +131,14 @@ export interface TourScrollOptions {
   /** Where the row lands when using `index`: 0 = start, 0.5 = centre, 1 = end. */
   viewPosition?: number;
   /**
-   * How far one counted swipe scrolls a non-paging list, in px. Ignored when
-   * `index` is set — those steps page by index instead.
+   * How far one counted swipe scrolls a non-paging list, in px, when the
+   * bound `handle` can't be watched passively (a hand-built
+   * `TourScrollHandle` with no `subscribeGesture`, unlike one from
+   * `useTourScroll()`) and the tour has to capture the touch and drive the
+   * scroll itself. Ignored when `index` is set (those steps page by index
+   * instead) or when the handle supports `subscribeGesture` — there, the
+   * list scrolls itself and one physical swipe always counts as one,
+   * however far it actually travels.
    */
   pageSize?: number;
 }
@@ -127,7 +172,7 @@ export interface TourStep {
   description: string;
   tooltipPosition?: TooltipPosition;
   /** Extra space (px) between the target bounds and the spotlight cutout. */
-  spotlightPadding?: number;
+  spotlightPadding?: SpotlightPadding;
   /** Overrides the auto-detected border radius of the spotlight cutout. */
   spotlightBorderRadius?: number;
   /** Skip this step without renumbering the tour. */

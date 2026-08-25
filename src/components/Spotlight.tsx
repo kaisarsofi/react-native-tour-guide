@@ -11,6 +11,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Defs, Mask, Rect } from "react-native-svg";
 
+import type { ResolvedSpotlightPadding } from "../utils/geometry";
 import type { Rect as RectType, SpotlightStyles, TourMotion } from "../types";
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -19,7 +20,7 @@ const PULSE_SPREAD = 14;
 export interface SpotlightProps {
   rect: RectType | null;
   radius: number;
-  padding: number;
+  padding: ResolvedSpotlightPadding;
   styles: Required<SpotlightStyles>;
   motion: TourMotion;
   duration: number;
@@ -34,11 +35,12 @@ export function Spotlight({
   duration,
 }: SpotlightProps) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { horizontal: padX, vertical: padY } = padding;
 
-  const holeX = useSharedValue(rect ? rect.x - padding : screenWidth / 2);
-  const holeY = useSharedValue(rect ? rect.y - padding : screenHeight / 2);
-  const holeW = useSharedValue(rect ? rect.width + padding * 2 : 0);
-  const holeH = useSharedValue(rect ? rect.height + padding * 2 : 0);
+  const holeX = useSharedValue(rect ? rect.x - padX : screenWidth / 2);
+  const holeY = useSharedValue(rect ? rect.y - padY : screenHeight / 2);
+  const holeW = useSharedValue(rect ? rect.width + padX * 2 : 0);
+  const holeH = useSharedValue(rect ? rect.height + padY * 2 : 0);
   const holeR = useSharedValue(radius);
   const opacity = useSharedValue(rect ? 1 : 0);
   const pulse = useSharedValue(0);
@@ -49,10 +51,10 @@ export function Spotlight({
       return;
     }
     const timing = { duration: motion === "none" ? 0 : duration };
-    holeX.value = withTiming(rect.x - padding, timing);
-    holeY.value = withTiming(rect.y - padding, timing);
-    holeW.value = withTiming(rect.width + padding * 2, timing);
-    holeH.value = withTiming(rect.height + padding * 2, timing);
+    holeX.value = withTiming(rect.x - padX, timing);
+    holeY.value = withTiming(rect.y - padY, timing);
+    holeW.value = withTiming(rect.width + padX * 2, timing);
+    holeH.value = withTiming(rect.height + padY * 2, timing);
     holeR.value = withTiming(radius, timing);
     opacity.value = withTiming(1, { duration });
   }, [
@@ -64,7 +66,8 @@ export function Spotlight({
     holeY,
     motion,
     opacity,
-    padding,
+    padX,
+    padY,
     radius,
     rect,
   ]);

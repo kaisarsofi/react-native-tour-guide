@@ -85,8 +85,13 @@ export function SwipeHint({ rect, hint }: SwipeHintProps) {
 
   const isVertical = AXIS[hint.direction] === "y";
   const pad = 10;
-  const width = isVertical ? hint.size + pad * 2 : hint.distance + hint.size;
-  const height = isVertical ? hint.distance + hint.size : hint.size + pad * 2;
+  // The trail can now be set longer than the hand's own travel (see
+  // `trailLength`), so the bounding box has to fit whichever span is
+  // larger — otherwise a trail longer than `distance` would clip against
+  // the edge of this view instead of drawing in full.
+  const travelSpan = Math.max(hint.distance, hint.trailLength);
+  const width = isVertical ? hint.size + pad * 2 : travelSpan + hint.size;
+  const height = isVertical ? travelSpan + hint.size : hint.size + pad * 2;
   const midX = width / 2;
   const midY = height / 2;
   const travel = hint.distance * 0.72;
@@ -138,9 +143,7 @@ export function SwipeHint({ rect, hint }: SwipeHintProps) {
   });
 
   const trailThickness = hint.size * 0.3;
-  // Longer than the hand's own travel so the line reads clearly as a track
-  // the hand rides along, not just the span it slides across.
-  const trailLength = hint.distance * 1.15;
+  const trailLength = hint.trailLength;
 
   if (!rect) return null;
 
@@ -170,7 +173,7 @@ export function SwipeHint({ rect, hint }: SwipeHintProps) {
           <G transform={`rotate(${rotation}) scale(${handScale})`}>
             <Path
               d={HAND_PALM_PATH}
-              fill="#FFFFFF"
+              fill={hint.fillColor}
               stroke={hint.color}
               strokeWidth={11}
               strokeLinecap="round"

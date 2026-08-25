@@ -216,9 +216,41 @@ export function snapScrollToProgress(
 }
 
 /**
- * Snap a paging list to a step's `scroll.index` immediately, so the pager
- * doesn't bounce back to the current page before the tour advances.
+ * `up`/`left` count a swipe as the list's own offset *increasing* — the
+ * same direction `dragScrollHandle` moves the offset for those hints.
+ * `down`/`right` are the mirror image. Kept separate from `NEXT_SIGN`
+ * above: that one reads a raw touch delta (dx/dy), this one reads a
+ * *scroll offset* delta, and the two point opposite ways for the same
+ * hinted direction (swiping up scrolls content up, i.e. offset increases,
+ * while the finger itself moves with negative dy).
  */
-export function snapScrollToStep(step: TourStep | undefined): void {
-  snapScrollToProgress(step, 0, { x: 0, y: 0 });
+const OFFSET_NEXT_SIGN: Record<SwipeDirection, number> = {
+  up: 1,
+  left: 1,
+  down: -1,
+  right: -1,
+};
+
+/**
+ * The scroll-offset counterpart to `resolveSwipeGesture`: instead of a
+ * captured touch's dx/dy, this reads the net *scroll offset* delta over a
+ * completed drag(+momentum) gesture session. Used when the swipe-hint's
+ * target is already natively scrollable, so counting swipes never needs to
+ * capture a single touch — the list is left to scroll exactly as if no
+ * tour were running, and the tour just counts how far one gesture actually
+ * carried it, the same threshold-gated way `resolveSwipeGesture` does for
+ * a captured touch.
+ */
+export function resolveScrollGesture(
+  direction: SwipeDirection,
+  dx: number,
+  dy: number,
+  threshold = SWIPE_THRESHOLD,
+): "next" | "prev" | null {
+  const vertical = direction === "up" || direction === "down";
+  const primary = vertical ? dy : dx;
+  const cross = vertical ? dx : dy;
+  if (Math.abs(primary) < threshold) return null;
+  if (Math.abs(cross) > Math.abs(primary)) return null;
+  return Math.sign(primary) === OFFSET_NEXT_SIGN[direction] ? "next" : "prev";
 }

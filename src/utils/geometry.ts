@@ -1,7 +1,29 @@
 import type { RefObject } from "react";
 import { Dimensions, type View } from "react-native";
 
-import type { Rect, TooltipPosition } from "../types";
+import type { Rect, SpotlightPadding, TooltipPosition } from "../types";
+
+export interface ResolvedSpotlightPadding {
+  horizontal: number;
+  vertical: number;
+}
+
+/**
+ * Expand a `SpotlightPadding` (a plain number, or per-axis overrides) into
+ * concrete `horizontal`/`vertical` values, falling back to `fallback` for
+ * whichever axis wasn't set.
+ */
+export function resolveSpotlightPadding(
+  padding: SpotlightPadding | undefined,
+  fallback: number,
+): ResolvedSpotlightPadding {
+  if (padding == null) return { horizontal: fallback, vertical: fallback };
+  if (typeof padding === "number") return { horizontal: padding, vertical: padding };
+  return {
+    horizontal: padding.horizontal ?? fallback,
+    vertical: padding.vertical ?? fallback,
+  };
+}
 
 type MeasureCallback = (
   x: number,
@@ -75,15 +97,6 @@ export function rectsEqual(a: Rect | null, b: Rect | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
-}
-
-export function padRect(rect: Rect, padding: number): Rect {
-  return {
-    x: rect.x - padding,
-    y: rect.y - padding,
-    width: rect.width + padding * 2,
-    height: rect.height + padding * 2,
-  };
 }
 
 export interface TooltipLayout {

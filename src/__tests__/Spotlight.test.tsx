@@ -13,7 +13,7 @@ describe("Spotlight", () => {
         <Spotlight
           rect={rect}
           radius={12}
-          padding={8}
+          padding={{ horizontal: 8, vertical: 8 }}
           duration={300}
           motion="morph"
           styles={DEFAULT_SPOTLIGHT_STYLES}
@@ -28,7 +28,7 @@ describe("Spotlight", () => {
         <Spotlight
           rect={null}
           radius={12}
-          padding={8}
+          padding={{ horizontal: 8, vertical: 8 }}
           duration={300}
           motion="morph"
           styles={DEFAULT_SPOTLIGHT_STYLES}
@@ -43,7 +43,7 @@ describe("Spotlight", () => {
         <Spotlight
           rect={rect}
           radius={12}
-          padding={8}
+          padding={{ horizontal: 8, vertical: 8 }}
           duration={300}
           motion="morph"
           styles={{ ...DEFAULT_SPOTLIGHT_STYLES, enablePulse: false }}
@@ -58,7 +58,7 @@ describe("Spotlight", () => {
         <Spotlight
           rect={rect}
           radius={12}
-          padding={8}
+          padding={{ horizontal: 8, vertical: 8 }}
           duration={300}
           motion="none"
           styles={{ ...DEFAULT_SPOTLIGHT_STYLES, borderWidth: 0 }}
@@ -72,7 +72,7 @@ describe("Spotlight", () => {
       <Spotlight
         rect={rect}
         radius={12}
-        padding={8}
+        padding={{ horizontal: 8, vertical: 8 }}
         duration={300}
         motion="morph"
         styles={DEFAULT_SPOTLIGHT_STYLES}
@@ -87,7 +87,7 @@ describe("Spotlight", () => {
       <Spotlight
         rect={rect}
         radius={12}
-        padding={8}
+        padding={{ horizontal: 8, vertical: 8 }}
         duration={300}
         motion="morph"
         styles={DEFAULT_SPOTLIGHT_STYLES}
@@ -98,7 +98,7 @@ describe("Spotlight", () => {
       <Spotlight
         rect={rect}
         radius={12}
-        padding={8}
+        padding={{ horizontal: 8, vertical: 8 }}
         duration={300}
         motion="morph"
         styles={{
@@ -120,7 +120,7 @@ describe("Spotlight", () => {
         <Spotlight
           rect={rect}
           radius={12}
-          padding={8}
+          padding={{ horizontal: 8, vertical: 8 }}
           duration={300}
           motion="morph"
           styles={{
@@ -138,7 +138,7 @@ describe("Spotlight", () => {
       <Spotlight
         rect={rect}
         radius={12}
-        padding={8}
+        padding={{ horizontal: 8, vertical: 8 }}
         duration={300}
         motion="morph"
         styles={DEFAULT_SPOTLIGHT_STYLES}
@@ -150,7 +150,7 @@ describe("Spotlight", () => {
         <Spotlight
           rect={{ x: 40, y: 60, width: 120, height: 60 }}
           radius={16}
-          padding={8}
+          padding={{ horizontal: 8, vertical: 8 }}
           duration={300}
           motion="morph"
           styles={DEFAULT_SPOTLIGHT_STYLES}

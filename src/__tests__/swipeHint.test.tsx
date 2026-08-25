@@ -16,6 +16,7 @@ describe("resolveSwipeHint", () => {
     expect(resolveSwipeHint("left")).toEqual({
       ...DEFAULT_SWIPE_HINT,
       direction: "left",
+      trailLength: DEFAULT_SWIPE_HINT.distance * 1.15,
     });
   });
 
@@ -26,7 +27,33 @@ describe("resolveSwipeHint", () => {
         direction: "up",
         distance: 120,
         color: "#000",
+        trailLength: 138,
       },
+    );
+  });
+
+  it("defaults trailLength off the resolved distance, not a fixed constant", () => {
+    expect(
+      resolveSwipeHint({ direction: "left", distance: 100 })?.trailLength,
+    ).toBeCloseTo(115);
+  });
+
+  it("honours an explicit trailLength independent of distance", () => {
+    expect(
+      resolveSwipeHint({ direction: "left", distance: 100, trailLength: 40 })
+        ?.trailLength,
+    ).toBe(40);
+  });
+
+  it("defaults the hand's fill to white, independent of the outline color", () => {
+    const resolved = resolveSwipeHint({ direction: "up", color: "#111827" });
+    expect(resolved?.fillColor).toBe("#FFFFFF");
+    expect(resolved?.color).toBe("#111827");
+  });
+
+  it("honours an explicit fillColor", () => {
+    expect(resolveSwipeHint({ direction: "up", fillColor: "#F97316" })?.fillColor).toBe(
+      "#F97316",
     );
   });
 });
@@ -64,6 +91,17 @@ describe("SwipeHint", () => {
     expect(JSON.stringify(withTrail).length).toBeGreaterThan(
       JSON.stringify(withoutTrail).length,
     );
+  });
+
+  it("renders the hand's fill with the configured fillColor", () => {
+    const { toJSON } = render(
+      <SwipeHint
+        rect={rect}
+        hint={resolveSwipeHint({ direction: "left", fillColor: "#F97316" })!}
+      />,
+    );
+
+    expect(JSON.stringify(toJSON())).toContain("#F97316");
   });
 
   it("cleans up its animation on unmount", () => {
