@@ -64,11 +64,13 @@ function makeHandle(
   },
   offset = { x: 0, y: 0 },
   horizontal = false,
+  pagingEnabled = false,
 ): TourScrollHandle {
   return {
     ref: { current: node },
     offsetRef: { current: { ...offset } },
     horizontal,
+    pagingEnabled,
   };
 }
 

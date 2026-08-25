@@ -111,8 +111,10 @@
     "react-native-svg": ">=13.0.0"
   },
   "devDependencies": {
+    "@legendapp/list": "^3.3.8",
     "@react-native/babel-preset": "^0.81.0",
     "@react-native/eslint-config": "^0.81.0",
+    "@shopify/flash-list": "^2.3.2",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "29.5.14",
     "@types/react": "^19.0.0",
@@ -151,6 +153,9 @@
     "modulePathIgnorePatterns": [
       "<rootDir>/example/node_modules",
       "<rootDir>/lib/"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!(react-native|@react-native|@shopify/flash-list|@legendapp/list)/)"
     ],
     "testMatch": [
       "<rootDir>/src/__tests__/**/*.(test|spec).(ts|tsx)"

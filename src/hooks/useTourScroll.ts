@@ -8,6 +8,14 @@ export interface UseTourScrollOptions {
   /** Set for a horizontal list / carousel. Default false. */
   horizontal?: boolean;
   /**
+   * Set when the bound list has `pagingEnabled` (or is otherwise a
+   * carousel/paging list). A step's `scroll` then defaults to
+   * `scrollToIndex` stepping — starting at index 0 unless the step sets its
+   * own `index` — instead of requiring the consumer to pass `scroll: {
+   * index }` themselves just to remember paging needs it. Default false.
+   */
+  pagingEnabled?: boolean;
+  /**
    * Forwarded to the list so your own `onScroll` still runs — the hook wraps
    * it rather than replacing it.
    */
@@ -52,7 +60,7 @@ export interface UseTourScrollResult {
  * ```
  */
 export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScrollResult {
-  const { horizontal = false, onScroll: userOnScroll } = options;
+  const { horizontal = false, pagingEnabled = false, onScroll: userOnScroll } = options;
 
   const nodeRef = useRef<ScrollableNode | null>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
@@ -78,8 +86,8 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
   );
 
   const handle = useMemo<TourScrollHandle>(
-    () => ({ ref: nodeRef, offsetRef, horizontal }),
-    [horizontal],
+    () => ({ ref: nodeRef, offsetRef, horizontal, pagingEnabled }),
+    [horizontal, pagingEnabled],
   );
 
   const reset = useCallback(() => {

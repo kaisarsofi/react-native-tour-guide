@@ -3,6 +3,7 @@ import "./rn-classname";
 export { TourGuideProvider, type TourGuideProviderProps } from "./TourGuideContext";
 export { TourGuideOverlay } from "./components/TourGuideOverlay";
 export { TourTarget, type TourTargetProps } from "./components/TourTarget";
+export { TourScrollList, type TourScrollListProps } from "./components/TourScrollList";
 export { Tooltip } from "./components/Tooltip";
 export { SwipeHint, type SwipeHintProps } from "./components/SwipeHint";
 
