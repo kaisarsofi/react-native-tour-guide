@@ -384,6 +384,7 @@ that a paging list needs `scrollToIndex` instead of a pixel offset.
 ```tsx
 import { FlashList } from "@shopify/flash-list";
 import { TourGuideProvider, TourScrollList } from "react-native-tour-guide";
+import { useIsFocused } from "@react-navigation/native"; // or expo-router's useIsFocused
 
 // Provider at the root, once:
 <TourGuideProvider>
@@ -399,6 +400,7 @@ import { TourGuideProvider, TourScrollList } from "react-native-tour-guide";
   title="Your items"
   description="Swipe up to see more."
   swipeHint="up"
+  active={useIsFocused()}
   data={items}
   renderItem={({ item }) => <Card item={item} />}
   pagingEnabled
@@ -406,13 +408,13 @@ import { TourGuideProvider, TourScrollList } from "react-native-tour-guide";
 ```
 
 That's the whole integration. `TourScrollList` starts the tour itself the
-first time `data` goes from empty to non-empty (calling `reset()` first, so
-it always begins at the first item), fills its parent (`flex: 1`) so the
-spotlight isn't zero-height, and — because `pagingEnabled` is set — steps
-the tour with `scrollToIndex` instead of a pixel offset, without you having
-to know that distinction exists. Every other prop (`renderItem`,
-`keyExtractor`, `estimatedItemSize`, ...) and the `ref` pass straight
-through to the underlying list.
+first time `data` is non-empty *and* `active` is true (calling `reset()`
+first, so it always begins at the first item), fills its parent
+(`flex: 1`) so the spotlight isn't zero-height, and — because
+`pagingEnabled` is set — steps the tour with `scrollToIndex` instead of a
+pixel offset, without you having to know that distinction exists. Every
+other prop (`renderItem`, `keyExtractor`, `estimatedItemSize`, ...) and the
+`ref` pass straight through to the underlying list.
 
 `as` accepts any `ScrollView`/`FlatList`/`SectionList`/`FlashList`/`LegendList`
 (or their `Animated` variants) — **it must stay the same reference across
@@ -421,10 +423,31 @@ component), or React remounts the underlying list on every render, wiping
 out `FlashList`'s or `LegendList`'s recycling pool. Other props:
 
 - `swipeHint`, `title`, `description` — same shape as a `TourStep`.
+- `active` — default `true`. See "Behind a tab or drawer navigator" below.
 - `tourStep` — merged over the generated step; override anything, including
   `scroll` itself for a custom `padding`/`pageSize`.
 - `tourConfig` — merged into the `startTour(steps, { tourId, persist, ...tourConfig })` call.
 - `wrapperStyle` — style for the `TourTarget` wrapper (default `{ flex: 1 }`).
+
+**Behind a tab or drawer navigator, wire `active` to `useIsFocused()`.**
+`TourGuideOverlay` is one global overlay mounted at the app root — it has
+no idea which screen the user is actually looking at. Tab and drawer
+navigators typically keep background screens mounted for fast switching,
+so a background screen's `data` can go non-empty (and its list can finish
+loading) long before the user ever taps that tab. Without `active`,
+`TourScrollList` would start the tour the moment `data` arrives regardless
+— and since the spotlight is a single overlay drawn on top of *whatever
+screen is actually visible*, the user sees the tour's hand and tooltip
+appear over the screen they're actually on, pointed at the wrong content
+entirely. `active` fixes this: the tour starts once `data` is non-empty
+*and* `active` is true, evaluated on the transition into that combined
+state from either side — data landing while already focused, or the
+screen gaining focus while data is already there — and never while
+`active` is `false`. This lets you wire it straight to `useIsFocused()`
+without conditionally mounting/unmounting `TourScrollList` itself, which
+would defeat the whole point of the stable-`as`-reference guarantee above
+(`FlashList`'s recycling pool would get destroyed on every tab switch if
+unmounting were your only tool for "don't start on a hidden screen").
 
 **Manual control.** `TourScrollList` is built on `useTourScroll()` +
 `TourTarget`, which stay available for cases it doesn't cover — spotlighting
@@ -709,6 +732,7 @@ const {
   title="Your items"
   description="Swipe up to see more."
   swipeHint="up"           // optional
+  active={useIsFocused()}  // optional, default true — see "Behind a tab or drawer navigator"
   pagingEnabled             // auto-detected: steps with scrollToIndex(0)
   wrapperStyle={{ flex: 1 }} // optional, this is the default
   tourStep={{ spotlightPadding: 8 }}  // optional, merged over the generated step
@@ -719,8 +743,9 @@ const {
 />
 ```
 
-Starts the tour itself the first time `data` goes from empty to non-empty
-(after calling `reset()`), and fills its parent (`flex: 1`) by default.
+Starts the tour itself the first time `data` is non-empty *and* `active`
+is true (after calling `reset()`), and fills its parent (`flex: 1`) by
+default.
 
 ### `useTourScroll()`
 

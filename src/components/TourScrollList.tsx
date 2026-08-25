@@ -55,6 +55,18 @@ export type TourScrollListProps<P extends BaseListProps> = Omit<P, "ref"> & {
   tourStep?: Partial<Omit<TourStep, "id" | "targetId">>;
   /** Merged over `{ tourId, persist }` for the `startTour` call. */
   tourConfig?: Omit<TourGuideConfig, "tourId" | "persist">;
+  /**
+   * Whether this list is actually the thing on screen right now. Default
+   * `true`. Wire this to `useIsFocused()` (React Navigation / Expo Router)
+   * for a list that lives behind a tab/drawer navigator — those keep
+   * background screens mounted, so `data` can go non-empty long before the
+   * user ever sees this screen. The tour starts once both `data` is
+   * non-empty *and* `active` is true, re-evaluated whenever either one
+   * flips — so it fires whichever arrives second: data landing while
+   * already focused, or the screen gaining focus while data is already
+   * there. It never starts while `active` is `false`.
+   */
+  active?: boolean;
 };
 
 function TourScrollListInner<P extends BaseListProps>(
@@ -72,6 +84,7 @@ function TourScrollListInner<P extends BaseListProps>(
     wrapperStyle,
     tourStep,
     tourConfig,
+    active = true,
     ...listProps
   } = props;
 
@@ -101,13 +114,20 @@ function TourScrollListInner<P extends BaseListProps>(
     }
   };
 
-  const hadDataRef = useRef(false);
+  const wasReadyRef = useRef(false);
 
   useEffect(() => {
     const hasData = Boolean(listProps.data && listProps.data.length > 0);
-    const justArrived = hasData && !hadDataRef.current;
-    hadDataRef.current = hasData;
-    if (!justArrived) return;
+    const ready = hasData && active;
+    // Fires on the transition into "data present and active" from either
+    // side — data arriving while already active, or `active` turning true
+    // while data is already there (e.g. a background tab screen gaining
+    // focus after its list already loaded). Never fires while `active` is
+    // false, and never re-fires just because `data` changed identity while
+    // already ready.
+    const justBecameReady = ready && !wasReadyRef.current;
+    wasReadyRef.current = ready;
+    if (!justBecameReady) return;
 
     reset();
     startTour(
@@ -124,11 +144,11 @@ function TourScrollListInner<P extends BaseListProps>(
       ],
       { tourId, persist, ...tourConfig },
     );
-    // Only the data-empty-to-non-empty transition should (re)start the
-    // tour — re-running for every prop/handler identity change would
-    // restart it on unrelated re-renders.
+    // Only the "became ready" transition should (re)start the tour —
+    // re-running for every prop/handler identity change would restart it
+    // on unrelated re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listProps.data]);
+  }, [listProps.data, active]);
 
   const element = React.createElement(Component, {
     ...(listProps as unknown as P),
@@ -156,16 +176,22 @@ const styles = StyleSheet.create({
  * and pass the tour declaratively; everything else (paging detection,
  * `reset()`, filling its parent) is handled for you.
  *
+ * Behind a tab/drawer navigator, wire `active` to `useIsFocused()` so the
+ * tour doesn't start on a screen the user hasn't actually reached yet —
+ * navigators typically keep background screens mounted, so `data` can go
+ * non-empty long before the screen is visible.
+ *
  * ```tsx
  * <TourScrollList
  *   as={FlashList}
- *   id="matches-list"
- *   tourId="matches-list-tour"
+ *   id="item-list"
+ *   tourId="item-list-tour"
  *   persist
- *   title="Your matches"
- *   description="Swipe up to see more profiles."
+ *   title="Your items"
+ *   description="Swipe up to see more."
  *   swipeHint="up"
- *   data={categoryMatches}
+ *   active={useIsFocused()}
+ *   data={items}
  *   renderItem={...}
  *   pagingEnabled
  * />

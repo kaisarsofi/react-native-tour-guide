@@ -344,6 +344,7 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
         : null;
       if (measureToken.current !== token) return;
       if (__DEV__ && ref?.current && !rect) {
+        // eslint-disable-next-line no-console
         console.warn(
           `[react-native-tour-guide] Step "${step.id}" measured its target ` +
             `(targetId: ${step.targetId ?? "n/a"}) to zero size. If the ` +
