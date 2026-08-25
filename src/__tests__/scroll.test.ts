@@ -183,11 +183,13 @@ function makeHandle(
   node: ScrollableNode,
   offset = { x: 0, y: 0 },
   horizontal = false,
+  pagingEnabled = false,
 ): TourScrollHandle {
   return {
     ref: { current: node },
     offsetRef: { current: offset },
     horizontal,
+    pagingEnabled,
   } as TourScrollHandle;
 }
 
@@ -247,6 +249,42 @@ describe("scrollStepIntoView", () => {
     await expect(
       scrollStepIntoView({ handle, settleDelay: 0 }, undefined),
     ).resolves.toBeUndefined();
+  });
+
+  it("defaults to scrollToIndex(0) on a paging handle with no explicit index", async () => {
+    const scrollToIndex = jest.fn();
+    const handle = makeHandle(
+      { scrollToIndex } as unknown as ScrollableNode,
+      undefined,
+      false,
+      true,
+    );
+
+    await scrollStepIntoView({ handle, settleDelay: 0 }, undefined);
+
+    expect(scrollToIndex).toHaveBeenCalledWith({
+      index: 0,
+      animated: true,
+      viewPosition: 0.5,
+    });
+  });
+
+  it("a paging handle still honors an explicit index", async () => {
+    const scrollToIndex = jest.fn();
+    const handle = makeHandle(
+      { scrollToIndex } as unknown as ScrollableNode,
+      undefined,
+      false,
+      true,
+    );
+
+    await scrollStepIntoView({ handle, index: 3, settleDelay: 0 }, undefined);
+
+    expect(scrollToIndex).toHaveBeenCalledWith({
+      index: 3,
+      animated: true,
+      viewPosition: 0.5,
+    });
   });
 
   it("no-ops when the target ref is empty", async () => {

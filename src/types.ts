@@ -43,7 +43,8 @@ export type ResolvedSwipeHint = Required<SwipeHintConfig>;
 
 /**
  * Anything with the scroll methods we need. Covers `ScrollView`, `FlatList`,
- * `SectionList`, and `Animated` variants of each without importing them.
+ * `SectionList`, `@shopify/flash-list`'s `FlashList`, `@legendapp/list`'s
+ * `LegendList`, and `Animated` variants of each without importing them.
  */
 export interface ScrollableNode {
   scrollTo?: (options: { x?: number; y?: number; animated?: boolean }) => void;
@@ -67,6 +68,14 @@ export interface TourScrollHandle {
   /** Live scroll offset, kept current by the hook's `scrollProps.onScroll`. */
   offsetRef: RefObject<{ x: number; y: number }>;
   horizontal: boolean;
+  /**
+   * Set when the bound list is paging (`pagingEnabled` / carousel-style).
+   * When true, a step's `scroll` uses `scrollToIndex` stepping (defaulting
+   * to index 0) even if the step doesn't set `index` itself, since a paging
+   * list can't be measured and scrolled by pixel offset the way a plain one
+   * can.
+   */
+  pagingEnabled: boolean;
 }
 
 export interface TourScrollOptions {

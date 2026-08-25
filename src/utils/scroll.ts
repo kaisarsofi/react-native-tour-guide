@@ -164,8 +164,14 @@ export async function scrollStepIntoView(
   const node = options.handle.ref.current;
   if (!node) return;
 
-  if (options.index != null) {
-    if (scrollNodeToIndex(node, options.index, options.viewPosition ?? 0.5)) {
+  if (options.index != null || options.handle.pagingEnabled) {
+    // A paging list can't be measured and scrolled by pixel offset the way
+    // a plain one can, so a bound `pagingEnabled` handle defaults to
+    // `scrollToIndex(0)` even when the step itself didn't set `index` —
+    // the consumer never has to know to reach for `index` instead of a
+    // pixel offset just because the list happens to page.
+    const index = options.index ?? 0;
+    if (scrollNodeToIndex(node, index, options.viewPosition ?? 0.5)) {
       await wait(scrollSettleDelay(options));
       await waitForScrollSettle(options.handle);
     }

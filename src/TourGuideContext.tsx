@@ -343,6 +343,15 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
         ? await measureView(ref, overlayHostRef.current ?? undefined)
         : null;
       if (measureToken.current !== token) return;
+      if (__DEV__ && ref?.current && !rect) {
+        console.warn(
+          `[react-native-tour-guide] Step "${step.id}" measured its target ` +
+            `(targetId: ${step.targetId ?? "n/a"}) to zero size. If the ` +
+            `<TourTarget> wraps a flex-filling child (a full-height list, ` +
+            "say), pass style={{ flex: 1 }} to it — or use <TourScrollList>, " +
+            "which does this for you.",
+        );
+      }
       dispatch({ type: "SET_TARGET_RECT", rect });
     };
 

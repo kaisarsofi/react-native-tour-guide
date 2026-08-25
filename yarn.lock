@@ -1959,6 +1959,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@legendapp/list@npm:^3.3.8":
+  version: 3.3.8
+  resolution: "@legendapp/list@npm:3.3.8"
+  dependencies:
+    use-sync-external-store: "npm:^1.5.0"
+  peerDependencies:
+    react: "*"
+  peerDependenciesMeta:
+    react-dom:
+      optional: true
+    react-native:
+      optional: true
+  checksum: 10c0/6dea312398307cc6ad0a039b8f380d924be7b2349b3c0dc3daca0878115dc77b45c6d569ac3adcee8f57e84691f6df6e34d20ec76677c1d1fd5312f3d20205c4
+  languageName: node
+  linkType: hard
+
 "@nicolo-ribaudo/eslint-scope-5-internals@npm:5.1.1-v1":
   version: 5.1.1-v1
   resolution: "@nicolo-ribaudo/eslint-scope-5-internals@npm:5.1.1-v1"
@@ -2215,6 +2231,17 @@ __metadata:
     "@types/react":
       optional: true
   checksum: 10c0/2f38e73d850e4c7f8bf9e6598ebdf97c524d6ddfa720044798e827aaa613ff6dc47dbdb8e440ce370f92f7ff932f0ac3204328287e79d7e3b8ac8db5651d0b4d
+  languageName: node
+  linkType: hard
+
+"@shopify/flash-list@npm:^2.3.2":
+  version: 2.3.2
+  resolution: "@shopify/flash-list@npm:2.3.2"
+  peerDependencies:
+    "@babel/runtime": "*"
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/3e58913506b1dc7f02dd0696c478fd963ede413d9d7121705a08ff505d5c21e611813ce9370068238b8983ff582ed7b8ee94f68e94f99a1ac8f600c01fff118e
   languageName: node
   linkType: hard
 
@@ -8244,8 +8271,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "react-native-tour-guide@workspace:."
   dependencies:
+    "@legendapp/list": "npm:^3.3.8"
     "@react-native/babel-preset": "npm:^0.81.0"
     "@react-native/eslint-config": "npm:^0.81.0"
+    "@shopify/flash-list": "npm:^2.3.2"
     "@testing-library/react-native": "npm:^13.3.3"
     "@types/jest": "npm:29.5.14"
     "@types/react": "npm:^19.0.0"
@@ -9644,6 +9673,15 @@ __metadata:
   dependencies:
     punycode: "npm:^2.1.0"
   checksum: 10c0/4ef57b45aa820d7ac6496e9208559986c665e49447cb072744c13b66925a362d96dd5a46c4530a6b8e203e5db5fe849369444440cb22ecfc26c679359e5dfa3c
+  languageName: node
+  linkType: hard
+
+"use-sync-external-store@npm:^1.5.0":
+  version: 1.6.0
+  resolution: "use-sync-external-store@npm:1.6.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/35e1179f872a53227bdf8a827f7911da4c37c0f4091c29b76b1e32473d1670ebe7bcd880b808b7549ba9a5605c233350f800ffab963ee4a4ee346ee983b6019b
   languageName: node
   linkType: hard
 

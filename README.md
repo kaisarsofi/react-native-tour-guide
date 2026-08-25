@@ -12,7 +12,9 @@ Expo-first. Zero native modules. TypeScript throughout.
 ![expo](https://img.shields.io/badge/Expo-Go%20%26%20dev%20builds-000.svg?style=flat-square&logo=expo)
 ![new arch](https://img.shields.io/badge/New%20Architecture-supported-61DAFB.svg?style=flat-square)
 
-
+If this library saves you a sprint of edge cases, a ⭐ on
+[GitHub](https://github.com/kaisarsofi/react-native-tour-guide) keeps it
+maintained.
 
 ## Demo
 
@@ -50,33 +52,13 @@ startTour([
 | 🎨 **Six bundled themes**       | `light`, `dark`, `minimal`, `vibrant`, `ocean`, `sunset` — or compose your own with `createTheme()`                                   |
 | 🧩 **Full step lifecycle**      | async `before`, `delayBefore`, `autoAdvance`, per-step callbacks, configurable backdrop behavior, conditional steps                   |
 | 📡 **Events**                   | `start`, `stepChange`, `end`, `skip`, `pause`, `resume` — subscribe with `events.on(...)`                                             |
-| 📜 **List tours**               | `useTourScroll()` brings off-screen rows into view, or keeps the spotlight on a list while the user swipes through it                 |
+| 📜 **List tours**               | `<TourScrollList as={FlashList} ...>` — wrap a list, get a tour, zero manual wiring. `useTourScroll()` stays available for manual control |
 | ✋ **Gesture demos**             | `swipeHint` mimes a swipe with an animated hand — no Next/Back; the list moves, the hole stays put                                    |
 | 💾 **Play-once persistence**    | `persist: true` — zero setup, or give the provider a real storage adapter to survive restarts                                         |
 | 📦 **Zero native code**         | works in Expo Go, dev builds, and bare React Native alike — no config plugin, no prebuild                                             |
 | 🖌️ **Looks right immediately** | the built-in tooltip is styled with real `StyleSheet` values, so it renders correctly with or without NativeWind/Tailwind in your app |
 | 🧪 **Well tested**              | 140+ unit and render tests across the spotlight, tooltip, geometry, scroll, and provider                                              |
 
-
-## Requirements
-
-This package is JavaScript only — no native modules, no config plugin, no
-prebuild. It runs on **both the old architecture (Paper) and the New
-Architecture (Fabric)**.
-
-
-|                   |                                                             |
-| ----------------- | ----------------------------------------------------------- |
-| **React Native**  | 0.71 or later (tested on 0.81)                              |
-| **React**         | 18 or later (works with 19)                                 |
-| **Expo**          | SDK 49 or later — Expo Go, development builds, and prebuild |
-| **iOS / Android** | both                                                        |
-| **Architecture**  | Paper (old) and Fabric (new)                                |
-| **Peers**         | `react-native-reanimated` ≥ 3, `react-native-svg` ≥ 13      |
-
-
-Bare React Native apps need the Reanimated Babel plugin. Expo apps usually
-already have it.
 
 ## Installation
 
@@ -101,6 +83,39 @@ This package is JavaScript only, but it **does** require those two peers in
 the app. Metro compiles this library from `src` (the `react-native` export
 points at `src/index.ts`) so the app's Reanimated plugin can process
 worklets. Do not add a Reanimated plugin to a library copy of Babel.
+
+## Requirements
+
+This package is JavaScript only — no native modules, no config plugin, no
+prebuild. It runs on **both the old architecture (Paper) and the New
+Architecture (Fabric)**.
+
+
+|                   |                                                             |
+| ----------------- | ----------------------------------------------------------- |
+| **React Native**  | 0.71 or later (tested on 0.81)                              |
+| **React**         | 18 or later (works with 19)                                 |
+| **Expo**          | SDK 49 or later — Expo Go, development builds, and prebuild |
+| **iOS / Android** | both                                                        |
+| **Architecture**  | Paper (old) and Fabric (new)                                |
+| **Peers**         | `react-native-reanimated` ≥ 3, `react-native-svg` ≥ 13      |
+
+
+Bare React Native apps need the Reanimated Babel plugin. Expo apps usually
+already have it.
+
+### Optional dependencies
+
+Not required to use this package — only needed if you use `<TourScrollList>`
+or `useTourScroll()` with one of these specific list components.
+
+|                                                                   |                                                                             |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [`@shopify/flash-list`](https://www.npmjs.com/package/@shopify/flash-list) | High-performance recycling list. Pass `as={FlashList}` to `<TourScrollList>`, or its ref to `useTourScroll()`'s `handle`. |
+| [`@legendapp/list`](https://www.npmjs.com/package/@legendapp/list)         | Recycling list with dynamic item sizing. Pass `as={LegendList}` (imported from `@legendapp/list/react-native`) the same way. |
+
+Plain `ScrollView`, `FlatList`, and `SectionList` need nothing extra — they
+ship with React Native.
 
 ## Quick start
 
@@ -360,10 +375,60 @@ startTour(steps, { motion: "none", animationDuration: 0 });
 
 ![Scrolling tab — list tours, paging, swipe hints, and wizard navigation](docs/scrollTour.gif)
 
-Two patterns share the same `useTourScroll()` binding.
+**The fast path: `<TourScrollList>`.** Teaching the list itself — spotlight
+stays on the list, the user swipes to catch up — is by far the most common
+list tour. Swap the list for `<TourScrollList as={...}>` and it's wired up
+end to end: no ref, no `useEffect`, no remembering `reset()`, no knowing
+that a paging list needs `scrollToIndex` instead of a pixel offset.
 
-**1. Spotlight a row that's off screen.** The tour scrolls it into view,
-waits for it to settle, then measures and spotlights that row:
+```tsx
+import { FlashList } from "@shopify/flash-list";
+import { TourGuideProvider, TourScrollList } from "react-native-tour-guide";
+
+// Provider at the root, once:
+<TourGuideProvider>
+  <App />
+</TourGuideProvider>;
+
+// Then just one wrapped list — nothing else:
+<TourScrollList
+  as={FlashList}
+  id="item-list"
+  tourId="item-list-tour"
+  persist
+  title="Your items"
+  description="Swipe up to see more."
+  swipeHint="up"
+  data={items}
+  renderItem={({ item }) => <Card item={item} />}
+  pagingEnabled
+/>;
+```
+
+That's the whole integration. `TourScrollList` starts the tour itself the
+first time `data` goes from empty to non-empty (calling `reset()` first, so
+it always begins at the first item), fills its parent (`flex: 1`) so the
+spotlight isn't zero-height, and — because `pagingEnabled` is set — steps
+the tour with `scrollToIndex` instead of a pixel offset, without you having
+to know that distinction exists. Every other prop (`renderItem`,
+`keyExtractor`, `estimatedItemSize`, ...) and the `ref` pass straight
+through to the underlying list.
+
+`as` accepts any `ScrollView`/`FlatList`/`SectionList`/`FlashList`/`LegendList`
+(or their `Animated` variants) — **it must stay the same reference across
+your own re-renders** (a top-level import, not an inline/anonymous
+component), or React remounts the underlying list on every render, wiping
+out `FlashList`'s or `LegendList`'s recycling pool. Other props:
+
+- `swipeHint`, `title`, `description` — same shape as a `TourStep`.
+- `tourStep` — merged over the generated step; override anything, including
+  `scroll` itself for a custom `padding`/`pageSize`.
+- `tourConfig` — merged into the `startTour(steps, { tourId, persist, ...tourConfig })` call.
+- `wrapperStyle` — style for the `TourTarget` wrapper (default `{ flex: 1 }`).
+
+**Manual control.** `TourScrollList` is built on `useTourScroll()` +
+`TourTarget`, which stay available for cases it doesn't cover — spotlighting
+one off-screen row inside an otherwise-untoured list, for instance:
 
 ```tsx
 import { useTourScroll } from "react-native-tour-guide";
@@ -387,26 +452,29 @@ startTour([
 ]);
 ```
 
-**2. Teach the list itself.** Keep the spotlight on the list, hide the
-tooltip, and let the user swipe. The hole does not jump onto child rows.
-See [gesture tours](#swipe-hints-gesture-tours).
-
-**Horizontal lists** — pass the axis on the hook:
+**Horizontal lists** — pass the axis on the hook (`TourScrollList` reads it
+off the `horizontal` prop you pass through automatically):
 
 ```tsx
 const { ref, scrollProps, handle, reset } = useTourScroll({ horizontal: true });
 ```
 
-**Paginated / virtualized lists** need an `index` (`scrollToIndex`) instead
-of a pixel offset — paging snaps to whole pages, and a far-down `FlatList`
-row isn't mounted yet so it can't be measured:
+**Paginated / virtualized lists** can't be measured and scrolled by pixel
+offset the way a plain list can — a far-down row isn't mounted yet. Pass
+`pagingEnabled: true` to `useTourScroll()` (or just the `pagingEnabled` prop
+when using `TourScrollList`) and a step's `scroll` defaults to
+`scrollToIndex(0)` on its own; set `index` explicitly only when you need a
+page other than the first:
 
 ```tsx
-{ ...step, scroll: { handle, index: 0, viewPosition: 0 } }
+const { handle } = useTourScroll({ pagingEnabled: true });
+
+{ ...step, scroll: { handle } }              // defaults to index 0
+{ ...step, scroll: { handle, index: 2 } }    // or pick a page
 ```
 
-Call `reset()` when you start the tour so the list (and swipe count) always
-begin at the first item:
+Call `reset()` when you start a manual tour so the list (and swipe count)
+always begin at the first item — `TourScrollList` already does this for you:
 
 ```tsx
 onPress={() => {
@@ -422,7 +490,8 @@ default 24), `settleDelay` (ms to wait after a scroll, default 400),
 
 `useTourScroll` stores the offset in a ref, so scrolling never re-renders
 your list. It wraps any `onScroll` you pass in. Works with `ScrollView`,
-`FlatList`, `SectionList`, and their `Animated` variants.
+`FlatList`, `SectionList`, `@shopify/flash-list`'s `FlashList`,
+`@legendapp/list`'s `LegendList`, and their `Animated` variants.
 
 ### Swipe hints (gesture tours)
 
@@ -629,11 +698,36 @@ const {
 } = useTourGuide();
 ```
 
+### `<TourScrollList>`
+
+```tsx
+<TourScrollList
+  as={FlashList}          // stable reference: FlatList, SectionList, FlashList, LegendList, ...
+  id="item-list"           // TourTarget id + step targetId
+  tourId="item-list-tour"
+  persist                  // TourGuideConfig.persist
+  title="Your items"
+  description="Swipe up to see more."
+  swipeHint="up"           // optional
+  pagingEnabled             // auto-detected: steps with scrollToIndex(0)
+  wrapperStyle={{ flex: 1 }} // optional, this is the default
+  tourStep={{ spotlightPadding: 8 }}  // optional, merged over the generated step
+  tourConfig={{ swipeCount: 5 }}      // optional, merged into startTour's config
+  data={items}
+  renderItem={...}
+  // ...every other prop of `as` forwards straight through, plus `ref`
+/>
+```
+
+Starts the tour itself the first time `data` goes from empty to non-empty
+(after calling `reset()`), and fills its parent (`flex: 1`) by default.
+
 ### `useTourScroll()`
 
 ```ts
 const { ref, scrollProps, handle, reset } = useTourScroll({
-  horizontal?: boolean,  // default false
+  horizontal?: boolean,     // default false
+  pagingEnabled?: boolean,  // default false — steps with scrollToIndex(0) unless `index` is set
   onScroll?: (event) => void,  // your handler still runs
 });
 
