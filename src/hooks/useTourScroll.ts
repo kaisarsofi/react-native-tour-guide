@@ -161,6 +161,17 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
       },
       onScrollBeginDrag: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         clearNoMomentumTimer();
+        // A re-grab while the previous swipe is still decelerating
+        // interrupts its momentum without ever firing onMomentumScrollEnd
+        // for it — very easy to hit with real, quick successive swipes,
+        // much harder to with an artificially paced one. Close that
+        // gesture out now, counting however far it actually got, before
+        // starting to track this new one — otherwise a quick swipe #2
+        // silently swallows swipe #1 entirely instead of counting either
+        // of them right.
+        if (dragStartOffsetRef.current) {
+          emitGestureEnd();
+        }
         dragStartOffsetRef.current = { ...offsetRef.current };
         userOnScrollBeginDragRef.current?.(event);
       },

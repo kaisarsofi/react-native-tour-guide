@@ -132,6 +132,44 @@ describe("useTourScroll", () => {
       expect(listener).toHaveBeenCalledWith({ x: 0, y: 220 });
     });
 
+    it("counts a swipe that's still decelerating from momentum when the next one grabs it, instead of swallowing it", () => {
+      // Regression: a real, quick second swipe commonly re-grabs the list
+      // while it's still decelerating from the first — native scroll views
+      // interrupt momentum silently on a re-grab, so onMomentumScrollEnd
+      // never fires for that first gesture. An artificially paced test (or
+      // a slow, deliberate swipe) gives momentum time to fully settle
+      // between swipes and never hits this at all.
+      const { result } = renderHook(() => useTourScroll());
+      const listener = jest.fn();
+
+      act(() => {
+        result.current.handle.subscribeGesture!(listener);
+        // First swipe: drag, release with momentum, momentum begins...
+        result.current.scrollProps.onScrollBeginDrag(scrollEvent(0, 0));
+        result.current.scrollProps.onScroll(scrollEvent(0, 60));
+        result.current.scrollProps.onScrollEndDrag(scrollEvent(0, 60));
+        result.current.scrollProps.onMomentumScrollBegin(scrollEvent(0, 60));
+        result.current.scrollProps.onScroll(scrollEvent(0, 90));
+        // ...but a second swipe grabs it right here — onMomentumScrollEnd
+        // for the first gesture never fires.
+        result.current.scrollProps.onScrollBeginDrag(scrollEvent(0, 90));
+      });
+
+      // The interrupted first swipe (0 -> 90) was still counted.
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledWith({ x: 0, y: 90 });
+
+      act(() => {
+        result.current.scrollProps.onScroll(scrollEvent(0, 150));
+        result.current.scrollProps.onScrollEndDrag(scrollEvent(0, 150));
+        jest.advanceTimersByTime(60);
+      });
+
+      // The second swipe (90 -> 150) was counted too — neither was lost.
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(listener).toHaveBeenLastCalledWith({ x: 0, y: 60 });
+    });
+
     it("stops notifying once unsubscribed", () => {
       const { result } = renderHook(() => useTourScroll());
       const listener = jest.fn();
