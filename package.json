@@ -1,6 +1,6 @@
 {
   "name": "react-native-tour-guide",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "React Native spotlight overlay, walkthrough, coach marks, tooltip tour, and onboarding for Expo. Animated SVG spotlight, auto-placed tooltips, list/gesture tours, TypeScript, zero native modules.",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
