@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View } from "react-native";
-import { TourTarget, useTourGuide, type TourStep } from "react-native-tour-guide";
+import { TourTarget, useTourGuide, type TourStep } from "@kaisarsofi/react-native-tour-guide";
 
 import { Badge, Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";

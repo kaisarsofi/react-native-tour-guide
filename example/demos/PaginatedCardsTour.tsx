@@ -7,7 +7,7 @@ import {
   useTourGuide,
   useTourScroll,
   type TourStep,
-} from "react-native-tour-guide";
+} from "@kaisarsofi/react-native-tour-guide";
 
 import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";

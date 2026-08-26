@@ -12,7 +12,7 @@
     "react-native-reanimated": "~4.1.7",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-svg": "15.12.1",
-    "react-native-tour-guide": "file:..",
+    "@kaisarsofi/react-native-tour-guide": "file:..",
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {

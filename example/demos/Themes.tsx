@@ -12,7 +12,7 @@ import {
   vibrantTheme,
   type TourGuideTheme,
   type TourStep,
-} from "react-native-tour-guide";
+} from "@kaisarsofi/react-native-tour-guide";
 
 import { Section } from "../components/Section";
 import { StatCard } from "../components/mocks";

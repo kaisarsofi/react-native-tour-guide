@@ -14,7 +14,7 @@ import {
   createWizardTourSteps,
   TourTarget,
   useTourGuide,
-} from "react-native-tour-guide";
+} from "@kaisarsofi/react-native-tour-guide";
 
 import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";
