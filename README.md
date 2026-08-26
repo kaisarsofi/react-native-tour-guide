@@ -290,11 +290,21 @@ const { ref, scrollProps, handle, reset } = useTourScroll({
   horizontal?: boolean,
   pagingEnabled?: boolean,   // steps with scrollToIndex(0) unless `index` is set
   onScroll?: (event) => void,
+  onScrollBeginDrag?: (event) => void,
+  onScrollEndDrag?: (event) => void,
+  onMomentumScrollBegin?: (event) => void,
+  onMomentumScrollEnd?: (event) => void,
 });
 
 <FlatList ref={ref} {...scrollProps} ... />
 // handle → a step's `scroll` option. reset() → jump back to the top.
 ```
+
+Need your own `onMomentumScrollEnd` (to track the current page, say)?
+Pass it here, not as a separate prop on the list after `{...scrollProps}`
+— setting it afterwards replaces the hook's own handler instead of adding
+to it, and `swipeHint` steps on that list silently stop advancing. All
+five callbacks above compose with the hook's own the same way.
 
 ### `TourStep`
 

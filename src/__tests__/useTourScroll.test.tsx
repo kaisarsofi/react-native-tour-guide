@@ -88,10 +88,10 @@ describe("useTourScroll", () => {
 
       act(() => {
         result.current.handle.subscribeGesture!(listener);
-        result.current.scrollProps.onScrollBeginDrag();
+        result.current.scrollProps.onScrollBeginDrag(scrollEvent(0, 0));
         result.current.scrollProps.onScroll(scrollEvent(0, 40));
         result.current.scrollProps.onScroll(scrollEvent(0, 96));
-        result.current.scrollProps.onScrollEndDrag();
+        result.current.scrollProps.onScrollEndDrag(scrollEvent(0, 0));
       });
 
       // Still inside the "might this have momentum?" grace window.
@@ -110,10 +110,10 @@ describe("useTourScroll", () => {
 
       act(() => {
         result.current.handle.subscribeGesture!(listener);
-        result.current.scrollProps.onScrollBeginDrag();
+        result.current.scrollProps.onScrollBeginDrag(scrollEvent(0, 0));
         result.current.scrollProps.onScroll(scrollEvent(0, 50));
-        result.current.scrollProps.onScrollEndDrag();
-        result.current.scrollProps.onMomentumScrollBegin();
+        result.current.scrollProps.onScrollEndDrag(scrollEvent(0, 0));
+        result.current.scrollProps.onMomentumScrollBegin(scrollEvent(0, 0));
       });
 
       // The no-momentum grace window passes with nothing emitted — momentum
@@ -125,7 +125,7 @@ describe("useTourScroll", () => {
 
       act(() => {
         result.current.scrollProps.onScroll(scrollEvent(0, 220));
-        result.current.scrollProps.onMomentumScrollEnd();
+        result.current.scrollProps.onMomentumScrollEnd(scrollEvent(0, 0));
       });
 
       expect(listener).toHaveBeenCalledTimes(1);
@@ -139,18 +139,18 @@ describe("useTourScroll", () => {
       let unsubscribe: () => void = () => {};
       act(() => {
         unsubscribe = result.current.handle.subscribeGesture!(listener);
-        result.current.scrollProps.onScrollBeginDrag();
+        result.current.scrollProps.onScrollBeginDrag(scrollEvent(0, 0));
         result.current.scrollProps.onScroll(scrollEvent(0, 60));
-        result.current.scrollProps.onScrollEndDrag();
+        result.current.scrollProps.onScrollEndDrag(scrollEvent(0, 0));
         jest.advanceTimersByTime(60);
       });
       expect(listener).toHaveBeenCalledTimes(1);
 
       act(() => {
         unsubscribe();
-        result.current.scrollProps.onScrollBeginDrag();
+        result.current.scrollProps.onScrollBeginDrag(scrollEvent(0, 0));
         result.current.scrollProps.onScroll(scrollEvent(0, 120));
-        result.current.scrollProps.onScrollEndDrag();
+        result.current.scrollProps.onScrollEndDrag(scrollEvent(0, 0));
         jest.advanceTimersByTime(60);
       });
       expect(listener).toHaveBeenCalledTimes(1);
@@ -167,6 +167,45 @@ describe("useTourScroll", () => {
       });
 
       expect(listener).not.toHaveBeenCalled();
+    });
+
+    it("still calls a caller-supplied handler for each of the four drag/momentum events, and still counts the gesture", () => {
+      // Regression: a consumer who needs their own onMomentumScrollEnd (to
+      // track the current page, say) would naturally spread scrollProps and
+      // then set onMomentumScrollEnd afterwards — which silently replaces
+      // the hook's own handler instead of adding to it, since JSX/object
+      // spread doesn't compose two handlers under the same prop name. Swipe
+      // counting then stops dead with no error. These options exist so a
+      // caller never has to reach for that unsafe pattern in the first
+      // place.
+      const onScrollBeginDrag = jest.fn();
+      const onScrollEndDrag = jest.fn();
+      const onMomentumScrollBegin = jest.fn();
+      const onMomentumScrollEnd = jest.fn();
+      const { result } = renderHook(() =>
+        useTourScroll({
+          onScrollBeginDrag,
+          onScrollEndDrag,
+          onMomentumScrollBegin,
+          onMomentumScrollEnd,
+        }),
+      );
+      const listener = jest.fn();
+
+      act(() => {
+        result.current.handle.subscribeGesture!(listener);
+        result.current.scrollProps.onScrollBeginDrag(scrollEvent(0, 0));
+        result.current.scrollProps.onScroll(scrollEvent(0, 96));
+        result.current.scrollProps.onScrollEndDrag(scrollEvent(0, 96));
+        result.current.scrollProps.onMomentumScrollBegin(scrollEvent(0, 96));
+        result.current.scrollProps.onMomentumScrollEnd(scrollEvent(0, 96));
+      });
+
+      expect(onScrollBeginDrag).toHaveBeenCalledTimes(1);
+      expect(onScrollEndDrag).toHaveBeenCalledTimes(1);
+      expect(onMomentumScrollBegin).toHaveBeenCalledTimes(1);
+      expect(onMomentumScrollEnd).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledWith({ x: 0, y: 96 });
     });
   });
 

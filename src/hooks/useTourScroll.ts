@@ -30,6 +30,19 @@ export interface UseTourScrollOptions {
    * it rather than replacing it.
    */
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  /**
+   * These four drive the hook's own gesture-session tracking (see
+   * `subscribeGesture` on the returned `handle`) — spreading `scrollProps`
+   * onto your list and then setting one of these four yourself, the normal
+   * way to override a single prop after a spread, silently replaces the
+   * hook's own handler instead of adding to it, and swipe-hint steps on
+   * this list stop advancing with no error. Pass your own handler here
+   * instead and it still runs, same as `onScroll` above.
+   */
+  onScrollBeginDrag?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  onScrollEndDrag?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  onMomentumScrollBegin?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  onMomentumScrollEnd?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
 
 /**
@@ -45,10 +58,10 @@ export interface UseTourScrollResult {
   /** Spread onto the list so the tour can read the live scroll offset. */
   scrollProps: {
     onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
-    onScrollBeginDrag: () => void;
-    onScrollEndDrag: () => void;
-    onMomentumScrollBegin: () => void;
-    onMomentumScrollEnd: () => void;
+    onScrollBeginDrag: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onScrollEndDrag: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onMomentumScrollBegin: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onMomentumScrollEnd: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
     scrollEventThrottle: number;
   };
   /** Pass to a step's `scroll.handle`. */
@@ -74,7 +87,15 @@ export interface UseTourScrollResult {
  * ```
  */
 export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScrollResult {
-  const { horizontal = false, pagingEnabled = false, onScroll: userOnScroll } = options;
+  const {
+    horizontal = false,
+    pagingEnabled = false,
+    onScroll: userOnScroll,
+    onScrollBeginDrag: userOnScrollBeginDrag,
+    onScrollEndDrag: userOnScrollEndDrag,
+    onMomentumScrollBegin: userOnMomentumScrollBegin,
+    onMomentumScrollEnd: userOnMomentumScrollEnd,
+  } = options;
 
   const nodeRef = useRef<ScrollableNode | null>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
@@ -86,6 +107,14 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
 
   const userOnScrollRef = useRef(userOnScroll);
   userOnScrollRef.current = userOnScroll;
+  const userOnScrollBeginDragRef = useRef(userOnScrollBeginDrag);
+  userOnScrollBeginDragRef.current = userOnScrollBeginDrag;
+  const userOnScrollEndDragRef = useRef(userOnScrollEndDrag);
+  userOnScrollEndDragRef.current = userOnScrollEndDrag;
+  const userOnMomentumScrollBeginRef = useRef(userOnMomentumScrollBegin);
+  userOnMomentumScrollBeginRef.current = userOnMomentumScrollBegin;
+  const userOnMomentumScrollEndRef = useRef(userOnMomentumScrollEnd);
+  userOnMomentumScrollEndRef.current = userOnMomentumScrollEnd;
 
   const ref = useCallback<TourScrollListRef>((instance) => {
     nodeRef.current = instance;
@@ -130,11 +159,12 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
         offsetRef.current.y = y;
         userOnScrollRef.current?.(event);
       },
-      onScrollBeginDrag: () => {
+      onScrollBeginDrag: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         clearNoMomentumTimer();
         dragStartOffsetRef.current = { ...offsetRef.current };
+        userOnScrollBeginDragRef.current?.(event);
       },
-      onScrollEndDrag: () => {
+      onScrollEndDrag: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         // If this drag has momentum, onMomentumScrollBegin preempts this
         // timer and the session isn't over yet — wait for
         // onMomentumScrollEnd instead. If nothing preempts it, this was
@@ -144,13 +174,16 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
           noMomentumTimerRef.current = null;
           emitGestureEnd();
         }, NO_MOMENTUM_GRACE_MS);
+        userOnScrollEndDragRef.current?.(event);
       },
-      onMomentumScrollBegin: () => {
+      onMomentumScrollBegin: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         clearNoMomentumTimer();
+        userOnMomentumScrollBeginRef.current?.(event);
       },
-      onMomentumScrollEnd: () => {
+      onMomentumScrollEnd: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         clearNoMomentumTimer();
         emitGestureEnd();
+        userOnMomentumScrollEndRef.current?.(event);
       },
       scrollEventThrottle: 16,
     }),
