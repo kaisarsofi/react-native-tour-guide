@@ -219,6 +219,63 @@ describe("TourGuideOverlay rendering", () => {
     expect(typeof capture.props.onStartShouldSetResponder).toBe("function");
   });
 
+  it("blocks touches outside the spotlight during a passive (native-scroll) gesture tour", async () => {
+    // Regression: the passive backdrop used to be one pointerEvents="none"
+    // view spanning the whole screen, which let every touch fall through
+    // to the real app everywhere — not just inside the spotlight (e.g. a
+    // tab bar or back button underneath the overlay was still tappable).
+    const handle = makeSubscribableHandle();
+    await renderTour().start([makeStep({ swipeHint: "up", scroll: { handle } })], {
+      defaultBackdropBehavior: "next",
+    });
+
+    const blockers = screen.getAllByTestId("tour-guide-outside-blocker");
+    // makeStep()'s targetRegion sits away from every screen edge, so all
+    // four bands (top/bottom/left/right) exist to seal it off.
+    expect(blockers).toHaveLength(4);
+
+    fireEvent.press(blockers[0]!);
+    // The tap outside the spotlight was handled here (backdrop behavior
+    // fired, ending the single-step tour) — not left to fall through to
+    // whatever's behind the overlay.
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeNull();
+  });
+
+  it("blocks touches outside the spotlight during a capturing (fallback) gesture tour", async () => {
+    const handle = {
+      ref: { current: { scrollToIndex: jest.fn() } },
+      offsetRef: { current: { x: 0, y: 0 } },
+      horizontal: false,
+      pagingEnabled: true,
+    };
+    await renderTour().start([makeStep({ swipeHint: "up", scroll: { handle } })], {
+      defaultBackdropBehavior: "next",
+    });
+
+    const blockers = screen.getAllByTestId("tour-guide-outside-blocker");
+    expect(blockers).toHaveLength(4);
+
+    fireEvent.press(blockers[0]!);
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeNull();
+  });
+
+  it("swallows a tap outside the spotlight without advancing when backdropBehavior is the default 'none'", async () => {
+    const handle = makeSubscribableHandle();
+    const onStepChange = jest.fn();
+    await renderTour().start([makeStep({ swipeHint: "up", scroll: { handle } })], {
+      onStepChange,
+    });
+
+    const blockers = screen.getAllByTestId("tour-guide-outside-blocker");
+    fireEvent.press(blockers[0]!);
+
+    // Still on the same step — the tap was absorbed rather than reaching
+    // whatever's behind the overlay, and didn't accidentally advance the
+    // tour either.
+    expect(screen.getByTestId("tour-guide-backdrop")).toBeTruthy();
+    expect(onStepChange).not.toHaveBeenCalled();
+  });
+
   it("fires onSpotlightPress instead of the backdrop behavior when the tap lands inside the spotlight", async () => {
     const onSpotlightPress = jest.fn();
     const tour = renderTour();

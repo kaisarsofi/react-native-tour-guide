@@ -15,7 +15,11 @@ import {
 import { useTourGuideContext } from "../TourGuideContext";
 import { resolveSwipeHint } from "../themes";
 import type { TooltipProps, TourStep } from "../types";
-import { computeTooltipLayout, resolveSpotlightPadding } from "../utils/geometry";
+import {
+  computeOutsideSpotlightBands,
+  computeTooltipLayout,
+  resolveSpotlightPadding,
+} from "../utils/geometry";
 import { waitForScrollSettle } from "../utils/scroll";
 import {
   createDragFrameScheduler,
@@ -55,7 +59,7 @@ export function TourGuideOverlay() {
     registerOverlayHost,
   } = useTourGuideContext();
   const hostRef = useRef<View>(null);
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [tooltipSize, setTooltipSize] = useState<{
     width: number;
     height: number;
@@ -333,6 +337,34 @@ export function TourGuideOverlay() {
     />
   );
 
+  // A gesture tour needs touches inside the spotlight to reach the real
+  // list underneath (or its own gesture-capture view, just below) — but
+  // everything *outside* it still has to be blocked from reaching the real
+  // app (a tab bar, a back button, ...), the same as a normal step's
+  // full-screen backdrop already does. One `pointerEvents="none"` view
+  // can't do that: it only skips itself during hit-testing, not whatever
+  // else is behind it, so a single full-screen "none" view leaks every
+  // touch, everywhere, straight through to the app. Rendering one blocking
+  // band per side of the hole (and nothing at all over the hole itself)
+  // is what actually leaves a touch there with nothing left to catch it.
+  // Falls back to one full-screen band before the target has a measured
+  // rect, so nothing leaks in that one gap frame either.
+  const outsideSpotlightBands = state.targetRect
+    ? computeOutsideSpotlightBands(state.targetRect, screenWidth, screenHeight)
+    : [{ x: 0, y: 0, width: screenWidth, height: screenHeight }];
+
+  const outsideSpotlightBlockers = outsideSpotlightBands.map((band, index) => (
+    <Pressable
+      key={index}
+      testID="tour-guide-outside-blocker"
+      onPress={() => handleBackdropPress(step.backdropBehavior)}
+      style={[
+        styles.gestureCapture,
+        { left: band.x, top: band.y, width: band.width, height: band.height },
+      ]}
+    />
+  ));
+
   return (
     <View
       ref={hostRef}
@@ -343,17 +375,22 @@ export function TourGuideOverlay() {
       accessibilityLabel={step.accessibilityLabel ?? step.title}
     >
       {passiveModeActive ? (
-        // Nothing is captured here: `pointerEvents="none"` lets every touch
-        // fall straight through to the real list beneath. Swipes are being
-        // counted from the list's own scroll offset (see the effect above),
-        // not from anything this view sees.
-        <View
-          testID="tour-guide-backdrop"
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        >
-          {spotlight}
-        </View>
+        <>
+          {/* Purely visual — the dimmed scrim and cutout never receive a
+              touch. Nothing is rendered over the spotlight itself, so a
+              touch there falls straight through to the real list beneath;
+              swipes are counted from the list's own scroll offset (see the
+              effect above), not from anything here. Everything *outside*
+              the spotlight is still blocked, same as a normal step. */}
+          <View
+            testID="tour-guide-backdrop"
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          >
+            {spotlight}
+          </View>
+          {outsideSpotlightBlockers}
+        </>
       ) : swipeAdvance ? (
         <>
           {/* The dimmed scrim is purely visual and spans the screen the way
@@ -366,6 +403,7 @@ export function TourGuideOverlay() {
           >
             {spotlight}
           </View>
+          {outsideSpotlightBlockers}
           {/* Touches are captured only over the spotlighted target itself,
               not the whole screen — a gesture tour should only ever touch
               what it's teaching. Falls back to the full screen only for the
