@@ -452,7 +452,9 @@ describe("TourGuideOverlay with an unmeasurable target", () => {
       await Promise.resolve();
     });
 
+    // eslint-disable-next-line no-console
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("nothing-here"));
+    // eslint-disable-next-line no-console
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("targetRegion"));
   });
 });

@@ -4,6 +4,11 @@ coverage/
 .DS_Store
 *.tgz
 
+.cursor/rules/no-ai-git-attribution.mdc
+.husky/prepare-commit-msg
+.claude/settings.json
+example/.claude/settings.json
+
 .turbo/
 .yarn/*
 !.yarn/releases
