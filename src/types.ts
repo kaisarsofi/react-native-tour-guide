@@ -349,7 +349,9 @@ export interface TourGuideConfig {
   defaultBackdropBehavior?: BackdropBehavior;
   /**
    * Default swipe count for `swipeHint` steps. Per-step `swipeCount` wins.
-   * Default 3.
+   * Unset by default — the actual default then depends on whether the
+   * step's target is a paging list (3) or not (2), decided per step since
+   * a single tour's config can't know that in advance.
    */
   swipeCount?: number;
   /**
@@ -379,7 +381,8 @@ export interface ResolvedTourGuideConfig {
   motion: TourMotion;
   tourId?: string;
   defaultBackdropBehavior: BackdropBehavior;
-  swipeCount: number;
+  /** Unset unless the caller set it — see `TourGuideConfig.swipeCount`. */
+  swipeCount?: number;
   onTourStart?: () => void;
   onTourEnd?: (completed: boolean) => void;
   onStepChange?: (from: number, to: number) => void;

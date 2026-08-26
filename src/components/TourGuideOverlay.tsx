@@ -111,7 +111,15 @@ export function TourGuideOverlay() {
   const stepOriginRef = useRef({ x: 0, y: 0 });
   const progressRef = useRef(0);
   const stepRef = useRef(step);
-  const countRef = useRef(step ? resolveSwipeCount(step, state.config.swipeCount) : 3);
+  const countRef = useRef(
+    step
+      ? resolveSwipeCount(
+          step,
+          state.config.swipeCount,
+          scrollHandle ? scrollHandle.pagingEnabled : true,
+        )
+      : 3,
+  );
   const indexRef = useRef(state.currentIndex);
   const swipeAdvanceRef = useRef(swipeAdvance);
 
@@ -124,7 +132,13 @@ export function TourGuideOverlay() {
     stepRef.current = step;
     indexRef.current = state.currentIndex;
     swipeAdvanceRef.current = swipeAdvance;
-    countRef.current = step ? resolveSwipeCount(step, state.config.swipeCount) : 3;
+    countRef.current = step
+      ? resolveSwipeCount(
+          step,
+          state.config.swipeCount,
+          scrollHandle ? scrollHandle.pagingEnabled : true,
+        )
+      : 3;
   });
 
   const dragSchedulerRef = useRef(

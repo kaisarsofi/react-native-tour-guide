@@ -74,7 +74,8 @@ function Row({ item }: { item: (typeof INBOX)[number] }) {
 /**
  * Full-screen spotlight demo. The spotlight stays on the list; the list
  * scrolls natively under the user's own finger, and the tour just counts
- * — the third swipe (the default `swipeCount`) ends the tour.
+ * — the second swipe ends it (the default `swipeCount` for a non-paging
+ * list, since one swipe already covers a full screenful here).
  */
 const TOUR_ID = "vertical-list";
 
@@ -109,7 +110,8 @@ export function VerticalListTour() {
         description={
           <>
             Spotlight stays on the list, full-screen. Swipe to scroll —{" "}
-            <Code>swipeCount</Code> defaults to 3, then the tour ends.
+            <Code>swipeCount</Code> defaults to 2 for a plain list, then the
+            tour ends.
           </>
         }
       />
@@ -127,7 +129,7 @@ export function VerticalListTour() {
       <View className="mt-3 flex-row items-center gap-1.5">
         <Ionicons name="information-circle-outline" size={14} color="#A3A3A3" />
         <Text className="text-xs text-neutral-400">
-          Swipe up three times — the hole stays on the whole list.
+          Swipe up twice — the hole stays on the whole list.
         </Text>
       </View>
 
