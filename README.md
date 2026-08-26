@@ -324,7 +324,7 @@ five callbacks above compose with the hook's own the same way.
 | `swipeHint` | direction or `SwipeHintConfig` | — | Animated hand + gesture tour |
 | `renderTooltip` | `(props) => ReactNode` | — | Per-step custom tooltip |
 | `hideNextButton` / `hidePrevButton` / `hideSkipButton` / `hideControls` | `boolean` | `false` | Hide controls |
-| `swipeCount` | `number` | `3` when `swipeHint` set | Swipes before this step advances |
+| `swipeCount` | `number` | `3` (paging list) / `2` (plain list) when `swipeHint` set | Swipes before this step advances |
 | `onNext` / `onPrev` / `onSkip` / `onSpotlightPress` | `() => void` | — | Callbacks |
 
 ### `TourGuideConfig`

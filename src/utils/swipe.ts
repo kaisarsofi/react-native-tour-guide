@@ -4,8 +4,20 @@ import { scrollNodeToIndex, scrollNodeToOffset } from "./scroll";
 /** Distance (px) a finger has to travel before it counts as a swipe. */
 export const SWIPE_THRESHOLD = 48;
 
-/** Counted swipes before a `swipeHint` step moves on. Overridden by `swipeCount`. */
+/**
+ * Counted swipes before a `swipeHint` step moves on, for a paging list (or
+ * one with no bound scroll handle at all). Overridden by `swipeCount`.
+ */
 export const DEFAULT_SWIPE_COUNT = 3;
+
+/**
+ * Default for a `swipeHint` step whose scroll handle is bound but *not*
+ * paging (a plain `ScrollView`/`FlatList`) — one swipe there already
+ * covers a full screenful of content, so it takes fewer of them to
+ * demonstrate the gesture than a paging carousel, which only advances one
+ * item per swipe. Overridden by `swipeCount`, same as the paging default.
+ */
+export const DEFAULT_SWIPE_COUNT_NON_PAGING = 2;
 
 const NEXT_SIGN: Record<SwipeDirection, number> = {
   up: -1,
@@ -30,10 +42,21 @@ export function isSwipeAdvanceEnabled(step: TourStep): boolean {
   return step.advanceOnSwipe !== false;
 }
 
-export function resolveSwipeCount(step: TourStep, configCount?: number): number {
+/**
+ * `isPaging` reflects the step's bound scroll handle (`handle.pagingEnabled`),
+ * or `true` when there's no handle at all — a swipeHint step not bound to
+ * any list keeps the original, higher default rather than opting into the
+ * non-paging one it doesn't actually qualify for.
+ */
+export function resolveSwipeCount(
+  step: TourStep,
+  configCount?: number,
+  isPaging = true,
+): number {
   if (!step.swipeHint) return 1;
-  const raw = step.swipeCount ?? configCount ?? DEFAULT_SWIPE_COUNT;
-  if (!Number.isFinite(raw) || raw < 1) return DEFAULT_SWIPE_COUNT;
+  const fallback = isPaging ? DEFAULT_SWIPE_COUNT : DEFAULT_SWIPE_COUNT_NON_PAGING;
+  const raw = step.swipeCount ?? configCount ?? fallback;
+  if (!Number.isFinite(raw) || raw < 1) return fallback;
   return Math.floor(raw);
 }
 

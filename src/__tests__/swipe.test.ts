@@ -1,5 +1,6 @@
 import {
   DEFAULT_SWIPE_COUNT,
+  DEFAULT_SWIPE_COUNT_NON_PAGING,
   createDragFrameScheduler,
   dragScrollHandle,
   isSameTourTarget,
@@ -153,6 +154,31 @@ describe("resolveSwipeCount", () => {
     expect(
       resolveSwipeCount(makeStep({ swipeHint: "left" }), Number.POSITIVE_INFINITY),
     ).toBe(DEFAULT_SWIPE_COUNT);
+  });
+
+  it("defaults to 3 for a paging list, or when there's no bound handle at all", () => {
+    expect(resolveSwipeCount(makeStep({ swipeHint: "left" }), undefined, true)).toBe(3);
+    // No third argument — same as not being bound to any scroll handle.
+    expect(resolveSwipeCount(makeStep({ swipeHint: "left" }))).toBe(3);
+  });
+
+  it("defaults to 2 for a non-paging list — one swipe already covers a screenful", () => {
+    expect(resolveSwipeCount(makeStep({ swipeHint: "up" }), undefined, false)).toBe(
+      DEFAULT_SWIPE_COUNT_NON_PAGING,
+    );
+  });
+
+  it("an explicit swipeCount or tour-level config still wins over the paging-based default", () => {
+    expect(
+      resolveSwipeCount(makeStep({ swipeHint: "up", swipeCount: 5 }), undefined, false),
+    ).toBe(5);
+    expect(resolveSwipeCount(makeStep({ swipeHint: "up" }), 4, false)).toBe(4);
+  });
+
+  it("falls back to 2, not 3, for an invalid swipeCount on a non-paging list", () => {
+    expect(
+      resolveSwipeCount(makeStep({ swipeHint: "up", swipeCount: 0 }), undefined, false),
+    ).toBe(DEFAULT_SWIPE_COUNT_NON_PAGING);
   });
 });
 

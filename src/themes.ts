@@ -94,7 +94,6 @@ export const DEFAULT_CONFIG: Omit<
       | "animationDuration"
       | "motion"
       | "defaultBackdropBehavior"
-      | "swipeCount"
     >
   >,
   never
@@ -108,7 +107,10 @@ export const DEFAULT_CONFIG: Omit<
   animationDuration: 320,
   motion: "morph",
   defaultBackdropBehavior: "none",
-  swipeCount: 3,
+  // swipeCount is deliberately left unset here — its real default (3 for
+  // a paging list, 2 otherwise) is decided per step in resolveSwipeCount,
+  // since a single tour-wide default can't know that in advance. Baking a
+  // number in here would always shadow that per-step default.
 };
 
 export function createTheme(theme: TourGuideTheme): TourGuideTheme {

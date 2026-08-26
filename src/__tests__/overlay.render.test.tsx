@@ -175,6 +175,23 @@ describe("TourGuideOverlay rendering", () => {
     expect(screen.queryByTestId("tour-guide-backdrop")).toBeNull();
   });
 
+  it("defaults to 2 swipes (not 3) for a non-paging list's swipeHint step", async () => {
+    // One swipe on a plain ScrollView/FlatList already covers a full
+    // screenful of content, unlike a paging carousel where one swipe only
+    // advances a single item — so it should take fewer of them by default
+    // to demonstrate the gesture.
+    const handle = makeSubscribableHandle({ pagingEnabled: false });
+    await renderTour().start([makeStep({ swipeHint: "up", scroll: { handle } })]);
+
+    act(() => handle.emitGesture({ x: 0, y: 96 }));
+    // Still on the (only) step after one swipe.
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeTruthy();
+
+    act(() => handle.emitGesture({ x: 0, y: 96 }));
+    // Second swipe ends it — the non-paging default of 2, not 3.
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeNull();
+  });
+
   it("counts one swipe no matter how far a single gesture actually scrolled the list", async () => {
     // This is what over-counted under the old offset-crossing design: a
     // single long native scroll (a fast fling, or a non-paging list with a
@@ -182,7 +199,10 @@ describe("TourGuideOverlay rendering", () => {
     // swipe, since it came from exactly one physical gesture.
     const handle = makeSubscribableHandle({ pagingEnabled: false });
     await renderTour().start([
-      makeStep({ swipeHint: "up", scroll: { handle, pageSize: 50 } }),
+      // swipeCount pinned explicitly — this test is about over-counting a
+      // single big scroll, not about the paging-vs-non-paging default (see
+      // the dedicated test for that).
+      makeStep({ swipeHint: "up", swipeCount: 3, scroll: { handle, pageSize: 50 } }),
     ]);
 
     act(() => handle.emitGesture({ x: 0, y: 650 }));
