@@ -367,6 +367,7 @@ export function TourGuideOverlay() {
     );
   }
 
+  const passThroughTouches = step.passThroughTouches ?? state.config.passThroughTouches;
   const { radius, padding } = resolveSpotlightShape({
     step,
     target: state.targetShape,
@@ -504,6 +505,21 @@ export function TourGuideOverlay() {
         >
           {spotlight}
         </View>
+      ) : passThroughTouches ? (
+        <>
+          {/* Nothing is rendered over the hole, so a touch there reaches the
+              real control and it behaves exactly as it would with no tour
+              running — no `onSpotlightPress` restating what the button
+              already does. Outside the hole is blocked as usual. */}
+          <View
+            testID="tour-guide-backdrop"
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          >
+            {spotlight}
+          </View>
+          {outsideSpotlightBlockers}
+        </>
       ) : (
         <Pressable
           testID="tour-guide-backdrop"

@@ -256,6 +256,25 @@ export interface TourStep {
    * that's the only way forward.
    */
   onSpotlightPress?: () => void;
+  /**
+   * Render nothing over the spotlight, so a touch there reaches the real
+   * control underneath — a spotlighted button does its own job (navigation,
+   * analytics, haptics, disabled state) with no `onSpotlightPress` restating
+   * it, and a spotlighted plain view simply isn't tappable.
+   *
+   * Off by default for now, because it changes two established behaviours
+   * for a step that opts in:
+   *
+   * - `onSpotlightPress` never fires. There is nothing over the hole left to
+   *   detect the tap with, so a step needs one or the other.
+   * - `backdropBehavior` stops applying to taps *inside* the spotlight.
+   *   Today those fall through to the backdrop handler, so a `'next'` step
+   *   advances when the target is tapped; with pass-through the tap belongs
+   *   to the control and only taps outside the hole reach the backdrop.
+   *
+   * Everything outside the spotlight is still blocked either way.
+   */
+  passThroughTouches?: boolean;
   accessibilityLabel?: string;
 }
 
@@ -375,6 +394,8 @@ export interface TourGuideConfig {
    * a single tour's config can't know that in advance.
    */
   swipeCount?: number;
+  /** Default for every step's `passThroughTouches`. Per-step wins. */
+  passThroughTouches?: boolean;
   /**
    * Show this tour once, then remember it via the provider's `storage`
    * (an in-memory adapter for the session by default; pass a real one to
@@ -404,6 +425,7 @@ export interface ResolvedTourGuideConfig {
   defaultBackdropBehavior: BackdropBehavior;
   /** Unset unless the caller set it — see `TourGuideConfig.swipeCount`. */
   swipeCount?: number;
+  passThroughTouches: boolean;
   onTourStart?: () => void;
   onTourEnd?: (completed: boolean) => void;
   onStepChange?: (from: number, to: number) => void;

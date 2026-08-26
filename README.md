@@ -246,10 +246,43 @@ list scrolls itself, exactly as it would with no tour running.
 }
 ```
 
-**Press the real button** — `onSpotlightPress` fires when the user taps
-the highlighted control itself, not a tooltip shortcut. Pairs with
-`hideNextButton` for "teach the live action" steps, or with
-`createWizardTourSteps()` for a Prev/Next-driven carousel.
+**Press the real button** — two ways, depending on whether the tour needs
+to know about the tap.
+
+`passThroughTouches: true` renders nothing over the spotlight, so the touch
+reaches the real control and it behaves exactly as it would with no tour
+running — its own navigation, analytics, haptics, disabled state. Nothing to
+restate:
+
+```tsx
+{
+  id: "menu",
+  targetId: "drawer-button",
+  title: "Your menu",
+  description: "Tap here for your profile and settings.",
+  passThroughTouches: true,   // the button just works
+}
+```
+
+Everything outside the spotlight is still blocked. Two things change for a
+step that opts in, which is why it isn't the default yet:
+
+- `onSpotlightPress` never fires — there's nothing over the hole left to
+  detect the tap with, so pick one or the other.
+- `backdropBehavior` no longer applies to taps _inside_ the spotlight. Only
+  taps outside reach the backdrop handler.
+
+So a pass-through step advances from the tooltip, `autoAdvance`, or a tap
+outside — not from the control itself.
+
+When the tour _does_ need to react to the press, keep the default and use
+`onSpotlightPress`: it fires when the user taps the highlighted control
+rather than a tooltip shortcut, at the cost of re-invoking the action
+yourself. Pairs with `hideNextButton` for "teach the live action" steps, or
+with `createWizardTourSteps()` for a Prev/Next-driven carousel.
+
+Set `passThroughTouches` on `TourGuideConfig` to apply it to a whole tour; a
+step can still opt out.
 
 **Play once, persist forever** — `persist: true` plus `tourId` and it
 just won't show again, zero storage setup. Pass `TourGuideProvider` a real
@@ -380,6 +413,7 @@ five callbacks above compose with the hook's own the same way.
 | `renderTooltip`                                                         | `(props) => ReactNode`                        | —                                                         | Per-step custom tooltip                                           |
 | `hideNextButton` / `hidePrevButton` / `hideSkipButton` / `hideControls` | `boolean`                                     | `false`                                                   | Hide controls                                                     |
 | `swipeCount`                                                            | `number`                                      | `3` (paging list) / `2` (plain list) when `swipeHint` set | Swipes before this step advances                                  |
+| `passThroughTouches`                                                    | `boolean`                                     | `false`                                                   | Render nothing over the hole so the real control gets the touch   |
 | `onNext` / `onPrev` / `onSkip` / `onSpotlightPress`                     | `() => void`                                  | —                                                         | Callbacks                                                         |
 
 ### `TourGuideConfig`
@@ -387,7 +421,7 @@ five callbacks above compose with the hook's own the same way.
 `tooltipStyles`, `spotlightStyles`, `styles`, `renderTooltip`,
 `showProgressDots`, `showStepCounter`, `*ButtonText`, `animationDuration`,
 `motion`, `tourId`, `persist`, `defaultBackdropBehavior`, `swipeCount`,
-`onTourStart` / `onTourEnd` / `onStepChange`.
+`passThroughTouches`, `onTourStart` / `onTourEnd` / `onStepChange`.
 
 ## Example app
 
@@ -401,7 +435,12 @@ with real, runnable code.
 
 ## Roadmap
 
-- [ ] Pass touches through the spotlight cutout to the live view
+- [x] Pass touches through the spotlight cutout to the live view
+      (`passThroughTouches`, opt-in — see [Press the real button](#everything-else-in-one-pass))
+- [ ] Make `passThroughTouches` the default, once a pass-through step can
+      also self-advance without a capture view over the hole
+- [ ] Reach natively-rendered targets (`expo-router` native tabs, native
+      headers) without hand-written `targetRegion` coordinates
 - [ ] Optional blur backdrop
 - [ ] Multi-hole / multi-target steps
 
