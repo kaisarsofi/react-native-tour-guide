@@ -94,6 +94,7 @@ export const DEFAULT_CONFIG: Omit<
       | "animationDuration"
       | "motion"
       | "defaultBackdropBehavior"
+      | "passThroughTouches"
     >
   >,
   never
@@ -107,6 +108,11 @@ export const DEFAULT_CONFIG: Omit<
   animationDuration: 320,
   motion: "morph",
   defaultBackdropBehavior: "none",
+  // Opt-in for now: it stops `onSpotlightPress` firing and stops
+  // `backdropBehavior` applying to taps inside the spotlight, so flipping
+  // this default would change behaviour for existing tours. See
+  // `TourStep.passThroughTouches`.
+  passThroughTouches: false,
   // swipeCount is deliberately left unset here — its real default (3 for
   // a paging list, 2 otherwise) is decided per step in resolveSwipeCount,
   // since a single tour-wide default can't know that in advance. Baking a

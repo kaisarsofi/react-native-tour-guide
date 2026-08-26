@@ -393,3 +393,150 @@ describe("TourGuideOverlay rendering", () => {
     expect(tour.api.isActive).toBe(false);
   });
 });
+
+describe("TourGuideOverlay with an unmeasurable target", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  /**
+   * A `targetId` nothing ever registered — the same shape as a target drawn
+   * by native code (an `expo-router` native tab bar), which has no React
+   * Native view to measure. Before this was handled, the overlay kept its
+   * full-screen fallback blocker up forever: no spotlight, an invisible
+   * tooltip, and nothing tappable anywhere. That is indistinguishable from
+   * a frozen app, so the overlay has to let go once measuring gives up.
+   */
+  const orphanStep = makeStep({ targetRegion: undefined, targetId: "nothing-here" });
+
+  it("keeps capturing touches for a target that does measure", async () => {
+    // Baseline: a normal step's backdrop is a real Pressable, so the release
+    // below means the overlay let go rather than never having captured.
+    const tour = renderTour();
+    await tour.start([makeStep()]);
+
+    const backdrop = screen.getByTestId("tour-guide-backdrop");
+    expect(backdrop.props.pointerEvents).not.toBe("none");
+  });
+
+  it("stops blocking touches once measurement gives up", async () => {
+    const tour = renderTour();
+    await tour.start([orphanStep]);
+
+    // Still capturing while the measure attempt is outstanding.
+    expect(screen.getByTestId("tour-guide-backdrop").props.pointerEvents).not.toBe(
+      "none",
+    );
+
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId("tour-guide-backdrop").props.pointerEvents).toBe("none");
+    expect(screen.queryAllByTestId("tour-guide-outside-blocker")).toHaveLength(0);
+  });
+
+  it("warns in development, naming the step and pointing at targetRegion", async () => {
+    const tour = renderTour();
+    await tour.start([orphanStep]);
+
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+      await Promise.resolve();
+    });
+
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("nothing-here"));
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("targetRegion"));
+  });
+});
+
+describe("TourGuideOverlay passThroughTouches", () => {
+  it("renders nothing over the hole, so the real control gets its own touches", async () => {
+    await renderTour().start([makeStep({ passThroughTouches: true })]);
+
+    // The scrim is purely visual and there is no capture view over the
+    // target — nothing is left at that spot to intercept a touch, which is
+    // the only way one actually reaches the control underneath.
+    expect(screen.getByTestId("tour-guide-backdrop").props.pointerEvents).toBe("none");
+    expect(screen.queryByTestId("tour-guide-gesture-capture")).toBeNull();
+  });
+
+  it("still blocks every touch outside the hole", async () => {
+    await renderTour().start([makeStep({ passThroughTouches: true })]);
+
+    expect(
+      screen.queryAllByTestId("tour-guide-outside-blocker").length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("honours backdropBehavior for a tap outside the hole", async () => {
+    const tour = renderTour();
+    await tour.start([makeStep({ passThroughTouches: true })], {
+      defaultBackdropBehavior: "dismiss",
+    });
+
+    fireEvent.press(screen.getAllByTestId("tour-guide-outside-blocker")[0]!);
+
+    expect(tour.api.isActive).toBe(false);
+  });
+
+  it("can be turned on for a whole tour from the config", async () => {
+    await renderTour().start([makeStep()], { passThroughTouches: true });
+
+    expect(screen.getByTestId("tour-guide-backdrop").props.pointerEvents).toBe("none");
+  });
+
+  it("lets a step opt out of a pass-through tour", async () => {
+    await renderTour().start([makeStep({ passThroughTouches: false })], {
+      passThroughTouches: true,
+    });
+
+    // Back to the capturing full-screen backdrop.
+    expect(screen.getByTestId("tour-guide-backdrop").props.pointerEvents).not.toBe(
+      "none",
+    );
+  });
+
+  it("captures the whole screen by default, keeping onSpotlightPress working", async () => {
+    // The pre-existing contract: without opting in, the backdrop covers
+    // everything and detects taps inside the spotlight itself.
+    const onSpotlightPress = jest.fn();
+    await renderTour().start([makeStep({ onSpotlightPress })]);
+
+    const backdrop = screen.getByTestId("tour-guide-backdrop");
+    expect(backdrop.props.pointerEvents).not.toBe("none");
+
+    // makeStep()'s targetRegion is { x: 10, y: 20, width: 100, height: 50 }.
+    fireEvent.press(backdrop, { nativeEvent: { pageX: 50, pageY: 40 } });
+    expect(onSpotlightPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the gesture tour's capture scoped to the target, not the screen", async () => {
+    // A swipe-hint step still needs the raw pan to count swipes, so it keeps
+    // its capture view — but only over the target it is teaching.
+    const handle = {
+      ref: { current: { scrollToIndex: jest.fn() } },
+      offsetRef: { current: { x: 0, y: 0 } },
+      horizontal: false,
+      pagingEnabled: true,
+    };
+    await renderTour().start([
+      makeStep({ swipeHint: "up", passThroughTouches: true, scroll: { handle } }),
+    ]);
+
+    const capture = screen.getByTestId("tour-guide-gesture-capture");
+    expect(typeof capture.props.onStartShouldSetResponder).toBe("function");
+    expect(capture.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ left: 10, top: 20, width: 100, height: 50 }),
+      ]),
+    );
+  });
+});
