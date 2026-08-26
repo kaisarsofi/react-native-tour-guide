@@ -2,6 +2,7 @@ import type { RefObject } from "react";
 import { Dimensions, type View } from "react-native";
 
 import {
+  computeOutsideSpotlightBands,
   computeTooltipLayout,
   measureView,
   rectsEqual,
@@ -70,6 +71,69 @@ describe("resolveSpotlightPadding", () => {
 
   it("allows a negative value to inset the spotlight instead of padding it", () => {
     expect(resolveSpotlightPadding(-8, 8)).toEqual({ horizontal: -8, vertical: -8 });
+  });
+});
+
+describe("computeOutsideSpotlightBands", () => {
+  const screenWidth = 400;
+  const screenHeight = 800;
+
+  it("produces four bands for a hole with room on every side", () => {
+    const hole = { x: 100, y: 200, width: 100, height: 100 };
+    const bands = computeOutsideSpotlightBands(hole, screenWidth, screenHeight);
+
+    expect(bands).toEqual([
+      { x: 0, y: 0, width: 400, height: 200 }, // top
+      { x: 0, y: 300, width: 400, height: 500 }, // bottom
+      { x: 0, y: 200, width: 100, height: 100 }, // left
+      { x: 200, y: 200, width: 200, height: 100 }, // right
+    ]);
+  });
+
+  it("together with the hole, the bands exactly tile the screen with no gap or overlap", () => {
+    const hole = { x: 137, y: 264, width: 91, height: 58 };
+    const bands = computeOutsideSpotlightBands(hole, screenWidth, screenHeight);
+    const totalArea = bands.reduce((sum, b) => sum + b.width * b.height, 0);
+    const holeArea = hole.width * hole.height;
+
+    expect(totalArea + holeArea).toBe(screenWidth * screenHeight);
+  });
+
+  it("omits the top band when the hole is flush against the top edge", () => {
+    const hole = { x: 50, y: 0, width: 100, height: 100 };
+    const bands = computeOutsideSpotlightBands(hole, screenWidth, screenHeight);
+
+    expect(bands).toEqual([
+      { x: 0, y: 100, width: 400, height: 700 }, // bottom
+      { x: 0, y: 0, width: 50, height: 100 }, // left
+      { x: 150, y: 0, width: 250, height: 100 }, // right
+    ]);
+  });
+
+  it("omits the left/right bands when the hole spans the full width", () => {
+    const hole = { x: 0, y: 300, width: screenWidth, height: 100 };
+    const bands = computeOutsideSpotlightBands(hole, screenWidth, screenHeight);
+
+    expect(bands).toEqual([
+      { x: 0, y: 0, width: 400, height: 300 },
+      { x: 0, y: 400, width: 400, height: 400 },
+    ]);
+  });
+
+  it("produces no bands when the hole covers the whole screen", () => {
+    const hole = { x: 0, y: 0, width: screenWidth, height: screenHeight };
+    expect(computeOutsideSpotlightBands(hole, screenWidth, screenHeight)).toEqual([]);
+  });
+
+  it("clamps a hole that extends past the screen edges", () => {
+    const hole = { x: -20, y: -20, width: 100, height: 100 };
+    const bands = computeOutsideSpotlightBands(hole, screenWidth, screenHeight);
+
+    // No top or left band — the hole's clamped edges are already at 0.
+    expect(bands).toEqual([
+      { x: 0, y: 80, width: 400, height: 720 }, // bottom
+      { x: 80, y: 0, width: 320, height: 80 }, // right
+    ]);
   });
 });
 

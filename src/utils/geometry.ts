@@ -25,6 +25,47 @@ export function resolveSpotlightPadding(
   };
 }
 
+/**
+ * Splits the screen minus `hole` into up to four rectangles — a "picture
+ * frame" around the spotlighted target. `pointerEvents="none"` on a single
+ * full-screen view only skips *that* view during hit-testing; a sibling
+ * behind it still catches the touch, so it can't punch a real hole for
+ * touches to reach whatever's underneath the tour (the real app). Rendering
+ * one blocking view per band instead, and rendering *nothing* over `hole`
+ * itself, is the only way a touch there genuinely reaches the real content
+ * — there's no view left at that spot to catch it.
+ *
+ * Order: top (full width, above the hole), bottom (full width, below),
+ * left and right (spanning only the hole's own vertical band). A hole
+ * flush against an edge simply produces no band on that side.
+ */
+export function computeOutsideSpotlightBands(
+  hole: Rect,
+  screenWidth: number,
+  screenHeight: number,
+): Rect[] {
+  const x = Math.max(0, hole.x);
+  const y = Math.max(0, hole.y);
+  const right = Math.min(screenWidth, hole.x + hole.width);
+  const bottom = Math.min(screenHeight, hole.y + hole.height);
+  const bands: Rect[] = [];
+
+  if (y > 0) {
+    bands.push({ x: 0, y: 0, width: screenWidth, height: y });
+  }
+  if (bottom < screenHeight) {
+    bands.push({ x: 0, y: bottom, width: screenWidth, height: screenHeight - bottom });
+  }
+  if (x > 0) {
+    bands.push({ x: 0, y, width: x, height: bottom - y });
+  }
+  if (right < screenWidth) {
+    bands.push({ x: right, y, width: screenWidth - right, height: bottom - y });
+  }
+
+  return bands;
+}
+
 type MeasureCallback = (
   x: number,
   y: number,
