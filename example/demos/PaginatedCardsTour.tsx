@@ -22,13 +22,22 @@ const TOUR_ID = "paginated";
 
 export function PaginatedCardsTour() {
   const { startTour, resetTour, isActive, tourId } = useTourGuide();
-  const { ref, scrollProps, handle, reset } = useTourScroll({ horizontal: true });
-  const { width } = useWindowDimensions();
   const [page, setPage] = useState(0);
+  const { width } = useWindowDimensions();
   const isThisTour = isActive && tourId === TOUR_ID;
 
   // The pager sits inside the screen's own side padding.
   const pageWidth = width - 32;
+
+  const { ref, scrollProps, handle, reset } = useTourScroll({
+    horizontal: true,
+    // Passed here rather than set directly on the FlatList below: spreading
+    // scrollProps and then setting onMomentumScrollEnd afterwards would
+    // silently replace the hook's own handler instead of adding to it,
+    // which is exactly what stops swipe-hint counting dead.
+    onMomentumScrollEnd: (event) =>
+      setPage(Math.round(event.nativeEvent.contentOffset.x / pageWidth)),
+  });
 
   const steps: TourStep[] = [
     {
@@ -74,9 +83,6 @@ export function PaginatedCardsTour() {
             data={PAGES}
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(event) =>
-              setPage(Math.round(event.nativeEvent.contentOffset.x / pageWidth))
-            }
             getItemLayout={(_, index) => ({
               length: pageWidth,
               offset: pageWidth * index,
