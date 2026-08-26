@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { TourTarget, cn, useTourGuide, type TourStep } from "react-native-tour-guide";
+import { TourTarget, cn, useTourGuide, type TourStep } from "@kaisarsofi/react-native-tour-guide";
 
 import { Code } from "../components/Code";
 import { DemoButton } from "../components/DemoButton";

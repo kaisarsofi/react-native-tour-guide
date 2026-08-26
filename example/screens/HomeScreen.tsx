@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTourGuide } from "react-native-tour-guide";
+import { useTourGuide } from "@kaisarsofi/react-native-tour-guide";
 
 import { CategoryTabs } from "../components/CategoryTabs";
 import { SectionCard } from "../components/SectionCard";

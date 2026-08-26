@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { cn } from "react-native-tour-guide";
+import { cn } from "@kaisarsofi/react-native-tour-guide";
 
 import { CATEGORY_STYLES, type SectionMeta } from "../data/sections";
 

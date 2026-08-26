@@ -7,7 +7,7 @@ LogBox.ignoreAllLogs(true);
 import Animated, { FadeIn, SlideInRight, SlideOutRight } from "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { TourGuideProvider, TourGuideOverlay } from "react-native-tour-guide";
+import { TourGuideProvider, TourGuideOverlay } from "@kaisarsofi/react-native-tour-guide";
 
 import { DetailScreen } from "./screens/DetailScreen";
 import { HomeScreen } from "./screens/HomeScreen";

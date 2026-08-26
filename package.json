@@ -1,7 +1,11 @@
 {
-  "name": "react-native-tour-guide",
+  "name": "@kaisarsofi/react-native-tour-guide",
   "version": "1.0.0",
   "description": "React Native spotlight overlay, walkthrough, coach marks, tooltip tour, and onboarding for Expo. Animated SVG spotlight, auto-placed tooltips, list/gesture tours, TypeScript, zero native modules.",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "types": "lib/typescript/index.d.ts",
@@ -189,10 +193,6 @@
         }
       ]
     ]
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
   },
   "resolutions": {
     "@typescript-eslint/eslint-plugin": "^8.39.0",

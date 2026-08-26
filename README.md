@@ -4,9 +4,9 @@
 spotlight, a tooltip that places itself, and a list-aware engine that scrolls,
 swipes, and remembers — in one component, zero native code.
 
-![npm version](https://img.shields.io/npm/v/react-native-tour-guide.svg?style=flat-square)
-![npm downloads](https://img.shields.io/npm/dm/react-native-tour-guide.svg?style=flat-square)
-![license](https://img.shields.io/npm/l/react-native-tour-guide.svg?style=flat-square)
+![npm version](https://img.shields.io/npm/v/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
+![npm downloads](https://img.shields.io/npm/dm/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
+![license](https://img.shields.io/npm/l/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
 ![types](https://img.shields.io/badge/types-included-3178C6.svg?style=flat-square)
 ![expo](https://img.shields.io/badge/Expo-Go%20%26%20dev%20builds-000.svg?style=flat-square&logo=expo)
 ![new arch](https://img.shields.io/badge/New%20Architecture-supported-61DAFB.svg?style=flat-square)
@@ -47,7 +47,7 @@ import {
   TourGuideProvider,
   TourGuideOverlay,
   useTourGuide,
-} from "react-native-tour-guide";
+} from "@kaisarsofi/react-native-tour-guide";
 
 function App() {
   return (
@@ -90,7 +90,7 @@ remembering that paging lists scroll differently. Now it's one component:
 
 ```tsx
 import { FlashList } from "@shopify/flash-list";
-import { TourScrollList } from "react-native-tour-guide";
+import { TourScrollList } from "@kaisarsofi/react-native-tour-guide";
 import { useIsFocused } from "@react-navigation/native";
 
 <TourScrollList
@@ -121,7 +121,7 @@ builds one step, for the list itself. Drop to `useTourScroll()` +
 same `handle` the list's own step scrolls with:
 
 ```tsx
-import { useTourScroll, TourTarget, useTourGuide } from "react-native-tour-guide";
+import { useTourScroll, TourTarget, useTourGuide } from "@kaisarsofi/react-native-tour-guide";
 
 const { ref, scrollProps, handle, reset } = useTourScroll({ horizontal: true });
 const { startTour, nextStep } = useTourGuide();
@@ -179,11 +179,11 @@ starting:
 ## Install
 
 ```bash
-npx expo install react-native-tour-guide react-native-svg react-native-reanimated
+npx expo install @kaisarsofi/react-native-tour-guide react-native-svg react-native-reanimated
 ```
 
 ```bash
-npm install react-native-tour-guide react-native-svg react-native-reanimated
+npm install @kaisarsofi/react-native-tour-guide react-native-svg react-native-reanimated
 ```
 
 That's it for JS-only usage. Reanimated needs its Babel plugin if your app

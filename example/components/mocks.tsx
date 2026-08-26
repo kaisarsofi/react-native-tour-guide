@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
-import { cn } from "react-native-tour-guide";
+import { cn } from "@kaisarsofi/react-native-tour-guide";
 
 /**
  * Small realistic UI fragments standing in for "your actual app" in the

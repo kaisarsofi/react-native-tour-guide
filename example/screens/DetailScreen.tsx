@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTourGuide } from "react-native-tour-guide";
+import { useTourGuide } from "@kaisarsofi/react-native-tour-guide";
 
 import { CATEGORIES, CATEGORY_STYLES, type SectionMeta } from "../data/sections";
 
