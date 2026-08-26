@@ -197,6 +197,27 @@ describe("TourGuideOverlay rendering", () => {
     expect(screen.queryByTestId("tour-guide-backdrop")).toBeNull();
   });
 
+  it("still counts a swipe attempted at the end of a short list, instead of stalling the tour forever", async () => {
+    // A short list can run out of scrollable content before swipeCount is
+    // reached — every further swipe attempt there produces ~0 measurable
+    // offset delta (there's nowhere left to go), so without the boundary
+    // fallback this would never advance no matter how many times the user
+    // tried.
+    const handle = makeSubscribableHandle();
+    await renderTour().start([makeStep({ swipeHint: "up", scroll: { handle } })]);
+
+    act(() => handle.emitGesture({ x: 0, y: 96 }, { atStart: false, atEnd: false }));
+    act(() => handle.emitGesture({ x: 0, y: 96 }, { atStart: false, atEnd: false }));
+    // Two real swipes counted; still on the (only) step.
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeTruthy();
+
+    // Third attempt: the list has hit bottom, so the drag produced no real
+    // movement at all — but it's pinned at the end an "up" hint scrolls
+    // toward, so it still counts as the third swipe.
+    act(() => handle.emitGesture({ x: 0, y: 0 }, { atStart: false, atEnd: true }));
+    expect(screen.queryByTestId("tour-guide-backdrop")).toBeNull();
+  });
+
   it("falls back to capturing touches when the handle can't be subscribed to", async () => {
     // A hand-built TourScrollHandle (no `subscribeGesture`, as
     // `useTourScroll` always provides) can't be watched passively, so the

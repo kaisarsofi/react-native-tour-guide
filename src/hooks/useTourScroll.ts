@@ -14,6 +14,21 @@ import { scrollNodeToIndex, scrollNodeToOffset } from "../utils/scroll";
  */
 const NO_MOMENTUM_GRACE_MS = 50;
 
+/**
+ * Tolerance (px) for treating the scroll offset as "at" a boundary. Native
+ * scroll reports sub-pixel float offsets and bounce residue even when a
+ * list is visually fully scrolled, so an exact `=== 0` / `=== max` check
+ * would almost never match.
+ */
+const BOUNDARY_EPSILON = 2;
+
+export interface ScrollBounds {
+  /** True once the tracked axis's offset is at (or past) its minimum. */
+  atStart: boolean;
+  /** True once the tracked axis's offset is at (or past) its maximum. */
+  atEnd: boolean;
+}
+
 export interface UseTourScrollOptions {
   /** Set for a horizontal list / carousel. Default false. */
   horizontal?: boolean;
@@ -100,9 +115,14 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
   const nodeRef = useRef<ScrollableNode | null>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
   const gestureListenersRef = useRef(
-    new Set<(delta: { x: number; y: number }) => void>(),
+    new Set<(delta: { x: number; y: number }, bounds: ScrollBounds) => void>(),
   );
   const dragStartOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  // Conservative until the first onScroll reports real measurements: a
+  // list that's never been scrolled hasn't proven it *can't* move further,
+  // so a swipe attempted before then falls back to needing real movement,
+  // same as always.
+  const boundsRef = useRef<ScrollBounds>({ atStart: false, atEnd: false });
   const noMomentumTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const userOnScrollRef = useRef(userOnScroll);
@@ -121,7 +141,7 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
   }, []);
 
   const subscribeGesture = useCallback(
-    (listener: (delta: { x: number; y: number }) => void) => {
+    (listener: (delta: { x: number; y: number }, bounds: ScrollBounds) => void) => {
       gestureListenersRef.current.add(listener);
       return () => {
         gestureListenersRef.current.delete(listener);
@@ -148,15 +168,35 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
     if (!start) return;
     const end = offsetRef.current;
     const delta = { x: end.x - start.x, y: end.y - start.y };
-    gestureListenersRef.current.forEach((listener) => listener(delta));
+    const bounds = boundsRef.current;
+    gestureListenersRef.current.forEach((listener) => listener(delta, bounds));
   }, []);
 
   const scrollProps = useMemo(
     () => ({
       onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const { x, y } = event.nativeEvent.contentOffset;
-        offsetRef.current.x = x;
-        offsetRef.current.y = y;
+        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+        offsetRef.current.x = contentOffset.x;
+        offsetRef.current.y = contentOffset.y;
+        // Tracked on whichever axis `horizontal` selects — a list can only
+        // page/scroll along one axis, and that's the one a swipeHint step
+        // ever cares about being pinned on. contentSize/layoutMeasurement
+        // are optional here (not just in real events, which always report
+        // them) so a hand-built event — e.g. calling scrollProps.onScroll
+        // directly in a consumer's own test — doesn't throw; bounds just
+        // stay unknown until a real event supplies them.
+        if (contentSize && layoutMeasurement) {
+          const offset = horizontal ? contentOffset.x : contentOffset.y;
+          const extent = horizontal ? contentSize.width : contentSize.height;
+          const viewport = horizontal
+            ? layoutMeasurement.width
+            : layoutMeasurement.height;
+          const maxOffset = Math.max(0, extent - viewport);
+          boundsRef.current = {
+            atStart: offset <= BOUNDARY_EPSILON,
+            atEnd: offset >= maxOffset - BOUNDARY_EPSILON,
+          };
+        }
         userOnScrollRef.current?.(event);
       },
       onScrollBeginDrag: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -198,7 +238,7 @@ export function useTourScroll(options: UseTourScrollOptions = {}): UseTourScroll
       },
       scrollEventThrottle: 16,
     }),
-    [emitGestureEnd],
+    [emitGestureEnd, horizontal],
   );
 
   const handle = useMemo<TourScrollHandle>(

@@ -4,6 +4,7 @@ import {
   dragScrollHandle,
   isSameTourTarget,
   isTooltipHidden,
+  resolveBoundaryGesture,
   resolveCountedSwipe,
   resolveScrollGesture,
   resolveSwipeCount,
@@ -269,5 +270,36 @@ describe("resolveScrollGesture", () => {
 
   it("accepts a custom threshold", () => {
     expect(resolveScrollGesture("up", 0, 30, 20)).toBe("next");
+  });
+});
+
+describe("resolveBoundaryGesture", () => {
+  it("counts a next swipe for up/left once the list is pinned at its end", () => {
+    // up/left both scroll by *increasing* offset, so their "no room left"
+    // edge is the end of the scrollable range.
+    expect(resolveBoundaryGesture("up", { atStart: false, atEnd: true })).toBe("next");
+    expect(resolveBoundaryGesture("left", { atStart: false, atEnd: true })).toBe(
+      "next",
+    );
+  });
+
+  it("counts a next swipe for down/right once the list is pinned at its start", () => {
+    // down/right scroll by *decreasing* offset, so their "no room left"
+    // edge is the start of the scrollable range instead.
+    expect(resolveBoundaryGesture("down", { atStart: true, atEnd: false })).toBe(
+      "next",
+    );
+    expect(resolveBoundaryGesture("right", { atStart: true, atEnd: false })).toBe(
+      "next",
+    );
+  });
+
+  it("reports nothing when there's room on the side that hint's swipe needs", () => {
+    expect(resolveBoundaryGesture("up", { atStart: true, atEnd: false })).toBeNull();
+    expect(resolveBoundaryGesture("down", { atStart: false, atEnd: true })).toBeNull();
+  });
+
+  it("reports nothing when neither boundary has been reached", () => {
+    expect(resolveBoundaryGesture("up", { atStart: false, atEnd: false })).toBeNull();
   });
 });

@@ -9,9 +9,23 @@ import {
 
 import { useTourScroll } from "../hooks/useTourScroll";
 
-function scrollEvent(x: number, y: number) {
+/**
+ * Defaults to a large content size relative to the viewport — plenty of
+ * scrollable room in both directions — so existing tests that don't care
+ * about boundary state never accidentally land "at" one.
+ */
+function scrollEvent(
+  x: number,
+  y: number,
+  options?: { contentWidth?: number; contentHeight?: number; viewport?: number },
+) {
+  const { contentWidth = 10000, contentHeight = 10000, viewport = 800 } = options ?? {};
   return {
-    nativeEvent: { contentOffset: { x, y } },
+    nativeEvent: {
+      contentOffset: { x, y },
+      contentSize: { width: contentWidth, height: contentHeight },
+      layoutMeasurement: { width: viewport, height: viewport },
+    },
   } as NativeSyntheticEvent<NativeScrollEvent>;
 }
 
@@ -101,7 +115,10 @@ describe("useTourScroll", () => {
         jest.advanceTimersByTime(60);
       });
 
-      expect(listener).toHaveBeenCalledWith({ x: 0, y: 96 });
+      expect(listener).toHaveBeenCalledWith(
+        { x: 0, y: 96 },
+        { atStart: false, atEnd: false },
+      );
     });
 
     it("waits for onMomentumScrollEnd instead when the drag has momentum", () => {
@@ -129,7 +146,10 @@ describe("useTourScroll", () => {
       });
 
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(listener).toHaveBeenCalledWith({ x: 0, y: 220 });
+      expect(listener).toHaveBeenCalledWith(
+        { x: 0, y: 220 },
+        { atStart: false, atEnd: false },
+      );
     });
 
     it("counts a swipe that's still decelerating from momentum when the next one grabs it, instead of swallowing it", () => {
@@ -157,7 +177,10 @@ describe("useTourScroll", () => {
 
       // The interrupted first swipe (0 -> 90) was still counted.
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(listener).toHaveBeenCalledWith({ x: 0, y: 90 });
+      expect(listener).toHaveBeenCalledWith(
+        { x: 0, y: 90 },
+        { atStart: false, atEnd: false },
+      );
 
       act(() => {
         result.current.scrollProps.onScroll(scrollEvent(0, 150));
@@ -167,7 +190,10 @@ describe("useTourScroll", () => {
 
       // The second swipe (90 -> 150) was counted too — neither was lost.
       expect(listener).toHaveBeenCalledTimes(2);
-      expect(listener).toHaveBeenLastCalledWith({ x: 0, y: 60 });
+      expect(listener).toHaveBeenLastCalledWith(
+        { x: 0, y: 60 },
+        { atStart: false, atEnd: false },
+      );
     });
 
     it("stops notifying once unsubscribed", () => {
@@ -207,6 +233,57 @@ describe("useTourScroll", () => {
       expect(listener).not.toHaveBeenCalled();
     });
 
+    it("reports atEnd once the offset reaches the bottom of the content", () => {
+      const { result } = renderHook(() => useTourScroll());
+      const listener = jest.fn();
+
+      act(() => {
+        // contentHeight 10000 - viewport 800 = 9200 max scrollable offset.
+        // Land at 9100 first so the upcoming drag actually starts from
+        // there, not from the hook's initial offset of 0.
+        result.current.scrollProps.onScroll(
+          scrollEvent(0, 9100, { contentHeight: 10000, viewport: 800 }),
+        );
+        result.current.handle.subscribeGesture!(listener);
+        result.current.scrollProps.onScrollBeginDrag(
+          scrollEvent(0, 9100, { contentHeight: 10000, viewport: 800 }),
+        );
+        result.current.scrollProps.onScroll(
+          scrollEvent(0, 9200, { contentHeight: 10000, viewport: 800 }),
+        );
+        result.current.scrollProps.onScrollEndDrag(
+          scrollEvent(0, 9200, { contentHeight: 10000, viewport: 800 }),
+        );
+        jest.advanceTimersByTime(60);
+      });
+
+      expect(listener).toHaveBeenCalledWith(
+        { x: 0, y: 100 },
+        { atStart: false, atEnd: true },
+      );
+    });
+
+    it("reports atStart at the top and neither flag once there's room on both sides", () => {
+      const { result } = renderHook(() => useTourScroll());
+      const listener = jest.fn();
+
+      act(() => {
+        // Land at offset 400 first (plenty of room either side) so the
+        // upcoming drag actually starts from there, not from 0.
+        result.current.scrollProps.onScroll(scrollEvent(0, 400));
+        result.current.handle.subscribeGesture!(listener);
+        result.current.scrollProps.onScrollBeginDrag(scrollEvent(0, 400));
+        result.current.scrollProps.onScroll(scrollEvent(0, 0));
+        result.current.scrollProps.onScrollEndDrag(scrollEvent(0, 0));
+        jest.advanceTimersByTime(60);
+      });
+
+      expect(listener).toHaveBeenCalledWith(
+        { x: 0, y: -400 },
+        { atStart: true, atEnd: false },
+      );
+    });
+
     it("still calls a caller-supplied handler for each of the four drag/momentum events, and still counts the gesture", () => {
       // Regression: a consumer who needs their own onMomentumScrollEnd (to
       // track the current page, say) would naturally spread scrollProps and
@@ -243,7 +320,10 @@ describe("useTourScroll", () => {
       expect(onScrollEndDrag).toHaveBeenCalledTimes(1);
       expect(onMomentumScrollBegin).toHaveBeenCalledTimes(1);
       expect(onMomentumScrollEnd).toHaveBeenCalledTimes(1);
-      expect(listener).toHaveBeenCalledWith({ x: 0, y: 96 });
+      expect(listener).toHaveBeenCalledWith(
+        { x: 0, y: 96 },
+        { atStart: false, atEnd: false },
+      );
     });
   });
 

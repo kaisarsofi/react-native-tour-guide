@@ -254,3 +254,23 @@ export function resolveScrollGesture(
   if (Math.abs(cross) > Math.abs(primary)) return null;
   return Math.sign(primary) === OFFSET_NEXT_SIGN[direction] ? "next" : "prev";
 }
+
+/**
+ * The fallback for a swipe attempted where the list has no room left to
+ * produce a measurable delta at all — a short list can run out of
+ * scrollable content before a `swipeCount` step's target number of swipes,
+ * and without this, every further attempt reads as "nothing happened" via
+ * `resolveScrollGesture` forever, since the offset genuinely can't move.
+ * Counts it as a completed "next" swipe if the list is already pinned at
+ * whichever end this hint's "next" direction scrolls toward — the user
+ * tried to advance and the list has nothing left to give, which reads the
+ * same as having succeeded, not as nothing happening.
+ */
+export function resolveBoundaryGesture(
+  direction: SwipeDirection,
+  bounds: { atStart: boolean; atEnd: boolean },
+): "next" | null {
+  const nextIsIncreasing = OFFSET_NEXT_SIGN[direction] === 1;
+  if (nextIsIncreasing ? bounds.atEnd : bounds.atStart) return "next";
+  return null;
+}
