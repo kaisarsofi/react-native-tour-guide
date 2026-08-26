@@ -65,4 +65,5 @@ export type {
   TourScrollHandle,
   TourScrollOptions,
   TourStep,
+  TourTargetShape,
 } from "./types";

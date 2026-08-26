@@ -22,9 +22,16 @@ import type {
   TourEventEmitter,
   TourGuideConfig,
   TourStep,
+  TourTargetShape,
 } from "./types";
 import { createTourEventEmitter } from "./utils/eventEmitter";
-import { measureView, nextPaint, rectsEqual } from "./utils/geometry";
+import {
+  measureView,
+  measureWindowRect,
+  nextPaint,
+  rectsEqual,
+  windowRectToHostRect,
+} from "./utils/geometry";
 import { scrollStepIntoView } from "./utils/scroll";
 import {
   createMemoryStorage,
@@ -40,6 +47,8 @@ interface TourGuideState {
   isActive: boolean;
   isPaused: boolean;
   targetRect: Rect | null;
+  /** Shape declared by the `<TourTarget>` the current step resolved to. */
+  targetShape: TourTargetShape | null;
 }
 
 type TourGuideAction =
@@ -48,7 +57,7 @@ type TourGuideAction =
   | { type: "END" }
   | { type: "PAUSE" }
   | { type: "RESUME" }
-  | { type: "SET_TARGET_RECT"; rect: Rect | null };
+  | { type: "SET_TARGET_RECT"; rect: Rect | null; shape?: TourTargetShape | null };
 
 const initialState: TourGuideState = {
   steps: [],
@@ -57,6 +66,7 @@ const initialState: TourGuideState = {
   isActive: false,
   isPaused: false,
   targetRect: null,
+  targetShape: null,
 };
 
 function reducer(state: TourGuideState, action: TourGuideAction): TourGuideState {
@@ -70,22 +80,34 @@ function reducer(state: TourGuideState, action: TourGuideAction): TourGuideState
         isActive: true,
         isPaused: false,
         targetRect: null,
+        targetShape: null,
       };
     case "GOTO":
       return {
         ...state,
         currentIndex: action.index,
         targetRect: action.keepTarget ? state.targetRect : null,
+        targetShape: action.keepTarget ? state.targetShape : null,
       };
     case "END":
-      return { ...state, isActive: false, isPaused: false, targetRect: null };
+      return {
+        ...state,
+        isActive: false,
+        isPaused: false,
+        targetRect: null,
+        targetShape: null,
+      };
     case "PAUSE":
       return { ...state, isPaused: true };
     case "RESUME":
       return { ...state, isPaused: false };
-    case "SET_TARGET_RECT":
-      if (rectsEqual(state.targetRect, action.rect)) return state;
-      return { ...state, targetRect: action.rect };
+    case "SET_TARGET_RECT": {
+      const shape = action.shape ?? null;
+      if (rectsEqual(state.targetRect, action.rect) && state.targetShape === shape) {
+        return state;
+      }
+      return { ...state, targetRect: action.rect, targetShape: shape };
+    }
     default:
       return state;
   }
@@ -102,7 +124,11 @@ export interface TourGuideContextValue {
   pauseTour: () => void;
   resumeTour: () => void;
   handleBackdropPress: (behavior?: BackdropBehavior) => void;
-  registerTarget: (id: string, ref: RefObject<View | null>) => () => void;
+  registerTarget: (
+    id: string,
+    ref: RefObject<View | null>,
+    shape?: TourTargetShape,
+  ) => () => void;
   registerOverlayHost: (ref: RefObject<View | null>) => () => void;
   /** Clears a `persist: true` tour's "already seen" record, so it shows again. */
   resetTour: (tourId: string) => void;
@@ -137,8 +163,12 @@ export interface TourGuideProviderProps {
 export function TourGuideProvider({ children, storage }: TourGuideProviderProps) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const resolvedStorage = useMemo(() => storage ?? createMemoryStorage(), [storage]);
-  const targetRegistry = useRef(new Map<string, RefObject<View | null>>());
+  const targetRegistry = useRef(
+    new Map<string, { ref: RefObject<View | null>; shape?: TourTargetShape }>(),
+  );
   const overlayHostRef = useRef<RefObject<View | null> | null>(null);
+  /** Overlay host's offset from the screen origin; see `registerOverlayHost`. */
+  const overlayOriginRef = useRef({ x: 0, y: 0 });
   const events = useMemo(() => createTourEventEmitter(), []);
   const measureToken = useRef(0);
   // A step's own callback (`onSpotlightPress`, `before`, …) is captured once
@@ -158,15 +188,31 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
   // `completed` value handed to consumers' `onTourEnd`.
   const markSeenRef = useRef(false);
 
-  const registerTarget = useCallback((id: string, ref: RefObject<View | null>) => {
-    targetRegistry.current.set(id, ref);
-    return () => {
-      targetRegistry.current.delete(id);
-    };
-  }, []);
+  const registerTarget = useCallback(
+    (id: string, ref: RefObject<View | null>, shape?: TourTargetShape) => {
+      targetRegistry.current.set(id, { ref, shape });
+      return () => {
+        // Only drop the entry if it's still ours — a target that remounts
+        // registers the new instance before the old one's cleanup runs.
+        if (targetRegistry.current.get(id)?.ref === ref) {
+          targetRegistry.current.delete(id);
+        }
+      };
+    },
+    [],
+  );
 
   const registerOverlayHost = useCallback((ref: RefObject<View | null>) => {
     overlayHostRef.current = ref;
+    // Measured once, here, rather than per step: the host is a full-screen
+    // absolute view that doesn't move, and caching its origin keeps
+    // `targetRegion` conversion synchronous — a step shouldn't wait on a
+    // measure round-trip just to offset a rect it already knows.
+    measureWindowRect(ref).then((origin) => {
+      if (origin) {
+        overlayOriginRef.current = { x: origin.x, y: origin.y };
+      }
+    });
     return () => {
       if (overlayHostRef.current === ref) {
         overlayHostRef.current = null;
@@ -319,11 +365,20 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
       if (measureToken.current !== token) return;
 
       if (step.targetRegion) {
-        dispatch({ type: "SET_TARGET_RECT", rect: step.targetRegion });
+        // Given in window/screen coordinates by the caller; the overlay
+        // draws in its host's space, which measured targets are already
+        // converted into. Convert here too, or the two disagree by exactly
+        // the host's offset from the screen origin — a status bar or notch
+        // above it, an iPad layout centring it in a max-width column.
+        dispatch({
+          type: "SET_TARGET_RECT",
+          rect: windowRectToHostRect(step.targetRegion, overlayOriginRef.current),
+        });
         return;
       }
 
-      const ref = step.targetRef ?? targetRegistry.current.get(step.targetId ?? "");
+      const entry = targetRegistry.current.get(step.targetId ?? "");
+      const ref = step.targetRef ?? entry?.ref;
 
       if (step.scroll) {
         // A chain runs outermost-first: scroll the page so the list is on
@@ -353,7 +408,7 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
             "which does this for you.",
         );
       }
-      dispatch({ type: "SET_TARGET_RECT", rect });
+      dispatch({ type: "SET_TARGET_RECT", rect, shape: entry?.shape ?? null });
     };
 
     resolve();

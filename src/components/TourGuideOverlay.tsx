@@ -38,6 +38,14 @@ import { Spotlight } from "./Spotlight";
 import { SwipeHint } from "./SwipeHint";
 import { Tooltip } from "./Tooltip";
 
+/**
+ * How long to wait for a step's target to produce a rect before giving up
+ * and letting touches through again. Long enough to cover a slow first
+ * measure (async `before`, a scroll settling, a screen still animating in),
+ * short enough that a genuinely unmeasurable target doesn't strand the user.
+ */
+const UNMEASURABLE_TARGET_TIMEOUT_MS = 2000;
+
 const DEFAULT_SPOTLIGHT_PADDING = 8;
 const DEFAULT_SPOTLIGHT_RADIUS = 12;
 const SCREEN_MARGIN = 16;
@@ -65,6 +73,7 @@ export function TourGuideOverlay() {
     width: number;
     height: number;
   } | null>(null);
+  const [targetUnmeasurable, setTargetUnmeasurable] = useState(false);
   // Reset tooltipSize synchronously during render (not in an effect) when a
   // new step or tour starts. TourGuideOverlay lives for the whole app, so a
   // *separate* effect resetting this raced with the tooltip's own first
@@ -314,6 +323,39 @@ export function TourGuideOverlay() {
     );
   };
 
+  // A step whose target never produces a rect — a `targetId` nothing
+  // registered, or one pointing at something with no React Native view to
+  // measure at all (a UIKit tab bar from `expo-router`'s native tabs, say)
+  // — would otherwise sit behind the full-screen fallback blocker below
+  // forever, with no spotlight and no visible tooltip. That reads to the
+  // user as a completely frozen app: nothing on screen, nothing tappable.
+  // Give measurement a moment, then stop blocking and let them out.
+  useEffect(() => {
+    if (!visible || !step) {
+      setTargetUnmeasurable(false);
+      return;
+    }
+    if (state.targetRect) {
+      setTargetUnmeasurable(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setTargetUnmeasurable(true);
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[react-native-tour-guide] Step "${step.id}" has no measurable ` +
+            `target (targetId: ${step.targetId ?? "n/a"}), so its spotlight ` +
+            "can't be placed. The overlay has stopped blocking touches so the app " +
+            "stays usable. If the target is rendered by native code — an " +
+            "`expo-router` native tab bar, for example — there is no React Native " +
+            "view to measure: use `targetRegion` for that step instead.",
+        );
+      }
+    }, UNMEASURABLE_TARGET_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [visible, step, state.targetRect]);
+
   if (!step || !visible) {
     return (
       <View
@@ -325,11 +367,17 @@ export function TourGuideOverlay() {
     );
   }
 
+  // Shape precedence: what this step asked for, else what the `<TourTarget>`
+  // itself declared (so a round button stays round for every tour that
+  // points at it, without any step restating it), else the default.
   const padding = resolveSpotlightPadding(
-    step.spotlightPadding,
+    step.spotlightPadding ?? state.targetShape?.spotlightPadding,
     DEFAULT_SPOTLIGHT_PADDING,
   );
-  const radius = step.spotlightBorderRadius ?? DEFAULT_SPOTLIGHT_RADIUS;
+  const radius =
+    step.spotlightBorderRadius ??
+    state.targetShape?.spotlightBorderRadius ??
+    DEFAULT_SPOTLIGHT_RADIUS;
   const showSkip = hideTooltip && !step.hideControls && !step.hideSkipButton;
 
   const tooltipProps: TooltipProps = {
@@ -371,9 +419,13 @@ export function TourGuideOverlay() {
   // is what actually leaves a touch there with nothing left to catch it.
   // Falls back to one full-screen band before the target has a measured
   // rect, so nothing leaks in that one gap frame either.
+  // ...but once measurement has given up entirely, block nothing: an
+  // unplaceable spotlight must never leave the app untappable.
   const outsideSpotlightBands = state.targetRect
     ? computeOutsideSpotlightBands(state.targetRect, screenWidth, screenHeight)
-    : [{ x: 0, y: 0, width: screenWidth, height: screenHeight }];
+    : targetUnmeasurable
+      ? []
+      : [{ x: 0, y: 0, width: screenWidth, height: screenHeight }];
 
   const outsideSpotlightBlockers = outsideSpotlightBands.map((band, index) => (
     <Pressable

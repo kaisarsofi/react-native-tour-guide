@@ -77,25 +77,43 @@ type MeasureCallback = (
 
 type Measurable = Pick<View, "measure" | "measureInWindow">;
 
+/**
+ * `measure`/`measureInWindow` take a callback the platform is not obliged to
+ * ever call — a detached or not-yet-laid-out view simply never answers. Left
+ * unbounded that stalls the whole measure chain, and a step that never
+ * resolves is what leaves a tour stuck with no spotlight. Resolve `null`
+ * instead and let callers treat it as "couldn't measure".
+ */
+const MEASURE_TIMEOUT_MS = 500;
+
 function readWindowRect(node: Measurable): Promise<Rect | null> {
   return new Promise((resolve) => {
+    let settled = false;
+    const settle = (rect: Rect | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(rect);
+    };
+    const timer = setTimeout(() => settle(null), MEASURE_TIMEOUT_MS);
+
     if (typeof node.measure === "function") {
       node.measure(((_x, _y, width, height, pageX, pageY) => {
         if (width === 0 && height === 0) {
-          resolve(null);
+          settle(null);
           return;
         }
-        resolve({ x: pageX, y: pageY, width, height });
+        settle({ x: pageX, y: pageY, width, height });
       }) as MeasureCallback);
       return;
     }
 
     node.measureInWindow((x, y, width, height) => {
       if (width === 0 && height === 0) {
-        resolve(null);
+        settle(null);
         return;
       }
-      resolve({ x, y, width, height });
+      settle({ x, y, width, height });
     });
   });
 }
@@ -132,6 +150,35 @@ export function measureView(
       };
     });
   });
+}
+
+/** Window-coordinate rect of a single view, or `null` if it can't be measured. */
+export function measureWindowRect(ref: RefObject<View | null>): Promise<Rect | null> {
+  const node = ref.current;
+  if (!node) return Promise.resolve(null);
+  return readWindowRect(node);
+}
+
+/**
+ * Shift a window/screen-coordinate rect into the overlay host's own space.
+ *
+ * `measureView` already does this for measured targets, so a `targetRegion`
+ * needs the same treatment or the two disagree: whenever the host doesn't
+ * start at the screen origin — a status-bar or notch inset above it, an iPad
+ * layout centring it in a max-width column — a region given in screen
+ * coordinates lands offset by exactly that gap, while a measured target
+ * beside it sits correctly.
+ */
+export function windowRectToHostRect(
+  rect: Rect,
+  origin: { x: number; y: number },
+): Rect {
+  return {
+    x: rect.x - origin.x,
+    y: rect.y - origin.y,
+    width: rect.width,
+    height: rect.height,
+  };
 }
 
 export function rectsEqual(a: Rect | null, b: Rect | null): boolean {

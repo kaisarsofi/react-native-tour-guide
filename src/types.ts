@@ -68,6 +68,20 @@ export type ResolvedSwipeHint = Required<SwipeHintConfig>;
 export type SpotlightPadding = number | { horizontal?: number; vertical?: number };
 
 /**
+ * How the spotlight should be shaped for a given target. Declared on the
+ * `<TourTarget>` itself so the shape lives with the thing being highlighted
+ * rather than being restated by every step that points at it — a circular
+ * button stays circular, a pill stays a pill, and the tour doesn't have to
+ * know. A step can still override either value.
+ */
+export interface TourTargetShape {
+  /** Corner radius of the cutout. `999` reads as a circle or pill. */
+  spotlightBorderRadius?: number;
+  /** Space between the target's bounds and the cutout. */
+  spotlightPadding?: SpotlightPadding;
+}
+
+/**
  * Anything with the scroll methods we need. Covers `ScrollView`, `FlatList`,
  * `SectionList`, `@shopify/flash-list`'s `FlashList`, `@legendapp/list`'s
  * `LegendList`, and `Animated` variants of each without importing them.

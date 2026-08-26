@@ -110,9 +110,15 @@ export function renderTour() {
       await act(async () => {
         hook.result.current.startTour(steps, config);
       });
+      // Drain the measure chain rather than counting its ticks: resolving a
+      // step walks several awaits (`before`, the region/host coordinate
+      // conversion, the measure itself), and pinning an exact number here
+      // means any new `await` on that path silently breaks every test that
+      // starts a tour.
       await act(async () => {
-        await Promise.resolve();
-        await Promise.resolve();
+        for (let tick = 0; tick < 10; tick += 1) {
+          await Promise.resolve();
+        }
       });
     },
     async flush(ms = 0) {
