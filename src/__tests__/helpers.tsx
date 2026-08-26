@@ -43,7 +43,8 @@ export function makeStep(over: Partial<TourStep> = {}): TourStep {
 
 /**
  * A `TourScrollHandle` whose `subscribeGesture` is a real, test-driven
- * event emitter — `emitGesture` pushes a completed-gesture delta to every
+ * event emitter — `emitGesture` pushes a completed-gesture delta (and
+ * optional boundary state, defaulting to "not at either end") to every
  * subscriber exactly like a `useTourScroll`-wrapped drag(+momentum)
  * session settling would, so a passive swipe-hint test can simulate "the
  * user swiped the real list" without a real native list or real touch
@@ -52,9 +53,17 @@ export function makeStep(over: Partial<TourStep> = {}): TourStep {
 export function makeSubscribableHandle(
   over: Partial<TourScrollHandle> = {},
 ): TourScrollHandle & {
-  emitGesture: (delta: { x: number; y: number }) => void;
+  emitGesture: (
+    delta: { x: number; y: number },
+    bounds?: { atStart: boolean; atEnd: boolean },
+  ) => void;
 } {
-  const listeners = new Set<(delta: { x: number; y: number }) => void>();
+  const listeners = new Set<
+    (
+      delta: { x: number; y: number },
+      bounds: { atStart: boolean; atEnd: boolean },
+    ) => void
+  >();
   const offsetRef = { current: { x: 0, y: 0 } };
   return {
     ref: { current: { scrollToIndex: jest.fn(), scrollTo: jest.fn() } },
@@ -65,8 +74,8 @@ export function makeSubscribableHandle(
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    emitGesture(delta) {
-      listeners.forEach((listener) => listener(delta));
+    emitGesture(delta, bounds = { atStart: false, atEnd: false }) {
+      listeners.forEach((listener) => listener(delta, bounds));
     },
     ...over,
   };

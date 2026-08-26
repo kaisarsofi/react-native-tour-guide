@@ -105,15 +105,22 @@ export interface TourScrollHandle {
   /**
    * Subscribe to completed scroll gestures — fires once per drag (plus any
    * following momentum) that settles, with the net offset delta over that
-   * whole session. Lets a `swipeHint` step on an already-scrollable target
-   * count swipes by watching how far the list's own native scroll actually
-   * moved per gesture, instead of capturing touches with a gesture
-   * responder and driving the scroll itself. Optional so a handle built by
-   * hand (without `useTourScroll`) still type-checks — such a handle just
-   * falls back to the touch-capturing path.
+   * whole session and whether the list was already pinned at either end of
+   * its scrollable range (on whichever axis `horizontal` selects) by the
+   * time the gesture ended. Lets a `swipeHint` step on an already-
+   * scrollable target count swipes by watching how far the list's own
+   * native scroll actually moved per gesture, instead of capturing touches
+   * with a gesture responder and driving the scroll itself — and lets it
+   * still count a swipe attempted at the end of a short list, where the
+   * list has no room left to produce a measurable delta at all. Optional
+   * so a handle built by hand (without `useTourScroll`) still type-checks
+   * — such a handle just falls back to the touch-capturing path.
    */
   subscribeGesture?: (
-    listener: (delta: { x: number; y: number }) => void,
+    listener: (
+      delta: { x: number; y: number },
+      bounds: { atStart: boolean; atEnd: boolean },
+    ) => void,
   ) => () => void;
 }
 

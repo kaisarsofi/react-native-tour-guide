@@ -26,6 +26,7 @@ import {
   dragScrollHandle,
   isSwipeAdvanceEnabled,
   isTooltipHidden,
+  resolveBoundaryGesture,
   resolveCountedSwipe,
   resolveScrollGesture,
   resolveSwipeCount,
@@ -153,10 +154,17 @@ export function TourGuideOverlay() {
   useEffect(() => {
     if (!passiveModeActive || !scrollHandle?.subscribeGesture) return;
 
-    return scrollHandle.subscribeGesture((delta) => {
+    return scrollHandle.subscribeGesture((delta, bounds) => {
       const hint = hintRef.current;
       if (!hint) return;
-      const gesture = resolveScrollGesture(hint.direction, delta.x, delta.y);
+      // A swipe attempted where the list has already run out of room to
+      // scroll further produces no measurable delta at all — without this
+      // fallback, a short list stalls the tour forever once it hits the
+      // end, since every further attempt would otherwise read as nothing
+      // happening.
+      const gesture =
+        resolveScrollGesture(hint.direction, delta.x, delta.y) ??
+        resolveBoundaryGesture(hint.direction, bounds);
       if (!gesture) return;
 
       const resolved = resolveCountedSwipe(
