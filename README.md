@@ -33,17 +33,21 @@ If this saves you a sprint of edge cases, a ⭐ on
 
 ## See it
 
-| **Targeting** | **Behavior** | **Scrolling** |
-| --- | --- | --- |
+| **Targeting**                                                                                   | **Behavior**                                                                               | **Scrolling**                                                                                  |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | ![Targeting tab — ref or TourTarget id, themes, and a custom tooltip](docs/TargetTourGuide.gif) | ![Behavior tab — backdrop, persistence, events, and live controls](docs/behaviourTour.gif) | ![Scrolling tab — list tours, paging, swipe hints, and wizard navigation](docs/scrollTour.gif) |
-| ref or id-based targeting, six themes, custom tooltips | backdrop taps, play-once persistence, press-the-real-button | auto-scroll lists, swipe hints, paging, wizard nav |
+| ref or id-based targeting, six themes, custom tooltips                                          | backdrop taps, play-once persistence, press-the-real-button                                | auto-scroll lists, swipe hints, paging, wizard nav                                             |
 
 _Same example app, iOS simulator and Android device._
 
 ## Two components. That's the whole API surface you touch daily.
 
 ```tsx
-import { TourGuideProvider, TourGuideOverlay, useTourGuide } from "react-native-tour-guide";
+import {
+  TourGuideProvider,
+  TourGuideOverlay,
+  useTourGuide,
+} from "react-native-tour-guide";
 
 function App() {
   return (
@@ -110,7 +114,7 @@ forwards every other prop straight to `FlashList` — swap in `LegendList` or
 plain `FlatList` with no other change. Behind a tab navigator? `active`
 keeps the tour from firing on a screen that's mounted but off-screen.
 
-**Need the tour to also point at something *outside* the list** — nav
+**Need the tour to also point at something _outside_ the list** — nav
 arrows next to a carousel, a filter chip above it? `<TourScrollList>` only
 builds one step, for the list itself. Drop to `useTourScroll()` +
 `TourTarget` and write the steps yourself — the arrows below drive the
@@ -189,9 +193,9 @@ doesn't have it already — see the
 <details>
 <summary><strong>Requirements & optional dependencies</strong></summary>
 
-| React Native | React        | Expo               | Architecture         |
-| ------------- | ------------- | ------------------- | --------------------- |
-| 0.71+         | 18+ (works with 19) | SDK 49+ (Go, dev builds, prebuild) | Paper and Fabric, both |
+| React Native | React               | Expo                               | Architecture           |
+| ------------ | ------------------- | ---------------------------------- | ---------------------- |
+| 0.71+        | 18+ (works with 19) | SDK 49+ (Go, dev builds, prebuild) | Paper and Fabric, both |
 
 `react-native-reanimated` (≥3) and `react-native-svg` (≥13) are required
 peers. `@shopify/flash-list` and `@legendapp/list` are **optional** —
@@ -205,6 +209,17 @@ nothing extra.
 
 **Targeting** — `targetRef`, `<TourTarget id>`, or a fixed `targetRegion`.
 No ref plumbing required for the ones you don't want to thread through.
+
+**Shape lives on the target** — give `<TourTarget>` a
+`spotlightBorderRadius` / `spotlightPadding` once and every step pointing at
+it is shaped to match, so a round icon button stays round and a pill stays a
+pill without each step restating it. A step can still override either.
+
+```tsx
+<TourTarget id="chat-icon" spotlightBorderRadius={999} spotlightPadding={8}>
+  <IconButton />
+</TourTarget>
+```
 
 **Themes & styling** — six bundled themes (`light`, `dark`, `minimal`,
 `vibrant`, `ocean`, `sunset`), token overrides for one-off colors, or
@@ -251,8 +266,20 @@ for analytics, wired the same way anywhere in the tree.
 ```ts
 const {
   startTour, // (steps: TourStep[], config?: TourGuideConfig) => void
-  nextStep, prevStep, goToStep, skipTour, endTour, pauseTour, resumeTour, resetTour,
-  isActive, isPaused, currentStep, currentStepIndex, totalSteps, tourId,
+  nextStep,
+  prevStep,
+  goToStep,
+  skipTour,
+  endTour,
+  pauseTour,
+  resumeTour,
+  resetTour,
+  isActive,
+  isPaused,
+  currentStep,
+  currentStepIndex,
+  totalSteps,
+  tourId,
   events,
 } = useTourGuide();
 ```
@@ -283,6 +310,34 @@ Every function here is referentially stable — safe to drop straight into a
 />
 ```
 
+### `<TourTarget>`
+
+Wraps anything you want to spotlight, so a step can reference it by
+`targetId` instead of threading a ref through.
+
+| Prop                    | Type                                   | Default  | Purpose                                                           |
+| ----------------------- | -------------------------------------- | -------- | ----------------------------------------------------------------- |
+| `id`                    | `string`                               | required | Referenced by a step's `targetId`                                 |
+| `spotlightBorderRadius` | `number`                               | `12`     | Cutout radius for every step targeting this (`999` = circle/pill) |
+| `spotlightPadding`      | `number \| { horizontal?, vertical? }` | `8`      | Space between this target and the cutout                          |
+| ...`ViewProps`          |                                        |          | Forwarded to the wrapper `View`                                   |
+
+Declaring the shape here rather than on each step keeps it with the thing
+being highlighted. A step's own `spotlightBorderRadius` / `spotlightPadding`
+still wins when it sets one.
+
+It sizes to its content like a plain `View` — pass `style={{ flex: 1 }}`
+when wrapping a flex-filling child (a full-height list), or the spotlight
+collapses to zero height. In development a target that measures to zero
+size logs a warning naming it.
+
+> **Natively-rendered targets.** Anything drawn by native code rather than
+> React Native — `expo-router`'s native tabs (a UIKit `UITabBar`), a native
+> header — has no view to wrap or measure, so `<TourTarget>` can't reach it.
+> Use `targetRegion` with screen coordinates for those. If a step's target
+> never measures, the overlay warns in development and stops blocking
+> touches rather than leaving the app untappable behind an invisible scrim.
+
 ### `useTourScroll()`
 
 ```ts
@@ -308,24 +363,24 @@ five callbacks above compose with the hook's own the same way.
 
 ### `TourStep`
 
-| Property | Type | Default | Purpose |
-| --- | --- | --- | --- |
-| `id` | `string` | required | Unique step id |
-| `targetRef` / `targetId` / `targetRegion` | see [Targeting](#everything-else-in-one-pass) | — | What to highlight |
-| `title` / `description` | `string` | required | Tooltip copy |
-| `tooltipPosition` | `'top'\|'bottom'\|'left'\|'right'\|'auto'` | `'auto'` | Preferred side |
-| `spotlightPadding` | `number \| { horizontal?, vertical? }` | `8` | Space around the cutout |
-| `spotlightBorderRadius` | `number` | `12` | Cutout corner radius (`999` = circle) |
-| `active` | `boolean` | `true` | Exclude from the tour when `false` |
-| `backdropBehavior` | `'next'\|'dismiss'\|'none'` | `'none'` | Tap-outside behavior |
-| `autoAdvance` | `number` | — | Auto-advance after N ms |
-| `before` / `delayBefore` | fn / `number` | — | Gate on async work, then wait |
-| `scroll` | `TourScrollOptions \| [...]` | — | Scroll a list into view first |
-| `swipeHint` | direction or `SwipeHintConfig` | — | Animated hand + gesture tour |
-| `renderTooltip` | `(props) => ReactNode` | — | Per-step custom tooltip |
-| `hideNextButton` / `hidePrevButton` / `hideSkipButton` / `hideControls` | `boolean` | `false` | Hide controls |
-| `swipeCount` | `number` | `3` (paging list) / `2` (plain list) when `swipeHint` set | Swipes before this step advances |
-| `onNext` / `onPrev` / `onSkip` / `onSpotlightPress` | `() => void` | — | Callbacks |
+| Property                                                                | Type                                          | Default                                                   | Purpose                                                           |
+| ----------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------- |
+| `id`                                                                    | `string`                                      | required                                                  | Unique step id                                                    |
+| `targetRef` / `targetId` / `targetRegion`                               | see [Targeting](#everything-else-in-one-pass) | —                                                         | What to highlight. `targetRegion` is in window/screen coordinates |
+| `title` / `description`                                                 | `string`                                      | required                                                  | Tooltip copy                                                      |
+| `tooltipPosition`                                                       | `'top'\|'bottom'\|'left'\|'right'\|'auto'`    | `'auto'`                                                  | Preferred side                                                    |
+| `spotlightPadding`                                                      | `number \| { horizontal?, vertical? }`        | target's, else `8`                                        | Space around the cutout                                           |
+| `spotlightBorderRadius`                                                 | `number`                                      | target's, else `12`                                       | Cutout corner radius (`999` = circle)                             |
+| `active`                                                                | `boolean`                                     | `true`                                                    | Exclude from the tour when `false`                                |
+| `backdropBehavior`                                                      | `'next'\|'dismiss'\|'none'`                   | `'none'`                                                  | Tap-outside behavior                                              |
+| `autoAdvance`                                                           | `number`                                      | —                                                         | Auto-advance after N ms                                           |
+| `before` / `delayBefore`                                                | fn / `number`                                 | —                                                         | Gate on async work, then wait                                     |
+| `scroll`                                                                | `TourScrollOptions \| [...]`                  | —                                                         | Scroll a list into view first                                     |
+| `swipeHint`                                                             | direction or `SwipeHintConfig`                | —                                                         | Animated hand + gesture tour                                      |
+| `renderTooltip`                                                         | `(props) => ReactNode`                        | —                                                         | Per-step custom tooltip                                           |
+| `hideNextButton` / `hidePrevButton` / `hideSkipButton` / `hideControls` | `boolean`                                     | `false`                                                   | Hide controls                                                     |
+| `swipeCount`                                                            | `number`                                      | `3` (paging list) / `2` (plain list) when `swipeHint` set | Swipes before this step advances                                  |
+| `onNext` / `onPrev` / `onSkip` / `onSpotlightPress`                     | `() => void`                                  | —                                                         | Callbacks                                                         |
 
 ### `TourGuideConfig`
 

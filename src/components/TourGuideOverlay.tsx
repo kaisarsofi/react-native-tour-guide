@@ -18,7 +18,7 @@ import type { TooltipProps, TourStep } from "../types";
 import {
   computeOutsideSpotlightBands,
   computeTooltipLayout,
-  resolveSpotlightPadding,
+  resolveSpotlightShape,
 } from "../utils/geometry";
 import { waitForScrollSettle } from "../utils/scroll";
 import {
@@ -367,17 +367,12 @@ export function TourGuideOverlay() {
     );
   }
 
-  // Shape precedence: what this step asked for, else what the `<TourTarget>`
-  // itself declared (so a round button stays round for every tour that
-  // points at it, without any step restating it), else the default.
-  const padding = resolveSpotlightPadding(
-    step.spotlightPadding ?? state.targetShape?.spotlightPadding,
-    DEFAULT_SPOTLIGHT_PADDING,
-  );
-  const radius =
-    step.spotlightBorderRadius ??
-    state.targetShape?.spotlightBorderRadius ??
-    DEFAULT_SPOTLIGHT_RADIUS;
+  const { radius, padding } = resolveSpotlightShape({
+    step,
+    target: state.targetShape,
+    defaultRadius: DEFAULT_SPOTLIGHT_RADIUS,
+    defaultPadding: DEFAULT_SPOTLIGHT_PADDING,
+  });
   const showSkip = hideTooltip && !step.hideControls && !step.hideSkipButton;
 
   const tooltipProps: TooltipProps = {
@@ -498,6 +493,17 @@ export function TourGuideOverlay() {
             {...panResponder.panHandlers}
           />
         </>
+      ) : targetUnmeasurable ? (
+        // Measurement gave up, so there's no hole to press inside or
+        // outside of — and a full-screen backdrop with nothing visible on it
+        // is just an invisible wall. Keep the scrim, drop the touch capture.
+        <View
+          testID="tour-guide-backdrop"
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        >
+          {spotlight}
+        </View>
       ) : (
         <Pressable
           testID="tour-guide-backdrop"

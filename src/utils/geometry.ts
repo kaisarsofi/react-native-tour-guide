@@ -1,7 +1,12 @@
 import type { RefObject } from "react";
 import { Dimensions, type View } from "react-native";
 
-import type { Rect, SpotlightPadding, TooltipPosition } from "../types";
+import type {
+  Rect,
+  SpotlightPadding,
+  TooltipPosition,
+  TourTargetShape,
+} from "../types";
 
 export interface ResolvedSpotlightPadding {
   horizontal: number;
@@ -22,6 +27,41 @@ export function resolveSpotlightPadding(
   return {
     horizontal: padding.horizontal ?? fallback,
     vertical: padding.vertical ?? fallback,
+  };
+}
+
+export interface ResolvedSpotlightShape {
+  radius: number;
+  padding: ResolvedSpotlightPadding;
+}
+
+/**
+ * Decide the cutout's shape for a step.
+ *
+ * Precedence is step, then the `<TourTarget>`'s own declaration, then the
+ * defaults — so a round icon button stays round for every tour that points
+ * at it without any step restating the shape, while a step that does care
+ * can still override. Each field falls back independently: a target may set
+ * only a radius and still inherit the default padding.
+ */
+export function resolveSpotlightShape({
+  step,
+  target,
+  defaultRadius,
+  defaultPadding,
+}: {
+  step?: TourTargetShape | null;
+  target?: TourTargetShape | null;
+  defaultRadius: number;
+  defaultPadding: number;
+}): ResolvedSpotlightShape {
+  return {
+    radius:
+      step?.spotlightBorderRadius ?? target?.spotlightBorderRadius ?? defaultRadius,
+    padding: resolveSpotlightPadding(
+      step?.spotlightPadding ?? target?.spotlightPadding,
+      defaultPadding,
+    ),
   };
 }
 

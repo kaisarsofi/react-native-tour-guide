@@ -393,3 +393,66 @@ describe("TourGuideOverlay rendering", () => {
     expect(tour.api.isActive).toBe(false);
   });
 });
+
+describe("TourGuideOverlay with an unmeasurable target", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  /**
+   * A `targetId` nothing ever registered — the same shape as a target drawn
+   * by native code (an `expo-router` native tab bar), which has no React
+   * Native view to measure. Before this was handled, the overlay kept its
+   * full-screen fallback blocker up forever: no spotlight, an invisible
+   * tooltip, and nothing tappable anywhere. That is indistinguishable from
+   * a frozen app, so the overlay has to let go once measuring gives up.
+   */
+  const orphanStep = makeStep({ targetRegion: undefined, targetId: "nothing-here" });
+
+  it("keeps capturing touches for a target that does measure", async () => {
+    // Baseline: a normal step's backdrop is a real Pressable, so the release
+    // below means the overlay let go rather than never having captured.
+    const tour = renderTour();
+    await tour.start([makeStep()]);
+
+    const backdrop = screen.getByTestId("tour-guide-backdrop");
+    expect(backdrop.props.pointerEvents).not.toBe("none");
+  });
+
+  it("stops blocking touches once measurement gives up", async () => {
+    const tour = renderTour();
+    await tour.start([orphanStep]);
+
+    // Still capturing while the measure attempt is outstanding.
+    expect(screen.getByTestId("tour-guide-backdrop").props.pointerEvents).not.toBe(
+      "none",
+    );
+
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId("tour-guide-backdrop").props.pointerEvents).toBe("none");
+    expect(screen.queryAllByTestId("tour-guide-outside-blocker")).toHaveLength(0);
+  });
+
+  it("warns in development, naming the step and pointing at targetRegion", async () => {
+    const tour = renderTour();
+    await tour.start([orphanStep]);
+
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+      await Promise.resolve();
+    });
+
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("nothing-here"));
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("targetRegion"));
+  });
+});

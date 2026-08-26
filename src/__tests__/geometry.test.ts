@@ -5,8 +5,11 @@ import {
   computeOutsideSpotlightBands,
   computeTooltipLayout,
   measureView,
+  measureWindowRect,
   rectsEqual,
   resolveSpotlightPadding,
+  resolveSpotlightShape,
+  windowRectToHostRect,
 } from "../utils/geometry";
 
 function viewRef(
@@ -278,5 +281,109 @@ describe("computeTooltipLayout", () => {
 
     expect(layout.x).toBe(16);
     expect(layout.arrowOffset).toBe(-6);
+  });
+});
+
+describe("resolveSpotlightShape", () => {
+  const defaults = { defaultRadius: 12, defaultPadding: 8 };
+
+  it("falls back to the defaults when neither step nor target says", () => {
+    expect(resolveSpotlightShape({ ...defaults })).toEqual({
+      radius: 12,
+      padding: { horizontal: 8, vertical: 8 },
+    });
+  });
+
+  it("uses the target's shape when the step doesn't set one", () => {
+    expect(
+      resolveSpotlightShape({
+        ...defaults,
+        target: { spotlightBorderRadius: 999, spotlightPadding: 4 },
+      }),
+    ).toEqual({ radius: 999, padding: { horizontal: 4, vertical: 4 } });
+  });
+
+  it("lets the step override the target", () => {
+    expect(
+      resolveSpotlightShape({
+        ...defaults,
+        step: { spotlightBorderRadius: 2, spotlightPadding: 0 },
+        target: { spotlightBorderRadius: 999, spotlightPadding: 4 },
+      }),
+    ).toEqual({ radius: 2, padding: { horizontal: 0, vertical: 0 } });
+  });
+
+  it("falls back per field, so a target can set only one of them", () => {
+    expect(
+      resolveSpotlightShape({ ...defaults, target: { spotlightBorderRadius: 999 } }),
+    ).toEqual({ radius: 999, padding: { horizontal: 8, vertical: 8 } });
+
+    expect(
+      resolveSpotlightShape({ ...defaults, target: { spotlightPadding: 2 } }),
+    ).toEqual({ radius: 12, padding: { horizontal: 2, vertical: 2 } });
+  });
+
+  it("mixes a step radius with a target padding", () => {
+    expect(
+      resolveSpotlightShape({
+        ...defaults,
+        step: { spotlightBorderRadius: 20 },
+        target: { spotlightPadding: { horizontal: 0, vertical: 6 } },
+      }),
+    ).toEqual({ radius: 20, padding: { horizontal: 0, vertical: 6 } });
+  });
+
+  it("treats an explicit 0 as a real value, not a missing one", () => {
+    expect(
+      resolveSpotlightShape({
+        ...defaults,
+        step: { spotlightBorderRadius: 0, spotlightPadding: 0 },
+        target: { spotlightBorderRadius: 999, spotlightPadding: 30 },
+      }),
+    ).toEqual({ radius: 0, padding: { horizontal: 0, vertical: 0 } });
+  });
+});
+
+describe("windowRectToHostRect", () => {
+  const rect = { x: 100, y: 200, width: 50, height: 40 };
+
+  it("is a no-op when the host sits at the screen origin", () => {
+    expect(windowRectToHostRect(rect, { x: 0, y: 0 })).toEqual(rect);
+  });
+
+  it("shifts a screen-space rect by the host's offset, size untouched", () => {
+    // A host pushed down by a status bar / notch, and inset horizontally the
+    // way an iPad max-width column centres it.
+    expect(windowRectToHostRect(rect, { x: 24, y: 59 })).toEqual({
+      x: 76,
+      y: 141,
+      width: 50,
+      height: 40,
+    });
+  });
+});
+
+describe("measureWindowRect", () => {
+  it("resolves null for a ref with nothing attached", async () => {
+    await expect(measureWindowRect({ current: null })).resolves.toBeNull();
+  });
+
+  it("resolves null rather than hanging when measure never answers", async () => {
+    jest.useFakeTimers();
+    // A detached view: the platform takes the callback and never calls it.
+    const ref = { current: { measure: () => {}, measureInWindow: () => {} } };
+
+    const pending = measureWindowRect(ref as never);
+    let settled: unknown = "unsettled";
+    pending.then((value) => {
+      settled = value;
+    });
+
+    await Promise.resolve();
+    expect(settled).toBe("unsettled");
+
+    jest.advanceTimersByTime(1000);
+    await expect(pending).resolves.toBeNull();
+    jest.useRealTimers();
   });
 });
