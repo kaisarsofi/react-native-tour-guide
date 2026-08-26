@@ -284,6 +284,31 @@ with `createWizardTourSteps()` for a Prev/Next-driven carousel.
 Set `passThroughTouches` on `TourGuideConfig` to apply it to a whole tour; a
 step can still opt out.
 
+### Tours are single-screen
+
+A tour runs on the screen it started on. `TourGuideOverlay` sits above your
+navigator, so it survives a navigation — but the engine doesn't follow: the
+spotlight keeps the rect it already measured, and a target that unmounted
+can't be re-measured. Spotlight a control that navigates away and the tour
+is left ringing empty space on the new screen.
+
+So if a spotlighted control navigates, **make it the last step** — end the
+tour there and start a fresh one on the destination:
+
+```tsx
+{
+  id: "open-settings",
+  targetId: "settings-button",
+  title: "Settings",
+  description: "Everything else lives in here.",
+  passThroughTouches: true,   // the button navigates for real
+  hideNextButton: true,
+  autoAdvance: 1200,          // ...and the tour bows out behind it
+}
+```
+
+Carrying one tour across screens is on the [roadmap](#roadmap).
+
 **Play once, persist forever** — `persist: true` plus `tourId` and it
 just won't show again, zero storage setup. Pass `TourGuideProvider` a real
 adapter (`storage={AsyncStorage}`, MMKV, anything shaped like
@@ -439,6 +464,12 @@ with real, runnable code.
       (`passThroughTouches`, opt-in — see [Press the real button](#everything-else-in-one-pass))
 - [ ] Make `passThroughTouches` the default, once a pass-through step can
       also self-advance without a capture view over the hole
+- [ ] **Cross-screen tours** — carry a tour across navigation, so a step
+      whose control navigates can continue on the screen it lands on. Needs
+      two things the engine doesn't have yet: a way to know the press
+      happened without capturing it, and a registry that waits for a target
+      that mounts a moment later instead of measuring once. Today a tour is
+      single-screen: see [Tours are single-screen](#tours-are-single-screen).
 - [ ] Reach natively-rendered targets (`expo-router` native tabs, native
       headers) without hand-written `targetRegion` coordinates
 - [ ] Optional blur backdrop

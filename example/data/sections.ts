@@ -8,6 +8,7 @@ import { EventLog } from "../demos/EventLog";
 import { HorizontalListControlsTour } from "../demos/HorizontalListControlsTour";
 import { PaginatedCardsTour } from "../demos/PaginatedCardsTour";
 import { Persistence } from "../demos/Persistence";
+import { PassThroughTour } from "../demos/PassThroughTour";
 import { PressableControlsTour } from "../demos/PressableControlsTour";
 import { Themes } from "../demos/Themes";
 import { VerticalListTour } from "../demos/VerticalListTour";
@@ -155,6 +156,16 @@ export const SECTIONS: SectionMeta[] = [
     category: "behavior",
     component: PressableControlsTour,
     tourId: "pressable-controls",
+  },
+  {
+    id: "pass-through",
+    index: 12,
+    title: "Touch pass-through",
+    tagline: "The spotlit button keeps its own onPress — the tour restates nothing.",
+    icon: "radio-button-on-outline",
+    category: "behavior",
+    component: PassThroughTour,
+    tourId: "pass-through",
   },
   {
     id: "wizard-navigation",
