@@ -3,6 +3,7 @@ import type { ComponentProps, ComponentType } from "react";
 
 import { BackdropAndMotion } from "../demos/BackdropAndMotion";
 import { BasicTargeting } from "../demos/BasicTargeting";
+import { CrossScreenTour } from "../demos/CrossScreenTour";
 import { CustomTooltip } from "../demos/CustomTooltip";
 import { EventLog } from "../demos/EventLog";
 import { HorizontalListControlsTour } from "../demos/HorizontalListControlsTour";
@@ -166,6 +167,17 @@ export const SECTIONS: SectionMeta[] = [
     category: "behavior",
     component: PassThroughTour,
     tourId: "pass-through",
+  },
+  {
+    id: "cross-screen",
+    index: 13,
+    title: "Cross-screen",
+    tagline: "A step navigates, then the next one's target mounts on the new screen.",
+    icon: "arrow-redo-outline",
+    category: "behavior",
+    component: CrossScreenTour,
+    fullBleed: true,
+    tourId: "cross-screen",
   },
   {
     id: "wizard-navigation",

@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+### The engine follows a tour across screens
+
+A step advanced (`nextStep`/`goToStep`) onto a target that hasn't mounted
+yet — most often because it lives on a screen still navigating in — used to
+measure once, find nothing, and give up: the spotlight sat on empty space
+until something else happened to re-trigger measurement. The target
+registry now remembers what a waiting step needs and finishes its
+measurement itself the instant the matching `<TourTarget>` registers, so a
+step whose `onSpotlightPress`/`onNext` navigates and then calls `nextStep()`
+picks its target up on the destination screen with no extra setup.
+
+This covers a step-driven advance (`onSpotlightPress`, `onNext`, a step's
+own `before`). A `passThroughTouches` step that navigates on its own, with
+nothing calling `nextStep()` for it, still can't be followed — see
+[`passThroughTouches` can't advance itself](README.md#passthroughtouches-cant-advance-itself)
+in the README.
+
+A target that mounts because of the navigation is often still mid-transition
+the instant it registers — a stack push or a drawer opening animates the
+very view that just mounted. `delayBefore` now applies to this late
+measurement too, the same as it already did for a target that was mounted
+ahead of time: without it, a target could register mid-animation and
+permanently capture a mid-transition rect, since nothing re-measures it
+afterward. Set `delayBefore` on a step whose target lives behind an animated
+navigation transition.
+
 ## 1.0.0
 
 First stable public release: animated SVG spotlight, auto-placed tooltip, six

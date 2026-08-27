@@ -379,20 +379,42 @@ for analytics, wired the same way anywhere in the tree.
 
 ## Current limitations
 
-Tours currently run within a single screen. If a highlighted control navigates to another screen, end the current tour and start a new tour on the destination screen.
+Tours can now carry across a navigation: `TourGuideOverlay` sits above your
+navigator, so it survives one, and when a step advances to a target that
+hasn't mounted yet — the next step lives on the screen you're navigating to
+— the engine waits and measures it the instant its `<TourTarget>` registers,
+instead of measuring once and giving up.
 
-Cross-screen tours are planned.
+That only helps once something actually calls `nextStep()` (or
+`goToStep()`). If the step that navigates does so through the tour itself —
+`onSpotlightPress`, `onNext`, a step's own `before` — call `nextStep()`
+right alongside the navigation and the next step picks up on the new screen:
 
-### Tours are single-screen
+```tsx
+{
+  id: "open-settings",
+  targetId: "settings-button",
+  title: "Settings",
+  description: "Everything else lives in here.",
+  onSpotlightPress: () => {
+    navigation.navigate("Settings");
+    nextStep();
+  },
+  hideNextButton: true,
+}
+```
 
-A tour runs on the screen it started on. `TourGuideOverlay` sits above your
-navigator, so it survives a navigation — but the engine doesn't follow: the
-spotlight keeps the rect it already measured, and a target that unmounted
-can't be re-measured. Spotlight a control that navigates away and the tour
-is left ringing empty space on the new screen.
+### `passThroughTouches` can't advance itself
 
-So if a spotlighted control navigates, **make it the last step** — end the
-tour there and start a fresh one on the destination:
+A step with `passThroughTouches: true` renders nothing over the spotlight,
+so the real control gets the tap and does its own thing — including, often,
+its own navigation. Nothing in that path calls `nextStep()`, so the engine
+has no way to know the press happened and the tour is left behind on the
+old screen.
+
+Until the engine can detect that press without capturing it, use
+`autoAdvance` to bow the tour out behind the navigating control instead of
+following it onto the new screen:
 
 ```tsx
 {
@@ -406,7 +428,7 @@ tour there and start a fresh one on the destination:
 }
 ```
 
-Carrying one tour across screens is on the [roadmap](#roadmap).
+This part of cross-screen support is still on the [roadmap](#roadmap).
 
 ## API reference
 
@@ -555,12 +577,13 @@ with real, runnable code.
       (`passThroughTouches`, opt-in — see [Press the real button](#everything-else-in-one-pass))
 - [ ] Make `passThroughTouches` the default, once a pass-through step can
       also self-advance without a capture view over the hole
-- [ ] **Cross-screen tours** — carry a tour across navigation, so a step
-      whose control navigates can continue on the screen it lands on. Needs
-      two things the engine doesn't have yet: a way to know the press
-      happened without capturing it, and a registry that waits for a target
-      that mounts a moment later instead of measuring once. Today a tour is
-      single-screen: see [Tours are single-screen](#tours-are-single-screen).
+- [x] **Cross-screen tours** — the target registry now waits for a
+      `<TourTarget>` that mounts a moment later instead of measuring once
+      and giving up, so a step advanced (via `nextStep`/`goToStep`) onto a
+      screen that's still navigating in picks up its target as soon as it
+      mounts. Still missing: a way to know a `passThroughTouches` press
+      happened without capturing it, so that variant can't self-advance yet
+      — see [`passThroughTouches` can't advance itself](#passthroughtouches-cant-advance-itself).
 - [ ] Reach natively-rendered targets (`expo-router` native tabs, native
       headers) without hand-written `targetRegion` coordinates
 - [ ] Optional blur backdrop

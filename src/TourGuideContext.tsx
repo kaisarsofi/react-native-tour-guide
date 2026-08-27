@@ -171,6 +171,15 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
   const overlayOriginRef = useRef({ x: 0, y: 0 });
   const events = useMemo(() => createTourEventEmitter(), []);
   const measureToken = useRef(0);
+  // Set while the current step's target isn't registered yet — most often
+  // because `before`/`onNext` just navigated to a screen whose `<TourTarget>`
+  // hasn't mounted. Lets `registerTarget` finish that step's measurement the
+  // instant the matching target shows up, instead of the step sitting there
+  // until something else happens to re-run the measure effect. Cleared at the
+  // top of that effect on every run, so a target that mounts after the tour
+  // has already moved on (or ended) is never mistaken for the one it's
+  // waiting on.
+  const pendingTargetIdRef = useRef<string | null>(null);
   // A step's own callback (`onSpotlightPress`, `before`, …) is captured once
   // into the steps array a caller hands to `startTour`, then invoked later
   // from inside the overlay — by then, a `nextStep`/`goToStep` closed over
@@ -188,9 +197,47 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
   // `completed` value handed to consumers' `onTourEnd`.
   const markSeenRef = useRef(false);
 
+  // Finishes a step's measurement outside the main effect below, for a
+  // target that registers *after* that effect already ran (and found
+  // nothing) — the cross-screen case. Shares `measureToken` with it so
+  // whichever measurement is current always wins.
+  const remeasurePendingTarget = useCallback(
+    (ref: RefObject<View | null>, shape?: TourTargetShape) => {
+      const token = ++measureToken.current;
+      (async () => {
+        // A target that mounts *because* of navigation (a screen the tour
+        // just moved onto) is often still mid-transition the instant it
+        // registers — a stack push or drawer open animates the very view
+        // that just mounted. The step's own `delayBefore` is the caller's
+        // declared settle time for exactly this; the normal resolve effect
+        // already waits it out before its first measurement; a target that
+        // shows up late deserves the same wait before this one measurement
+        // it gets, or it can permanently capture a mid-animation rect.
+        const delay =
+          stateRef.current.steps[stateRef.current.currentIndex]?.delayBefore;
+        if (delay) {
+          await new Promise<void>((done) => {
+            setTimeout(done, delay);
+          });
+          if (measureToken.current !== token) return;
+        }
+        await nextPaint();
+        if (measureToken.current !== token) return;
+        const rect = await measureView(ref, overlayHostRef.current ?? undefined);
+        if (measureToken.current !== token) return;
+        dispatch({ type: "SET_TARGET_RECT", rect, shape: shape ?? null });
+      })();
+    },
+    [],
+  );
+
   const registerTarget = useCallback(
     (id: string, ref: RefObject<View | null>, shape?: TourTargetShape) => {
       targetRegistry.current.set(id, { ref, shape });
+      if (pendingTargetIdRef.current === id) {
+        pendingTargetIdRef.current = null;
+        remeasurePendingTarget(ref, shape);
+      }
       return () => {
         // Only drop the entry if it's still ours — a target that remounts
         // registers the new instance before the old one's cleanup runs.
@@ -199,7 +246,7 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
         }
       };
     },
-    [],
+    [remeasurePendingTarget],
   );
 
   const registerOverlayHost = useCallback((ref: RefObject<View | null>) => {
@@ -349,6 +396,9 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
   );
 
   useEffect(() => {
+    // Whatever the previous step was waiting on, this step (or this pause/
+    // resume/end) supersedes it.
+    pendingTargetIdRef.current = null;
     if (!state.isActive || state.isPaused) return;
     const step = state.steps[state.currentIndex];
     if (!step) return;
@@ -380,6 +430,17 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
       const entry = targetRegistry.current.get(step.targetId ?? "");
       const ref = step.targetRef ?? entry?.ref;
 
+      if (!ref) {
+        // No explicit ref, and nothing has registered this targetId yet —
+        // typically because `before`/`onNext` just navigated to a screen
+        // whose `<TourTarget>` hasn't mounted. Remember the id so
+        // `registerTarget` can pick this step's measurement up the instant
+        // that target mounts, rather than measuring once and giving up.
+        if (step.targetId) pendingTargetIdRef.current = step.targetId;
+        dispatch({ type: "SET_TARGET_RECT", rect: null, shape: null });
+        return;
+      }
+
       if (step.scroll) {
         // A chain runs outermost-first: scroll the page so the list is on
         // screen, then the list so the row is. Scrolling only the inner list
@@ -394,11 +455,9 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
 
       await nextPaint();
       if (measureToken.current !== token) return;
-      const rect = ref
-        ? await measureView(ref, overlayHostRef.current ?? undefined)
-        : null;
+      const rect = await measureView(ref, overlayHostRef.current ?? undefined);
       if (measureToken.current !== token) return;
-      if (__DEV__ && ref?.current && !rect) {
+      if (__DEV__ && ref.current && !rect) {
         // eslint-disable-next-line no-console
         console.warn(
           `[react-native-tour-guide] Step "${step.id}" measured its target ` +
