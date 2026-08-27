@@ -1,8 +1,10 @@
 # react-native-tour-guide
 
-**Product tours for React Native that actually feel native.** An animated
-spotlight, a tooltip that places itself, and a list-aware engine that scrolls,
-swipes, and remembers — in one component, zero native code.
+**Product tours for React Native that actually feel native.**
+
+A **React Native tour guide, onboarding, walkthrough, and coach-marks library** with animated spotlight overlays, auto-positioned tooltips, smart scrolling, and gesture-aware tours.
+
+It supports `FlatList`, `FlashList`, `LegendList`, `ScrollView`, and `SectionList`, with Expo and React Native CLI support and zero native modules.
 
 ![npm version](https://img.shields.io/npm/v/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
 ![npm downloads](https://img.shields.io/npm/dm/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
@@ -16,27 +18,63 @@ If this saves you a sprint of edge cases, a ⭐ on
 
 ---
 
-## Why this one
+## Features
+
+- 🎯 Animated spotlight overlays
+- 💬 Auto-positioned tooltips
+- 🧭 Step-by-step React Native tours
+- 📱 Expo Go, Expo dev builds, and React Native CLI
+- 📜 FlatList, FlashList, LegendList, SectionList, and ScrollView support
+- ↕️ Smart automatic scrolling
+- 👆 Gesture-aware swipe tours
+- 🎨 Built-in themes and custom tooltip rendering
+- 💾 Persistent/play-once tours
+- 🧩 Ref, ID, and coordinate-based targeting
+- ⚡ Reanimated-powered animations
+- 📘 TypeScript support
+- 🏗️ Paper and Fabric/New Architecture support
+- 🚫 Zero native modules
+
+## Why this React Native tour guide
 
 - 🎯 **Zero setup, real results.** Wrap a provider, wrap a list, done — the
-  library handles measuring, scrolling, placement, and safe areas for you.
-- 📜 **List tours that don't fight you.** `<TourScrollList>` turns any
-  `FlatList` / `FlashList` / `LegendList` into a guided tour with no refs, no
-  `useEffect`, no manual scroll math.
+  library handles measuring, automatic scrolling, tooltip placement, and safe
+  areas for you.
+- 📜 **List tours that don't fight you.** `<TourScrollList>` turns a
+  `FlatList`, `FlashList`, `LegendList`, or `SectionList` into a guided tour
+  with no refs, no `useEffect`, no manual scroll math.
 - ✋ **Real gestures, not fake ones.** Swipe-hint steps let the actual list
   scroll natively wherever possible — no captured, simulated touches.
 - 📦 **Ships nothing extra.** No native modules, no config plugin, no
-  prebuild. Works in Expo Go, dev builds, and bare React Native alike.
+  prebuild. Works in Expo Go, Expo dev builds, and React Native CLI alike.
 - 🧪 **Actually tested.** 200+ unit and render tests across the spotlight,
   scroll engine, gestures, and provider — this isn't a demo dressed up as a
   library.
 
+## More than a spotlight overlay
+
+This is not only a tooltip or spotlight component.
+
+The tour engine also handles:
+
+- target measurement
+- tooltip placement
+- safe-area-aware positioning
+- list scrolling
+- paging
+- swipe progression
+- persistence
+- step lifecycle
+- real control interaction (`passThroughTouches`)
+
 ## See it
 
-| **Targeting**                                                                                   | **Behavior**                                                                               | **Scrolling**                                                                                  |
-| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| ![Targeting tab — ref or TourTarget id, themes, and a custom tooltip](docs/TargetTourGuide.gif) | ![Behavior tab — backdrop, persistence, events, and live controls](docs/behaviourTour.gif) | ![Scrolling tab — list tours, paging, swipe hints, and wizard navigation](docs/scrollTour.gif) |
-| ref or id-based targeting, six themes, custom tooltips                                          | backdrop taps, play-once persistence, press-the-real-button                                | auto-scroll lists, swipe hints, paging, wizard nav                                             |
+The same example app demonstrates targeting, behavior, onboarding flows, list scrolling, paging, swipe gestures, and custom controls.
+
+| **Targeting**                                                                                                                                | **Behavior**                                                                                                                               | **Scrolling**                                                                                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ![React Native tour guide targeting with spotlight and custom tooltip](https://github.com/kaisarsofi/react-native-tour-guide/raw/main/docs/TargetTourGuide.gif) | ![React Native tour guide behavior, persistence, and controls](https://github.com/kaisarsofi/react-native-tour-guide/raw/main/docs/behaviourTour.gif) | ![React Native tour guide list scrolling and swipe gestures](https://github.com/kaisarsofi/react-native-tour-guide/raw/main/docs/scrollTour.gif) |
+| ref or id-based targeting, six themes, custom tooltips                                                                                       | backdrop taps, play-once persistence, press-the-real-button                                                                                | auto-scroll lists, swipe hints, paging, wizard nav                                                                                               |
 
 _Same example app, iOS simulator and Android device._
 
@@ -48,9 +86,13 @@ import {
   TourGuideOverlay,
   useTourGuide,
 } from "@kaisarsofi/react-native-tour-guide";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function App() {
   return (
+    // Optional: pass storage once app-wide so play-once tours survive restarts.
+    // Without it, persist still works for the current session (in-memory).
+    // <TourGuideProvider storage={AsyncStorage}>
     <TourGuideProvider>
       <Screen />
       <TourGuideOverlay />
@@ -66,14 +108,17 @@ function Screen() {
     <Pressable
       ref={buttonRef}
       onPress={() =>
-        startTour([
-          {
-            id: "compose",
-            targetRef: buttonRef,
-            title: "Compose",
-            description: "Tap here to start a new post.",
-          },
-        ])
+        startTour(
+          [
+            {
+              id: "compose",
+              targetRef: buttonRef,
+              title: "Compose",
+              description: "Tap here to start a new post.",
+            },
+          ],
+          // { tourId: "compose-tour", persist: true }  // play once — see below
+        )
       }
     >
       <Text>New post</Text>
@@ -82,7 +127,18 @@ function Screen() {
 }
 ```
 
-## List tours in one wrapper
+## React Native list tours
+
+Guide users through scrollable content without manually wiring refs, measuring positions, or writing scroll math.
+
+`<TourScrollList>` supports:
+
+- `FlatList`
+- `FlashList`
+- `LegendList`
+- `SectionList`
+
+It handles the tour's target measurement, scrolling, paging behavior, and gesture-aware progression. `ScrollView` works the same way through `useTourScroll()`.
 
 The most common real-world tour — teach the list itself, spotlight fixed,
 user swipes to catch up — used to mean wiring a ref, a `useEffect`, and
@@ -178,12 +234,22 @@ starting:
 
 ## Install
 
+### Expo
+
 ```bash
 npx expo install @kaisarsofi/react-native-tour-guide react-native-svg react-native-reanimated
 ```
 
+### React Native CLI
+
+npm or Yarn:
+
 ```bash
 npm install @kaisarsofi/react-native-tour-guide react-native-svg react-native-reanimated
+```
+
+```bash
+yarn add @kaisarsofi/react-native-tour-guide react-native-svg react-native-reanimated
 ```
 
 That's it for JS-only usage. Reanimated needs its Babel plugin if your app
@@ -230,10 +296,10 @@ own bundler compiles, so Tailwind/NativeWind classes work there.
 per-step callbacks, conditional `active` steps, configurable backdrop
 behavior (tap to advance, dismiss, or nothing).
 
-**Gesture tours** — `swipeHint` draws an animated hand and turns a step
-into a swipe-to-advance demo. When the target's own list can be subscribed
-to, the tour counts real native swipes instead of capturing touches — the
-list scrolls itself, exactly as it would with no tour running.
+**Gesture and swipe tours** — `swipeHint` draws an animated hand and turns a
+step into a swipe-to-advance demo. When the target's own list can be
+subscribed to, the tour counts real native swipes instead of capturing
+touches — the list scrolls itself, exactly as it would with no tour running.
 
 ```tsx
 {
@@ -284,6 +350,39 @@ with `createWizardTourSteps()` for a Prev/Next-driven carousel.
 Set `passThroughTouches` on `TourGuideConfig` to apply it to a whole tour; a
 step can still opt out.
 
+**Play once, persist forever** — `persist: true` plus a `tourId` and an
+onboarding walkthrough just won't show again. No storage adapter is required
+for the current app session; pass one to `TourGuideProvider` to survive
+restarts.
+
+```tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// 1. Once, app-wide — optional for session-only persistence
+<TourGuideProvider storage={AsyncStorage}>
+  ...
+  <TourGuideOverlay />
+</TourGuideProvider>
+
+// 2. On each tour you want to play once
+startTour(steps, { tourId: "onboarding", persist: true });
+
+// 3. To show it again during development (from useTourGuide())
+resetTour("onboarding");
+```
+
+Any adapter shaped like `{ getItem, setItem, removeItem? }` works — MMKV,
+SecureStore, your own wrapper around AsyncStorage.
+
+**Events** — `events.on('start' | 'stepChange' | 'end' | 'skip' | 'pause' | 'resume', handler)`
+for analytics, wired the same way anywhere in the tree.
+
+## Current limitations
+
+Tours currently run within a single screen. If a highlighted control navigates to another screen, end the current tour and start a new tour on the destination screen.
+
+Cross-screen tours are planned.
+
 ### Tours are single-screen
 
 A tour runs on the screen it started on. `TourGuideOverlay` sits above your
@@ -308,14 +407,6 @@ tour there and start a fresh one on the destination:
 ```
 
 Carrying one tour across screens is on the [roadmap](#roadmap).
-
-**Play once, persist forever** — `persist: true` plus `tourId` and it
-just won't show again, zero storage setup. Pass `TourGuideProvider` a real
-adapter (`storage={AsyncStorage}`, MMKV, anything shaped like
-`{ getItem, setItem, removeItem? }`) to survive restarts.
-
-**Events** — `events.on('start' | 'stepChange' | 'end' | 'skip' | 'pause' | 'resume', handler)`
-for analytics, wired the same way anywhere in the tree.
 
 ## API reference
 
@@ -345,7 +436,7 @@ const {
 Every function here is referentially stable — safe to drop straight into a
 `useEffect` dependency array, no `eslint-disable` required.
 
-### `<TourScrollList>`
+### `TourScrollList`
 
 ```tsx
 <TourScrollList
@@ -368,7 +459,7 @@ Every function here is referentially stable — safe to drop straight into a
 />
 ```
 
-### `<TourTarget>`
+### `TourTarget`
 
 Wraps anything you want to spotlight, so a step can reference it by
 `targetId` instead of threading a ref through.
@@ -482,7 +573,7 @@ with a feature request.
 
 ```bash
 git clone https://github.com/kaisarsofi/react-native-tour-guide.git
-cd react-native-tour-guide && npm install && npm run validate
+cd react-native-tour-guide && yarn && yarn validate
 ```
 
 A Husky pre-commit hook runs lint, format, and typecheck automatically.
