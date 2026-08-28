@@ -408,6 +408,10 @@ right alongside the navigation and the next step picks up on the new screen:
 }
 ```
 
+![React Native tour guide cross-screen tour following navigation](https://github.com/kaisarsofi/react-native-tour-guide/raw/main/docs/crossScreenTour.gif)
+
+_Real `@react-navigation/drawer` — each step navigates for real and the tour picks up the next target on whatever mounts._
+
 ### Going back doesn't reverse the navigation
 
 `prevStep()` only walks `currentIndex` backwards and re-resolves that
