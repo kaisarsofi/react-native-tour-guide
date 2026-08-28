@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.1.0
+
 ### The engine follows a tour across screens
 
 A step advanced (`nextStep`/`goToStep`) onto a target that hasn't mounted
