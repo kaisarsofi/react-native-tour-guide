@@ -227,6 +227,69 @@ export function rectsEqual(a: Rect | null, b: Rect | null): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
+/**
+ * Rects within this many px of each other count as "the same" for settle
+ * detection. An animated transform rarely lands on the exact same float
+ * twice, so this needs slack that plain `rectsEqual` (used for render
+ * dedup, where the input really is unchanged) doesn't.
+ */
+const SETTLE_EPSILON = 0.5;
+
+function rectsNearlyEqual(a: Rect, b: Rect): boolean {
+  return (
+    Math.abs(a.x - b.x) <= SETTLE_EPSILON &&
+    Math.abs(a.y - b.y) <= SETTLE_EPSILON &&
+    Math.abs(a.width - b.width) <= SETTLE_EPSILON &&
+    Math.abs(a.height - b.height) <= SETTLE_EPSILON
+  );
+}
+
+/**
+ * Ceiling on how long `measureSettledView` will keep polling. Generous
+ * next to real transition durations (React Navigation's defaults, a
+ * drawer's slide) so it doesn't cut a legitimate animation off early, but
+ * short enough that a target which is simply never going to resolve
+ * — the node measures to nothing every time, not just this once — still
+ * gives up promptly instead of stalling the tour.
+ */
+const SETTLE_TIMEOUT_MS = 700;
+
+/**
+ * Measures `ref` repeatedly, a frame apart, until two consecutive
+ * measurements agree (the animation driving its layout — a stack push, a
+ * drawer opening or closing, ...) has settled, or `SETTLE_TIMEOUT_MS`
+ * elapses, whichever comes first.
+ *
+ * A single `measureView` call can catch a target mid-transform and lock
+ * the spotlight onto a position it's about to move away from — the exact
+ * shape of a target that mounts (or moves) *because of* the navigation a
+ * tour step just triggered. This is what a step's target resolution
+ * should use instead, so that case self-corrects without every caller
+ * having to discover and hand-tune `delayBefore` for it. `delayBefore`
+ * still has its own job: gating on work that has to finish *before this
+ * function is even called* (data loading, a screen that doesn't render
+ * its `<TourTarget>` at all until then) — this only handles a target
+ * that's already rendering but still animating into place.
+ */
+export async function measureSettledView(
+  ref: RefObject<View | null>,
+  hostRef?: RefObject<View | null>,
+): Promise<Rect | null> {
+  const deadline = Date.now() + SETTLE_TIMEOUT_MS;
+  let previous: Rect | null = null;
+
+  do {
+    await nextPaint();
+    const rect = await measureView(ref, hostRef);
+    if (rect && previous && rectsNearlyEqual(rect, previous)) {
+      return rect;
+    }
+    previous = rect;
+  } while (Date.now() < deadline);
+
+  return previous;
+}
+
 export interface TooltipLayout {
   x: number;
   y: number;

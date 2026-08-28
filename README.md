@@ -292,9 +292,10 @@ pill without each step restating it. A step can still override either.
 replace the tooltip entirely with `renderTooltip` — a real component your
 own bundler compiles, so Tailwind/NativeWind classes work there.
 
-**Step lifecycle** — async `before`, `delayBefore`, `autoAdvance`,
-per-step callbacks, conditional `active` steps, configurable backdrop
-behavior (tap to advance, dismiss, or nothing).
+**Step lifecycle** — async `before`, `delayBefore` (gate on data or a target
+not yet mounted — not for animations; those settle automatically),
+`autoAdvance`, per-step callbacks, conditional `active` steps, configurable
+backdrop behavior (tap to advance, dismiss, or nothing).
 
 **Gesture and swipe tours** — `swipeHint` draws an animated hand and turns a
 step into a swipe-to-advance demo. When the target's own list can be
@@ -379,20 +380,81 @@ for analytics, wired the same way anywhere in the tree.
 
 ## Current limitations
 
-Tours currently run within a single screen. If a highlighted control navigates to another screen, end the current tour and start a new tour on the destination screen.
+Tours can now carry across a navigation: `TourGuideOverlay` sits above your
+navigator, so it survives one, and when a step advances to a target that
+hasn't mounted yet — the next step lives on the screen you're navigating to
+— the engine waits and measures it the instant its `<TourTarget>` registers,
+instead of measuring once and giving up. While measuring, it keeps polling
+until the target's position stops moving — a drawer sliding open, a stack
+push still finishing — so you don't need to hand-tune `delayBefore` for
+transition timing.
 
-Cross-screen tours are planned.
+That only helps once something actually calls `nextStep()` (or
+`goToStep()`). If the step that navigates does so through the tour itself —
+`onSpotlightPress`, `onNext`, a step's own `before` — call `nextStep()`
+right alongside the navigation and the next step picks up on the new screen:
 
-### Tours are single-screen
+```tsx
+{
+  id: "open-settings",
+  targetId: "settings-button",
+  title: "Settings",
+  description: "Everything else lives in here.",
+  onSpotlightPress: () => {
+    navigation.navigate("Settings");
+    nextStep();
+  },
+  hideNextButton: true,
+}
+```
 
-A tour runs on the screen it started on. `TourGuideOverlay` sits above your
-navigator, so it survives a navigation — but the engine doesn't follow: the
-spotlight keeps the rect it already measured, and a target that unmounted
-can't be re-measured. Spotlight a control that navigates away and the tour
-is left ringing empty space on the new screen.
+![React Native tour guide cross-screen tour following navigation](https://github.com/kaisarsofi/react-native-tour-guide/raw/main/docs/crossScreenTour.gif)
 
-So if a spotlighted control navigates, **make it the last step** — end the
-tour there and start a fresh one on the destination:
+_Real `@react-navigation/drawer` — each step navigates for real and the tour picks up the next target on whatever mounts._
+
+### Going back doesn't reverse the navigation
+
+`prevStep()` only walks `currentIndex` backwards and re-resolves that
+step's target — it never triggers navigation, because it has no idea what
+navigation, if any, got you to the current screen. If the previous step's
+target lived on a screen you've since moved past (its `<TourTarget>`
+unmounted when that screen did), going back in the tour can't bring it back
+into view: there's nothing left to measure, so that step lands with no
+spotlight.
+
+Concretely: a step that crosses a screen boundary going forward —
+`onSpotlightPress` calling `navigation.navigate(...)` then `nextStep()`, as
+above — has no forward-symmetric counterpart for `prevStep()`. Two ways to
+handle it:
+
+- **Hide `Back` on steps that only make sense moving forward** —
+  `hidePrevButton: true` on the step that navigated in, so there's no
+  control offering a trip the tour can't make.
+- **Drive the back-navigation yourself** — give that step its own `onPrev`
+  that calls `navigation.goBack()` (or equivalent) before `prevStep()` runs,
+  mirroring the `onSpotlightPress` pattern above but for the reverse
+  direction.
+
+```tsx
+{
+  id: "settings",
+  targetId: "settings-save",
+  title: "Save your changes",
+  onPrev: () => navigation.goBack(),
+}
+```
+
+### `passThroughTouches` can't advance itself
+
+A step with `passThroughTouches: true` renders nothing over the spotlight,
+so the real control gets the tap and does its own thing — including, often,
+its own navigation. Nothing in that path calls `nextStep()`, so the engine
+has no way to know the press happened and the tour is left behind on the
+old screen.
+
+Until the engine can detect that press without capturing it, use
+`autoAdvance` to bow the tour out behind the navigating control instead of
+following it onto the new screen:
 
 ```tsx
 {
@@ -406,7 +468,7 @@ tour there and start a fresh one on the destination:
 }
 ```
 
-Carrying one tour across screens is on the [roadmap](#roadmap).
+This part of cross-screen support is still on the [roadmap](#roadmap).
 
 ## API reference
 
@@ -523,7 +585,7 @@ five callbacks above compose with the hook's own the same way.
 | `active`                                                                | `boolean`                                     | `true`                                                    | Exclude from the tour when `false`                                |
 | `backdropBehavior`                                                      | `'next'\|'dismiss'\|'none'`                   | `'none'`                                                  | Tap-outside behavior                                              |
 | `autoAdvance`                                                           | `number`                                      | —                                                         | Auto-advance after N ms                                           |
-| `before` / `delayBefore`                                                | fn / `number`                                 | —                                                         | Gate on async work, then wait                                     |
+| `before` / `delayBefore`                                                | fn / `number`                                 | —                                                         | Gate on async work (`before`), optional ms wait before measuring (`delayBefore` — for data loads or a target not yet mounted, not animations) |
 | `scroll`                                                                | `TourScrollOptions \| [...]`                  | —                                                         | Scroll a list into view first                                     |
 | `swipeHint`                                                             | direction or `SwipeHintConfig`                | —                                                         | Animated hand + gesture tour                                      |
 | `renderTooltip`                                                         | `(props) => ReactNode`                        | —                                                         | Per-step custom tooltip                                           |
@@ -555,12 +617,16 @@ with real, runnable code.
       (`passThroughTouches`, opt-in — see [Press the real button](#everything-else-in-one-pass))
 - [ ] Make `passThroughTouches` the default, once a pass-through step can
       also self-advance without a capture view over the hole
-- [ ] **Cross-screen tours** — carry a tour across navigation, so a step
-      whose control navigates can continue on the screen it lands on. Needs
-      two things the engine doesn't have yet: a way to know the press
-      happened without capturing it, and a registry that waits for a target
-      that mounts a moment later instead of measuring once. Today a tour is
-      single-screen: see [Tours are single-screen](#tours-are-single-screen).
+- [x] **Cross-screen tours** — the target registry now waits for a
+      `<TourTarget>` that mounts a moment later instead of measuring once
+      and giving up, so a step advanced (via `nextStep`/`goToStep`) onto a
+      screen that's still navigating in picks up its target as soon as it
+      mounts. Measurement also waits for a target to stop moving before
+      committing, so animated transitions (drawer open, stack push) don't
+      need per-step `delayBefore`. Still missing: a way to know a
+      `passThroughTouches` press happened without capturing it, so that
+      variant can't self-advance yet — see
+      [`passThroughTouches` can't advance itself](#passthroughtouches-cant-advance-itself).
 - [ ] Reach natively-rendered targets (`expo-router` native tabs, native
       headers) without hand-written `targetRegion` coordinates
 - [ ] Optional blur backdrop

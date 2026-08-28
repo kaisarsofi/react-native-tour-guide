@@ -1,5 +1,48 @@
 # Changelog
 
+## Unreleased
+
+## 1.1.0
+
+### The engine follows a tour across screens
+
+A step advanced (`nextStep`/`goToStep`) onto a target that hasn't mounted
+yet — most often because it lives on a screen still navigating in — used to
+measure once, find nothing, and give up: the spotlight sat on empty space
+until something else happened to re-trigger measurement. The target
+registry now remembers what a waiting step needs and finishes its
+measurement itself the instant the matching `<TourTarget>` registers, so a
+step whose `onSpotlightPress`/`onNext` navigates and then calls `nextStep()`
+picks its target up on the destination screen with no extra setup.
+
+This covers a step-driven advance (`onSpotlightPress`, `onNext`, a step's
+own `before`). A `passThroughTouches` step that navigates on its own, with
+nothing calling `nextStep()` for it, still can't be followed — see
+[`passThroughTouches` can't advance itself](README.md#passthroughtouches-cant-advance-itself)
+in the README.
+
+### Measurement now waits for a target to stop moving, not just to exist
+
+Every target resolution — not only the late/cross-screen case above — used
+to measure once, a fixed two frames after the step became current, and
+commit to whatever it got. If that view was still animating into place (a
+drawer sliding open, a screen transition still finishing), the spotlight
+could lock onto a mid-animation position and stay there once the animation
+caught up and moved on without it — visually, the spotlight "jumps" to the
+wrong spot and the overlay gives up on it. This previously had one real
+fix: hand-tuning `delayBefore` per step to outlast whatever transition sits
+in front of it, which nobody discovers until they hit the bug.
+
+Target measurement now polls a frame apart and only commits once two
+consecutive reads agree (within half a pixel), for up to 700ms before
+giving up and using the last reading — so it settles itself on the common
+case (a target moving because of an animation already in flight) without
+requiring a step to declare how long that takes. `delayBefore` keeps its
+own, narrower job: gating on work that has to finish *before* the target
+even starts rendering — an async data load, a screen that doesn't mount its
+`<TourTarget>` at all until then. Combine both when a step's target is
+gated on data *and* sits behind an animated transition once it does render.
+
 ## 1.0.0
 
 First stable public release: animated SVG spotlight, auto-placed tooltip, six
