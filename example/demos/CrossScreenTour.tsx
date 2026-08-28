@@ -65,9 +65,9 @@ function HomeScreen() {
 /**
  * A real drawer's own content. `@react-navigation/drawer` keeps this mounted
  * the whole time — just translated off-screen — so its target is already
- * registered before the drawer ever opens; `delayBefore` on the step that
- * points at it is what actually matters here, giving the slide-open
- * animation a beat to finish before the engine measures its new position.
+ * registered before the drawer ever opens. Once the drawer opens, the engine
+ * waits for the item's position to settle before placing the spotlight —
+ * no per-step `delayBefore` needed for the slide animation.
  */
 function CustomDrawerContent({ onEditProfile }: { onEditProfile: () => void }) {
   return (
@@ -200,10 +200,6 @@ export function CrossScreenTour() {
       description: "Still on the drawer's own item — same screen the button lives on, now open.",
       spotlightBorderRadius: 12,
       hideNextButton: true,
-      // The drawer content is already mounted (just off-screen) — this
-      // isn't waiting on a mount, it's waiting on the slide-open animation
-      // to finish before measuring, or the spotlight lands mid-slide.
-      delayBefore: 260,
       // Backward isn't supported here — step one's target sits behind the
       // open drawer, on a screen this step never navigated away from. Only
       // the real menu button (step one's own control) can get back there.
@@ -222,10 +218,6 @@ export function CrossScreenTour() {
       spotlightBorderRadius: 12,
       hideNextButton: true,
       hidePrevButton: true,
-      // Edit Profile just mounted because of the navigation that got us
-      // here — give its own enter transition a beat to settle before the
-      // one shot at measuring it (see the same reasoning above).
-      delayBefore: 260,
       onSpotlightPress: () => {
         goToHome();
         nextStep();

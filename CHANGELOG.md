@@ -19,14 +19,27 @@ nothing calling `nextStep()` for it, still can't be followed — see
 [`passThroughTouches` can't advance itself](README.md#passthroughtouches-cant-advance-itself)
 in the README.
 
-A target that mounts because of the navigation is often still mid-transition
-the instant it registers — a stack push or a drawer opening animates the
-very view that just mounted. `delayBefore` now applies to this late
-measurement too, the same as it already did for a target that was mounted
-ahead of time: without it, a target could register mid-animation and
-permanently capture a mid-transition rect, since nothing re-measures it
-afterward. Set `delayBefore` on a step whose target lives behind an animated
-navigation transition.
+### Measurement now waits for a target to stop moving, not just to exist
+
+Every target resolution — not only the late/cross-screen case above — used
+to measure once, a fixed two frames after the step became current, and
+commit to whatever it got. If that view was still animating into place (a
+drawer sliding open, a screen transition still finishing), the spotlight
+could lock onto a mid-animation position and stay there once the animation
+caught up and moved on without it — visually, the spotlight "jumps" to the
+wrong spot and the overlay gives up on it. This previously had one real
+fix: hand-tuning `delayBefore` per step to outlast whatever transition sits
+in front of it, which nobody discovers until they hit the bug.
+
+Target measurement now polls a frame apart and only commits once two
+consecutive reads agree (within half a pixel), for up to 700ms before
+giving up and using the last reading — so it settles itself on the common
+case (a target moving because of an animation already in flight) without
+requiring a step to declare how long that takes. `delayBefore` keeps its
+own, narrower job: gating on work that has to finish *before* the target
+even starts rendering — an async data load, a screen that doesn't mount its
+`<TourTarget>` at all until then. Combine both when a step's target is
+gated on data *and* sits behind an animated transition once it does render.
 
 ## 1.0.0
 

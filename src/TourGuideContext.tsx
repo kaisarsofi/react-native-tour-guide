@@ -26,9 +26,8 @@ import type {
 } from "./types";
 import { createTourEventEmitter } from "./utils/eventEmitter";
 import {
-  measureView,
+  measureSettledView,
   measureWindowRect,
-  nextPaint,
   rectsEqual,
   windowRectToHostRect,
 } from "./utils/geometry";
@@ -206,13 +205,12 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
       const token = ++measureToken.current;
       (async () => {
         // A target that mounts *because* of navigation (a screen the tour
-        // just moved onto) is often still mid-transition the instant it
-        // registers — a stack push or drawer open animates the very view
-        // that just mounted. The step's own `delayBefore` is the caller's
-        // declared settle time for exactly this; the normal resolve effect
-        // already waits it out before its first measurement; a target that
-        // shows up late deserves the same wait before this one measurement
-        // it gets, or it can permanently capture a mid-animation rect.
+        // just moved onto) may still be mid-transition the instant it
+        // registers. `delayBefore` — if set — runs first, same as on the
+        // normal resolve path: it gates on work that has to finish before
+        // measuring even starts (async data, a screen that hasn't rendered
+        // its `<TourTarget>` yet). Animation settling is handled by
+        // `measureSettledView` after that.
         const delay =
           stateRef.current.steps[stateRef.current.currentIndex]?.delayBefore;
         if (delay) {
@@ -221,9 +219,7 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
           });
           if (measureToken.current !== token) return;
         }
-        await nextPaint();
-        if (measureToken.current !== token) return;
-        const rect = await measureView(ref, overlayHostRef.current ?? undefined);
+        const rect = await measureSettledView(ref, overlayHostRef.current ?? undefined);
         if (measureToken.current !== token) return;
         dispatch({ type: "SET_TARGET_RECT", rect, shape: shape ?? null });
       })();
@@ -453,9 +449,7 @@ export function TourGuideProvider({ children, storage }: TourGuideProviderProps)
         }
       }
 
-      await nextPaint();
-      if (measureToken.current !== token) return;
-      const rect = await measureView(ref, overlayHostRef.current ?? undefined);
+      const rect = await measureSettledView(ref, overlayHostRef.current ?? undefined);
       if (measureToken.current !== token) return;
       if (__DEV__ && ref.current && !rect) {
         // eslint-disable-next-line no-console

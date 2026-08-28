@@ -4,6 +4,7 @@ import { Dimensions, type View } from "react-native";
 import {
   computeOutsideSpotlightBands,
   computeTooltipLayout,
+  measureSettledView,
   measureView,
   measureWindowRect,
   rectsEqual,
@@ -199,6 +200,95 @@ describe("measureView", () => {
       width: 80,
       height: 40,
     });
+  });
+});
+
+describe("measureSettledView", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  // Drains the poll loop's `nextPaint`s and `setTimeout`s without pinning an
+  // exact iteration count to it — see the identical helper in
+  // `crossScreen.test.tsx` for why.
+  async function drain() {
+    for (let tick = 0; tick < 30; tick += 1) {
+      jest.advanceTimersByTime(50);
+      await Promise.resolve();
+    }
+  }
+
+  it("waits out a target still mid-animation instead of locking onto its first position", async () => {
+    // A view sliding into place: the first couple of measurements land
+    // mid-slide, then it holds still. This is the exact shape of a
+    // `<TourTarget>` that mounts because of the navigation a tour step just
+    // triggered (a stack push, a drawer opening) — measuring once, on the
+    // instant it registers, would capture one of the mid-slide positions
+    // and never revisit it.
+    const positions = [
+      { x: 40, y: 200, width: 80, height: 40 },
+      { x: 20, y: 200, width: 80, height: 40 },
+      { x: 0, y: 200, width: 80, height: 40 },
+      { x: 0, y: 200, width: 80, height: 40 },
+    ];
+    let call = 0;
+    const ref = viewRef((cb) => {
+      const pos = positions[Math.min(call, positions.length - 1)]!;
+      call += 1;
+      cb(pos.x, pos.y, pos.width, pos.height);
+    });
+
+    const result = measureSettledView(ref);
+    await drain();
+
+    await expect(result).resolves.toEqual({ x: 0, y: 200, width: 80, height: 40 });
+    // It kept polling past the first (mid-slide) measurement rather than
+    // resolving as soon as any single measurement came back.
+    expect(call).toBeGreaterThan(1);
+  });
+
+  it("treats measurements within half a pixel of each other as settled", async () => {
+    const positions = [
+      { x: 10.2, y: 5, width: 80, height: 40 },
+      { x: 10.6, y: 5, width: 80, height: 40 },
+    ];
+    let call = 0;
+    const ref = viewRef((cb) => {
+      const pos = positions[Math.min(call, positions.length - 1)]!;
+      call += 1;
+      cb(pos.x, pos.y, pos.width, pos.height);
+    });
+
+    const result = measureSettledView(ref);
+    await drain();
+
+    await expect(result).resolves.toEqual(positions[1]);
+  });
+
+  it("gives up and returns the last measurement if the target never stops moving", async () => {
+    let call = 0;
+    const ref = viewRef((cb) => {
+      call += 1;
+      cb(call, 0, 10, 10);
+    });
+
+    const result = measureSettledView(ref);
+    await drain();
+
+    const resolved = await result;
+    expect(resolved).not.toBeNull();
+    expect(resolved!.width).toBe(10);
+  });
+
+  it("resolves null when the ref is empty", async () => {
+    const result = measureSettledView({ current: null });
+    await drain();
+
+    await expect(result).resolves.toBeNull();
   });
 });
 

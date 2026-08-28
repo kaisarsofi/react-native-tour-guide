@@ -174,12 +174,10 @@ describe("cross-screen tours", () => {
   });
 
   it("waits out the step's delayBefore before measuring a target that mounts late", async () => {
-    // A target that mounts *because of* the navigation (a screen transition,
-    // a drawer opening) is often still mid-animation the instant it
-    // registers. `delayBefore` is how a step already tells the normal path
-    // to wait for that; a late-registering target must get the same wait
-    // before its one shot at measuring, or it can permanently capture a
-    // mid-transition rect instead of the settled one.
+    // `delayBefore` runs before measurement on the late-register path too —
+    // for gating on work that has to finish before the target even exists
+    // (data loading, a screen that hasn't rendered its `<TourTarget>` yet),
+    // not for animation settling (that's `measureSettledView`'s job).
     const { result } = renderHook(() => useHarness(), { wrapper });
     const step = makeStep({
       id: "a",
