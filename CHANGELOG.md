@@ -4,6 +4,10 @@
 
 ## 1.1.0
 
+Cross-screen tours: a step now follows real navigation to its target on the
+next screen, and target measurement settles itself instead of every caller
+hand-tuning a delay to guess it.
+
 ### The engine follows a tour across screens
 
 A step advanced (`nextStep`/`goToStep`) onto a target that hasn't mounted
@@ -42,6 +46,19 @@ own, narrower job: gating on work that has to finish *before* the target
 even starts rendering — an async data load, a screen that doesn't mount its
 `<TourTarget>` at all until then. Combine both when a step's target is
 gated on data *and* sits behind an animated transition once it does render.
+
+### Known limitations
+
+- **Going back doesn't reverse the navigation.** `prevStep()` only rewinds
+  the tour's own index — it never re-triggers whatever navigation got you
+  to the current screen. A step whose target lived on a screen you've since
+  left has nothing to go back to. See
+  [Going back doesn't reverse the navigation](README.md#going-back-doesnt-reverse-the-navigation)
+  in the README for how to handle it (`hidePrevButton`, or a step's own
+  `onPrev`).
+- **`passThroughTouches` still can't advance itself.** Carried over from
+  1.0.0 — see
+  [`passThroughTouches` can't advance itself](README.md#passthroughtouches-cant-advance-itself).
 
 ## 1.0.0
 
