@@ -57,24 +57,25 @@ function Toggle({ targetId, icon, label, on, onPress }: ToggleProps) {
 }
 
 export function PassThroughTour() {
-  const { startTour, resetTour, isActive, tourId } = useTourGuide();
+  const { startTour, nextStep, resetTour, isActive, tourId } = useTourGuide();
   const [wifi, setWifi] = useState(false);
   const [alerts, setAlerts] = useState(false);
   const [sync, setSync] = useState(false);
   const isThisTour = isActive && tourId === TOUR_ID;
 
-  // Note what these steps *don't* have: no `onSpotlightPress` restating what
-  // each toggle already does. The tap goes straight to the real control.
-  // Advancing is the tooltip's job, since with nothing over the cutout the
-  // overlay can't see the tap at all.
+  // The tap goes straight to the real control — `onSpotlightPress` doesn't
+  // restate what the toggle already does, it just rides along with the
+  // real press to move the tour on, the same way it would for a captured
+  // step that calls `nextStep()` from its own handler.
   const steps: TourStep[] = [
     {
       id: "wifi",
       targetId: "toggle-wifi",
       title: "Tap it — really",
       description:
-        "The spotlight isn't covering this button. Toggling it here does exactly what it does normally.",
+        "The spotlight isn't covering this button. Toggling it here does exactly what it does normally — and moves the tour on by itself.",
       passThroughTouches: true,
+      onSpotlightPress: nextStep,
     },
     {
       id: "alerts",
@@ -83,6 +84,7 @@ export function PassThroughTour() {
       description:
         "No duplicated handler in the tour, so this can't drift from what the real control does.",
       passThroughTouches: true,
+      onSpotlightPress: nextStep,
     },
     {
       id: "sync",
