@@ -249,11 +249,19 @@ export interface TourStep {
   onPrev?: () => void;
   onSkip?: () => void;
   /**
-   * Fires instead of the default backdrop-tap behavior when the user taps
-   * inside the spotlight itself (as opposed to the dimmed area around it) —
-   * lets a step require pressing the real, live control to advance rather
-   * than the tooltip's own Next button. Pair with `hideNextButton` so
-   * that's the only way forward.
+   * Fires when the user taps inside the spotlight itself (as opposed to the
+   * dimmed area around it).
+   *
+   * Without `passThroughTouches`, this replaces the default backdrop-tap
+   * behavior — lets a step require pressing the real, live control to
+   * advance rather than the tooltip's own Next button. Pair with
+   * `hideNextButton` so that's the only way forward.
+   *
+   * With `passThroughTouches`, the tap still reaches the real control
+   * underneath untouched — this fires *alongside* it, from a passive touch
+   * observer on the `<TourTarget>` rather than by capturing anything. Call
+   * `nextStep()` here to follow the control's own navigation instead of
+   * guessing at a timer with `autoAdvance`.
    */
   onSpotlightPress?: () => void;
   /**
@@ -262,17 +270,18 @@ export interface TourStep {
    * analytics, haptics, disabled state) with no `onSpotlightPress` restating
    * it, and a spotlighted plain view simply isn't tappable.
    *
-   * Off by default for now, because it changes two established behaviours
-   * for a step that opts in:
+   * `onSpotlightPress` still fires for a tap here — the `<TourTarget>`
+   * wrapping this step's target observes the touch passively (it never
+   * claims it, so the real control gets it first and unchanged) and calls
+   * `onSpotlightPress` for anything that looks like a tap rather than a
+   * scroll passing through.
    *
-   * - `onSpotlightPress` never fires. There is nothing over the hole left to
-   *   detect the tap with, so a step needs one or the other.
-   * - `backdropBehavior` stops applying to taps *inside* the spotlight.
-   *   Today those fall through to the backdrop handler, so a `'next'` step
-   *   advances when the target is tapped; with pass-through the tap belongs
-   *   to the control and only taps outside the hole reach the backdrop.
-   *
-   * Everything outside the spotlight is still blocked either way.
+   * Off by default for now, because it changes an established behaviour for
+   * a step that opts in: `backdropBehavior` stops applying to taps *inside*
+   * the spotlight. Today those fall through to the backdrop handler, so a
+   * `'next'` step advances when the target is tapped; with pass-through the
+   * tap belongs to the control and only taps outside the hole reach the
+   * backdrop. Everything outside the spotlight is still blocked either way.
    */
   passThroughTouches?: boolean;
   accessibilityLabel?: string;
