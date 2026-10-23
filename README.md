@@ -8,6 +8,7 @@ It supports `FlatList`, `FlashList`, `LegendList`, `ScrollView`, and `SectionLis
 
 ![npm version](https://img.shields.io/npm/v/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
 ![npm downloads](https://img.shields.io/npm/dm/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
+![CI](https://img.shields.io/github/actions/workflow/status/kaisarsofi/react-native-tour-guide/ci.yml?branch=main&style=flat-square)
 ![license](https://img.shields.io/npm/l/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
 ![types](https://img.shields.io/badge/types-included-3178C6.svg?style=flat-square)
 ![expo](https://img.shields.io/badge/Expo-Go%20%26%20dev%20builds-000.svg?style=flat-square&logo=expo)
