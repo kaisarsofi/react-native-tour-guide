@@ -6,8 +6,8 @@ A **React Native tour guide, onboarding, walkthrough, and coach-marks library** 
 
 It supports `FlatList`, `FlashList`, `LegendList`, `ScrollView`, and `SectionList`, with Expo and React Native CLI support and zero native modules.
 
-![npm version](https://img.shields.io/npm/v/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
-![npm downloads](https://img.shields.io/npm/dm/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
+[![npm version](https://img.shields.io/npm/v/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)](https://www.npmjs.com/package/@kaisarsofi/react-native-tour-guide)
+[![npm downloads](https://img.shields.io/npm/dm/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)](https://www.npmjs.com/package/@kaisarsofi/react-native-tour-guide)
 ![CI](https://img.shields.io/github/actions/workflow/status/kaisarsofi/react-native-tour-guide/ci.yml?branch=main&style=flat-square)
 ![license](https://img.shields.io/npm/l/@kaisarsofi/react-native-tour-guide.svg?style=flat-square)
 ![types](https://img.shields.io/badge/types-included-3178C6.svg?style=flat-square)
