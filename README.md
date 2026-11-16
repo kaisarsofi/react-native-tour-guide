@@ -445,17 +445,15 @@ handle it:
 }
 ```
 
-### `passThroughTouches` can't advance itself
+### `passThroughTouches` self-advances via `onSpotlightPress`
 
 A step with `passThroughTouches: true` renders nothing over the spotlight,
 so the real control gets the tap and does its own thing — including, often,
-its own navigation. Nothing in that path calls `nextStep()`, so the engine
-has no way to know the press happened and the tour is left behind on the
-old screen.
-
-Until the engine can detect that press without capturing it, use
-`autoAdvance` to bow the tour out behind the navigating control instead of
-following it onto the new screen:
+its own navigation. The `<TourTarget>` wrapping that control still sees the
+tap, passively — it never claims it, so the real control gets it first and
+unchanged — and fires `onSpotlightPress` for anything that looks like a tap
+rather than a scroll or swipe passing through. Call `nextStep()` there to
+follow the control's own navigation, the same pattern as a captured step:
 
 ```tsx
 {
@@ -465,11 +463,12 @@ following it onto the new screen:
   description: "Everything else lives in here.",
   passThroughTouches: true,   // the button navigates for real
   hideNextButton: true,
-  autoAdvance: 1200,          // ...and the tour bows out behind it
+  onSpotlightPress: () => nextStep(),  // fires alongside the real press
 }
 ```
 
-This part of cross-screen support is still on the [roadmap](#roadmap).
+No timer guess required — the tour advances the instant the real control is
+tapped, not some milliseconds later.
 
 ## API reference
 
@@ -616,18 +615,23 @@ with real, runnable code.
 
 - [x] Pass touches through the spotlight cutout to the live view
       (`passThroughTouches`, opt-in — see [Press the real button](#everything-else-in-one-pass))
-- [ ] Make `passThroughTouches` the default, once a pass-through step can
-      also self-advance without a capture view over the hole
+- [x] **Self-advancing `passThroughTouches`** — a `<TourTarget>` now
+      observes the tap over its hole passively (never claiming it, so the
+      real control still gets it first), and fires `onSpotlightPress` for
+      anything that looks like a tap. Call `nextStep()` there to follow the
+      control's own navigation instead of guessing at a timer with
+      `autoAdvance` — see
+      [`passThroughTouches` self-advances via `onSpotlightPress`](#passthroughtouches-self-advances-via-onspotlightpress).
+      `passThroughTouches` stays opt-in for now; making it the default is
+      a separate, larger change.
 - [x] **Cross-screen tours** — the target registry now waits for a
       `<TourTarget>` that mounts a moment later instead of measuring once
       and giving up, so a step advanced (via `nextStep`/`goToStep`) onto a
       screen that's still navigating in picks up its target as soon as it
       mounts. Measurement also waits for a target to stop moving before
       committing, so animated transitions (drawer open, stack push) don't
-      need per-step `delayBefore`. Still missing: a way to know a
-      `passThroughTouches` press happened without capturing it, so that
-      variant can't self-advance yet — see
-      [`passThroughTouches` can't advance itself](#passthroughtouches-cant-advance-itself).
+      need per-step `delayBefore`.
+- [ ] Make `passThroughTouches` the default, now that it can self-advance
 - [ ] Reach natively-rendered targets (`expo-router` native tabs, native
       headers) without hand-written `targetRegion` coordinates
 - [ ] Optional blur backdrop

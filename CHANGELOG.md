@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+### `passThroughTouches` steps can self-advance
+
+A `passThroughTouches` step renders nothing over the spotlight, so the real
+control gets the tap — but until now nothing told the tour it happened, so
+a step whose control navigates on its own (as pass-through controls often
+do) left the tour behind on the old screen. The only workaround was a timed
+guess via `autoAdvance`.
+
+`<TourTarget>` now observes a tap over its hole passively — `View`'s plain
+`onTouchStart`/`onTouchEnd`, which never claim the touch, unlike the
+responder system `Pressable` uses — so the real control still gets the
+press first and unchanged. When that observation looks like a tap rather
+than a scroll or swipe passing through, it fires the step's
+`onSpotlightPress`, the same callback a captured step already uses to
+require pressing the real control. Call `nextStep()` there to follow the
+control's own navigation instead of guessing at a timer:
+
+```tsx
+{
+  id: "open-settings",
+  targetId: "settings-button",
+  passThroughTouches: true,
+  onSpotlightPress: () => nextStep(),
+}
+```
+
+See [`passThroughTouches` self-advances via `onSpotlightPress`](README.md#passthroughtouches-self-advances-via-onspotlightpress)
+in the README.
+
 ## 1.1.0
 
 Cross-screen tours: a step now follows real navigation to its target on the
